@@ -7,7 +7,12 @@ from rest_framework.permissions import IsAuthenticated
 from ..models.course_model import Course
 from ..serializers.course_serializer import CourseSerializer
 from ..roles import IsTeacher, IsTeacherAndOwner
+from ..service.google_drive_service import upload_file_to_drive, delete_file_from_drive
+from django.core.files.storage import default_storage
+import os
+from django.conf import settings
 
+# Course API View to list all courses
 class CourseListAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -27,9 +32,27 @@ class CourseListAPIView(generics.ListAPIView):
         return Response({
             'success': False,
             'message': 'No courses found'
-        }, status=status.HTTP_404_NOT_FOUND) 
+        }, status=status.HTTP_404_NOT_FOUND)
     
 
+def upload_thumbnail(thumbnail_file):
+    try:
+        # Save the thumbnail file temporarily on the server
+        file_path = os.path.join(settings.MEDIA_ROOT, thumbnail_file.name)
+        with default_storage.open(file_path, 'wb+') as destination:
+            for chunk in thumbnail_file.chunks():
+                destination.write(chunk)
+
+        # Upload the thumbnail file to Google Drive
+        file_id = upload_file_to_drive(file_path, thumbnail_file.name)
+    except Exception as e:
+        raise "Error uploading thumbnail to Google Drive"
+    
+    # Remove the temporary file
+    os.remove(file_path)
+    return file_id
+
+# Course API View to create a course
 class CourseCreateAPIView(generics.CreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -40,6 +63,18 @@ class CourseCreateAPIView(generics.CreateAPIView):
         serializer.save(teacher=self.request.user)
 
     def create(self, request, *args, **kwargs):
+
+        # Upload the thumbnail to Google Drive
+        try:
+            thumbnail_id = upload_thumbnail(request.FILES.get('thumbnail'))
+            request.data['thumbnail_id'] = thumbnail_id
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error uploading thumbnail',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)    
+
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
@@ -109,9 +144,35 @@ class CourseUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        old_thumbnail_id = None
+
+        # Upload the thumbnail to Google Drive
+        if request.FILES.get('thumbnail'):
+            try:
+                thumbnail_id = upload_thumbnail(request.FILES.get('thumbnail'))
+                request.data['thumbnail_id'] = thumbnail_id
+                old_thumbnail_id = instance.thumbnail_id
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'message': 'Error uploading thumbnail',
+                    'error': str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             self.perform_update(serializer)
+
+            if request.FILES.get('thumbnail'):
+                try:
+                    delete_file_from_drive(old_thumbnail_id)
+                except Exception as e:
+                    return Response({
+                        'success': False,
+                        'message': 'Error deleting old thumbnail',
+                        'error': str(e)
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
             return Response({
                 'success': True,
                 'message': 'Course updated successfully',
@@ -126,7 +187,17 @@ class CourseUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+
+        try:
+            delete_file_from_drive(instance.thumbnail_id)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error deleting thumbnail',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
         self.perform_destroy(instance)
+
         return Response({
             'success': True,
             'message': 'Course deleted successfully'

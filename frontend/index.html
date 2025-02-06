@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload</title>
+    <style>
+        .container {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        img {
+            max-width: 300px;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="file" id="fileInput">
+        <button onclick="uploadFile()">Upload</button>
+        <div id="errorMessage" class="error"></div>
+        <div id="preview">
+            <img id="uploadedImage" src="" alt="Uploaded content will appear here">
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // Handle file selection
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFile = e.target.files[0];
+            document.getElementById('errorMessage').textContent = '';
+        });
+
+        // Upload function
+        async function uploadFile() {
+            if (!selectedFile) {
+                showError('Please select a file first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('http://localhost:8000/api/file/upload/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Token 0ba53dc8a498ea54783c92507ad22a52654f349f'
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const fileUrl = `https://drive.google.com/uc?export=view&id=${data.file_id}`;
+                
+                // Show the uploaded image
+                const imgElement = document.getElementById('uploadedImage');
+                imgElement.src = fileUrl;
+                imgElement.alt = 'Uploaded content';
+                
+            } catch (error) {
+                showError(`Upload failed: ${error.message}`);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>

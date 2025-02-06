@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -12,8 +13,8 @@ class Course(models.Model):
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'teacher'})
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    start_date = models.DateTimeField()
-    regis_start_date = models.DateTimeField()
+    start_date = models.DateTimeField(timezone.now)
+    regis_start_date = models.DateTimeField(default=timezone.now)
     regis_end_date = models.DateTimeField()
     max_students = models.IntegerField(null=True, blank=True)
 
