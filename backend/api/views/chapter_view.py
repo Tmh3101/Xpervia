@@ -5,7 +5,9 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.models.chapter_model import Chapter
 from api.models.course_model import Course
+from api.models.lesson_model import Lesson
 from api.serializers.chapter_serializer import ChapterSerializer
+from api.serializers.lesson_serializer import LessonSerializer
 from api.roles import IsTeacher, IsCourseOfChapterOwner
 
 # Chapters list API view for listing all chapters
@@ -17,18 +19,12 @@ class ChapterListAPIView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        if queryset:
-            serializer = ChapterSerializer(queryset, many=True)
-            return Response({
-                'success': True,
-                'message': 'All chapters have been listed successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
-        
+        serializer = ChapterSerializer(queryset, many=True)
         return Response({
-            'success': False,
-            'message': 'No chapters found'
-        }, status=status.HTTP_404_NOT_FOUND)
+            'success': True,
+            'message': 'All chapters have been listed successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 # Chapter create API view for creating a chapter
@@ -78,7 +74,15 @@ class ChapterRetrieveAPIView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Chapter not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = self.get_serializer(instance)
         return Response({
             'success': True,
@@ -96,7 +100,15 @@ class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:    
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Chapter not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.get_serializer(instance, data=request.data)
         if serializer.is_valid():
             self.perform_update(serializer)
@@ -119,3 +131,35 @@ class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
             'success': True,
             'message': 'Chapter deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
+    
+
+# Chapter detail API view for retrieving a chapter with all lessons
+class ChapterDetailAPIView(generics.RetrieveAPIView):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+
+    def retrieve(self, request, *args, **kwargs):
+        try:    
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Chapter not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        lessons = Lesson.objects.filter(chapter=instance)
+        lessons_serializer = LessonSerializer(lessons, many=True)
+        
+        serializer = self.get_serializer(instance)
+        chapter_detail_data = serializer.data.copy()
+        chapter_detail_data['lessons'] = lessons_serializer.data
+
+        return Response({
+            'success': True,
+            'message': 'Chapter retrieved successfully',
+            'data': chapter_detail_data
+        }, status=status.HTTP_200_OK)

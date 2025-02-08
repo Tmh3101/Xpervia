@@ -18,6 +18,7 @@ urlpatterns = [
     path('courses/<int:id>/', course_view.CourseRetrievelAPIView.as_view(), name='course-detail'),
     path('courses/<int:id>/update/', course_view.CourseUpdateDeleteAPIView.as_view(), name='course-update'),
     path('courses/<int:id>/delete/', course_view.CourseUpdateDeleteAPIView.as_view(), name='course-delete'),
+    path('courses/<int:id>/detail/', course_view.CourseDetailAPIView.as_view(), name='course-lesson-list'),
 
     # Chapter URLs
     path('courses/<int:course_id>/chapters/', chapter_view.ChapterListAPIView.as_view(), name='chapter-list'),
@@ -25,6 +26,7 @@ urlpatterns = [
     path('courses/chapters/<int:id>/', chapter_view.ChapterRetrieveAPIView.as_view(), name='chapter-detail'),
     path('courses/chapters/<int:id>/update/', chapter_view.ChapterUpdateDeleteAPIView.as_view(), name='chapter-update'),
     path('courses/chapters/<int:id>/delete/', chapter_view.ChapterUpdateDeleteAPIView.as_view(), name='chapter-delete'),
+    path('courses/chapters/<int:id>/detail/', chapter_view.ChapterDetailAPIView.as_view(), name='chapter-lessons-list'),
 
     # Lesson URLs
     path('courses/<int:course_id>/lessons/', lesson_view.LessonListByCourseAPIView.as_view(), name='lesson-list'),

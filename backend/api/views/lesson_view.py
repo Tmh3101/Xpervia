@@ -152,17 +152,19 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
-            serializer = self.get_serializer(instance)
-            return Response({
-                'success': True,
-                'message': 'Lesson retrieved successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
         except Http404 as e:
             return Response({
                 'success': False,
-                'message': str(e)
+                'message': 'Lesson not found',
+                'error': str(e)
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(instance)
+        return Response({
+            'success': True,
+            'message': 'Lesson retrieved successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 # Lesson update and delete API view for updating and deleting a lesson
@@ -174,7 +176,14 @@ class LessonUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Lesson not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         # Upload the video, subtitle, and attachment to Google Drive
         files = ['video', 'subtitle', 'attachment']
@@ -230,7 +239,14 @@ class LessonUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Lesson not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         # Delete the video, subtitle, and attachment from Google Drive
         files = ['video', 'subtitle', 'attachment']

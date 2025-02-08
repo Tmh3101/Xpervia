@@ -8,7 +8,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from api.serializers.user_serializer import UserSerializer, UserRegisterSerializer
-from api.roles import IsAdmin
+from api.roles import IsAdmin, IsUserOwner
 
 User = get_user_model()
 
@@ -21,18 +21,12 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        if queryset:
-            serializer = UserSerializer(queryset, many=True)
-            return Response({
-                'success': True,
-                'message': 'All users have been listed successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
-        
+        serializer = UserSerializer(queryset, many=True)
         return Response({
-            'success': False,
-            'message': 'No users found'
-        }, status=status.HTTP_404_NOT_FOUND)    
+            'success': True,
+            'message': 'All users have been listed successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)    
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -57,40 +51,25 @@ class UserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdmin | IsUserOwner]
     lookup_field = 'id'
-    
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        lookup_value = self.kwargs.get(lookup_url_kwarg)
-
-        if lookup_value is None:
-            raise Http404("User not found, lookup_value=None")
-
-        try:
-            obj = queryset.get(**{self.lookup_field: lookup_value})
-        except (User.DoesNotExist, ValidationError, ValueError):
-            raise Http404("User not found")
-
-        self.check_object_permissions(self.request, obj)
-        return obj
 
     def retrieve(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
-            serializer = self.get_serializer(instance)
-            return Response({
-                'success': True,
-                'message': 'User retrieved successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
         except Http404 as e:
             return Response({
                 'success': False,
                 'message': 'User not found',
                 'error': str(e)
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(instance)
+        return Response({
+            'success': True,
+            'message': 'User retrieved successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -107,22 +86,6 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
-
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        lookup_value = self.kwargs.get(lookup_url_kwarg)
-
-        if lookup_value is None:
-            raise Http404("User not found, lookup_value=None")
-
-        try:
-            obj = queryset.get(**{self.lookup_field: lookup_value})
-        except (User.DoesNotExist, ValidationError, ValueError):
-            raise Http404("User not found")
-
-        self.check_object_permissions(self.request, obj)
-        return obj
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -166,6 +129,7 @@ class UserPasswordUpdateAPIView(generics.UpdateAPIView):
                     'success': False,
                     'message': 'Old password is incorrect'
                 }, status=status.HTTP_400_BAD_REQUEST)
+            
             instance.set_password(new_password)
             instance.save()
             return Response({
@@ -195,6 +159,7 @@ class UserRegisterAPIView(generics.CreateAPIView):
                 'message': 'User registered successfully',
                 'data': serializer.data
             }, status=status.HTTP_201_CREATED)
+        
         return Response({
             'success': False,
             'message': 'User not registered',
@@ -208,14 +173,30 @@ class CustomAuthTokenAPIView(ObtainAuthToken):
         email = request.data.get('email')
         password = request.data.get('password')
         user = User.objects.filter(email=email).first()
-        if user and user.check_password(password) and user.is_active:
-            token, created = Token.objects.get_or_create(user=user)
+        if user:
+            if user.is_active:
+                if user.check_password(password):
+                    token, created = Token.objects.get_or_create(user=user)
+                    return Response({
+                        'success': True,
+                        'message': 'Login successful',
+                        'token': token.key
+                    })
+                
+                return Response({
+                    'success': False,
+                    'message': 'Invalid password'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             return Response({
-                'success': True,
-                'message': 'Login successful',
-                'token': token.key
-            })
-        return Response({'error': 'Invalid Credentials'}, status=400)
+                'success': False,
+                'message': 'User is not active'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid email'
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     
 class UserLogoutAPIView(generics.DestroyAPIView):
