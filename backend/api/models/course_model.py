@@ -8,7 +8,7 @@ class Course(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    thumbnail_id = models.CharField(max_length=255, null=True, blank=True)
+    thumbnail_id = models.CharField(max_length=50, null=True, blank=True)
     price = models.IntegerField(default=0)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'teacher'})
     is_visible = models.BooleanField(default=True)

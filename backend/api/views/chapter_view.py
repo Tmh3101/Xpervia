@@ -1,0 +1,121 @@
+from django.http import Http404
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from api.models.chapter_model import Chapter
+from api.models.course_model import Course
+from api.serializers.chapter_serializer import ChapterSerializer
+from api.roles import IsTeacher, IsCourseOfChapterOwner
+
+# Chapters list API view for listing all chapters
+class ChapterListAPIView(generics.ListAPIView):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if queryset:
+            serializer = ChapterSerializer(queryset, many=True)
+            return Response({
+                'success': True,
+                'message': 'All chapters have been listed successfully',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'success': False,
+            'message': 'No chapters found'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+# Chapter create API view for creating a chapter
+class ChapterCreateAPIView(generics.CreateAPIView):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher]
+
+    def perform_create(self, serializer):
+        try:
+            course = Course.objects.get(id=self.kwargs.get('course_id'))
+            serializer.save(course=course)
+        except Course.DoesNotExist:
+            raise Http404("Course does not exist")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                self.perform_create(serializer)
+            except Http404 as e:
+                return Response({
+                    'success': False,
+                    'message': str(e)
+                }, status=status.HTTP_404_NOT_FOUND)
+            headers = self.get_success_headers(serializer.data)
+            return Response({
+                'success': True,
+                'message': 'Chapter created successfully',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED, headers=headers)
+        
+        return Response({
+            'success': False,
+            'message': 'Chapter not created',
+            'error': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# Chapter retrieve API view for retrieving a chapter
+class ChapterRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({
+            'success': True,
+            'message': 'Chapter retrieved successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+# Chapter update and delete API view for updating and deleting a chapter
+class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOfChapterOwner]
+    lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response({
+                'success': True,
+                'message': 'Chapter updated successfully',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'success': False,
+            'message': 'Chapter not updated',
+            'error': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({
+            'success': True,
+            'message': 'Chapter deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)

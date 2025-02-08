@@ -7,8 +7,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from ..serializers.user_serializer import UserSerializer, UserRegisterSerializer
-from ..roles import IsAdmin
+from api.serializers.user_serializer import UserSerializer, UserRegisterSerializer
+from api.roles import IsAdmin
 
 User = get_user_model()
 
