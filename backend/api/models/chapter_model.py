@@ -9,6 +9,9 @@ class Chapter(models.Model):
 
     class Meta:
         ordering = ['order']
+        db_table = 'chapters'
+        verbose_name = 'Chapter'
+        verbose_name_plural = 'Chapters'
 
     def __str__(self):
         return self.title

@@ -17,6 +17,9 @@ class Lesson(models.Model):
 
     class Meta:
         ordering = ['order']
+        db_table = 'lessons'
+        verbose_name = 'Lesson'
+        verbose_name_plural = 'Lessons'
 
     def __str__(self):
         return self.title

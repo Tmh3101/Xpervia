@@ -11,8 +11,8 @@ from api.models.course_model import Course
 from api.models.chapter_model import Chapter
 from api.models.lesson_model import Lesson
 from api.serializers.course_serializer import CourseSerializer
-from api.serializers.chapter_serializer import ChapterSerializer
-from api.serializers.lesson_serializer import LessonSerializer
+from api.serializers.chapter_serializer import ChapterSerializer, SimpleChapterSerializer
+from api.serializers.lesson_serializer import LessonSerializer, SimpleLessonSerializer
 from api.roles import IsTeacher, IsCourseOwner
 from api.services.google_drive_service import upload_file, delete_file
 
@@ -212,16 +212,16 @@ class CourseDetailAPIView(generics.RetrieveAPIView):
         # Get chapters and lessons
         chapters = Chapter.objects.filter(course=instance)
         if chapters.exists():
-            chapters_serializer = ChapterSerializer(chapters, many=True)
+            chapters_serializer = SimpleChapterSerializer(chapters, many=True)
             for chapter_data in chapters_serializer.data:
                 chapter_id = chapter_data['id']
                 lessons = Lesson.objects.filter(chapter_id=chapter_id)
-                lessons_serializer = LessonSerializer(lessons, many=True)
+                lessons_serializer = SimpleLessonSerializer(lessons, many=True)
                 chapter_data['lessons'] = lessons_serializer.data
             course_detail_data['chapters'] = chapters_serializer.data
         else:
             lessons = Lesson.objects.filter(course=instance, chapter__isnull=True)
-            lessons_serializer = LessonSerializer(lessons, many=True)
+            lessons_serializer = SimpleLessonSerializer(lessons, many=True)
             course_detail_data['lessons'] = lessons_serializer.data
 
         return Response({

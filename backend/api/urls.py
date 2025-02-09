@@ -1,5 +1,5 @@
 from django.urls import path
-from api.views import user_view, course_view, chapter_view, lesson_view
+from api.views import user_view, category_view, course_view, chapter_view, lesson_view
 
 urlpatterns = [
     # User URLs
@@ -11,6 +11,13 @@ urlpatterns = [
     path('register/', user_view.UserRegisterAPIView.as_view(), name='user-register'),
     path('token/login/', user_view.CustomAuthTokenAPIView.as_view(), name='token_obtain_pair'),
     path('token/logout/', user_view.UserLogoutAPIView.as_view(), name='api_token_logout'),
+
+    # Course Category URLs
+    path('courses/categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
+    path('courses/categories/create/', category_view.CategoryCreateAPIView.as_view(), name='category-create'),
+    path('courses/categories/<int:id>/', category_view.CategoryRetrieveAPIView.as_view(), name='category-detail'),
+    path('courses/categories/<int:id>/update/', category_view.CategoryUpdateDeleteAPIView.as_view(), name='category-update'),
+    path('courses/categories/<int:id>/delete/', category_view.CategoryUpdateDeleteAPIView.as_view(), name='category-delete'),
 
     # Course URLs
     path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),

@@ -7,7 +7,7 @@ from api.models.chapter_model import Chapter
 from api.models.course_model import Course
 from api.models.lesson_model import Lesson
 from api.serializers.chapter_serializer import ChapterSerializer
-from api.serializers.lesson_serializer import LessonSerializer
+from api.serializers.lesson_serializer import LessonSerializer, SimpleLessonSerializer
 from api.roles import IsTeacher, IsCourseOfChapterOwner
 
 # Chapters list API view for listing all chapters
@@ -125,7 +125,15 @@ class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Chapter not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         self.perform_destroy(instance)
         return Response({
             'success': True,
@@ -152,7 +160,7 @@ class ChapterDetailAPIView(generics.RetrieveAPIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
         lessons = Lesson.objects.filter(chapter=instance)
-        lessons_serializer = LessonSerializer(lessons, many=True)
+        lessons_serializer = SimpleLessonSerializer(lessons, many=True)
         
         serializer = self.get_serializer(instance)
         chapter_detail_data = serializer.data.copy()

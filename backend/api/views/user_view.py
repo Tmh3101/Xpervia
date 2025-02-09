@@ -88,7 +88,15 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'User not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = self.get_serializer(instance, data=request.data, partial=False)
         if serializer.is_valid():
             self.perform_update(serializer)
