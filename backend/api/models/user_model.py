@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from api.enums.role_enum import RoleEnum
 import uuid
 
 # Create UserManager class to set email as username field
@@ -34,12 +35,8 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, max_length=255)
     date_of_birth = models.DateField(null=True, blank=True)
 
-    ROLE_CHOICES = [
-        ('admin', 'Admin'),
-        ('teacher', 'Teacher'),
-        ('student', 'Student')
-    ]
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    ROLE_CHOICES = [(role.name, role.description) for role in RoleEnum]
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=RoleEnum.STUDENT.name)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']

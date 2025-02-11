@@ -1,0 +1,226 @@
+from django.http import Http404
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from api.models.course_detail_model import CourseDetail
+from api.models.course_model import Course
+from api.serializers.course_serializer import CourseSerializer
+from api.serializers.course_detail_serializer import CourseDetailSerializer
+from api.roles import IsTeacher, IsCourseOwner
+from api.services.google_drive_service import upload_file, delete_file    
+
+def create_course(request):
+    # Upload the thumbnail
+    try:
+        thumbnail_id = upload_file(request.FILES.get('thumbnail'))
+        request.data['thumbnail_id'] = thumbnail_id
+    except Exception as e:
+        raise Exception(f'Error uploading thumbnail: {str(e)}')
+
+    # Chuyển đổi categories thành danh sách nếu nó là một chuỗi
+    categories = request.data.get('categories')
+    if isinstance(categories, str):
+        categories = categories.split(',')
+
+    # Create the course
+    course_data = {
+        'title': request.data.get('title'),
+        'description': request.data.get('description'),
+        'thumbnail_id': request.data.get('thumbnail_id'),
+        'teacher_id': request.user.id
+    }
+    course_serializer = CourseSerializer(data=course_data)
+    if not course_serializer.is_valid():
+        delete_file(request.data.get('thumbnail_id'))
+        raise Exception(f'Error creating course: {course_serializer.errors}')
+    
+    course = course_serializer.save()
+    course.categories.set(categories)
+    return course
+
+def delete_course(course_id):
+    course = Course.objects.get(id=course_id)
+    if course:
+        delete_file(course.thumbnail_id)
+        course.delete()
+
+# Course Detail API View to create a course detail
+class CourseDetailCreateAPIView(generics.CreateAPIView):
+    queryset = CourseDetail.objects.all()
+    serializer_class = CourseDetailSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher]
+
+    def create(self, request, *args, **kwargs):
+        # Create the course
+        try:
+            course = create_course(request)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error creating course',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the course detail
+        course_detail_data = {  
+            'course_id': course.id,
+            'price': request.data.get('price'),
+            'discount': request.data.get('discount'),
+            'is_visible': request.data.get('is_visible'),
+            'start_date': request.data.get('start_date'),
+            'regis_start_date': request.data.get('regis_start_date'),
+            'regis_end_date': request.data.get('regis_end_date'),
+            'max_students': request.data.get('max_students'),
+        }
+
+        course_detail_serializer = CourseDetailSerializer(data=course_detail_data)
+        if not course_detail_serializer.is_valid():
+            delete_course(course.id)
+            return Response({
+                'success': False,
+                'message': 'Error creating course detail',
+                'error': course_detail_serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            course_detail_serializer.save()
+        except Exception as e:
+            delete_course(course.id)
+            return Response({
+                'success': False,
+                'message': f'Error creating course detail',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': True,
+            'message': 'Course and course detail created successfully',
+            'data': course_detail_serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
+    
+# Course Detail API View to list all course details
+class CourseDetailListAPIView(generics.ListAPIView):
+    queryset = CourseDetail.objects.all()
+    serializer_class = CourseDetailSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()        
+        serializer = CourseDetailSerializer(queryset, many=True)
+        return Response({
+            'success': True,
+            'message': 'All course details have been listed successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+
+# Course Detail API View to retrieve a course detail
+class CourseDetailRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = CourseDetail.objects.all()
+    serializer_class = CourseDetailSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Course detail not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(instance)
+        return Response({
+            'success': True,
+            'message': 'Course detail retrieved successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+
+# Course Detail API View to update a course detail
+class CourseDetailUpdateAPIView(generics.UpdateAPIView):
+    queryset = CourseDetail.objects.all()
+    serializer_class = CourseDetailSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
+    lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Course detail not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the thumbnail
+        old_thumbnail_id = None
+        if request.FILES.get('thumbnail'):
+            try:
+                thumbnail_id = upload_file(request.FILES.get('thumbnail'))
+                request.data['thumbnail_id'] = thumbnail_id
+                old_thumbnail_id = instance.course.thumbnail_id
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'message': 'Error uploading thumbnail',
+                    'error': str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the course detail
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if not serializer.is_valid():
+            delete_file(serializer.data.get('thumbnail_id'))
+            return Response({
+                'success': False,
+                'message': 'Error updating course detail',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Delete the old thumbnail
+        if old_thumbnail_id:
+            delete_file(old_thumbnail_id)
+
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Course detail updated successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+            
+        
+# Course Detail API View to delete a course detail
+class CourseDetailDeleteAPIView(generics.DestroyAPIView):
+    queryset = CourseDetail.objects.all()
+    serializer_class = CourseDetailSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
+    lookup_field = 'id'
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Course detail not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Delete the course detail
+        course_id = instance.course.id
+        instance.delete()
+        delete_course(course_id)
+        return Response({
+            'success': True,
+            'message': 'Course detail deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)

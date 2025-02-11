@@ -7,7 +7,7 @@ from api.models.chapter_model import Chapter
 from api.models.course_model import Course
 from api.models.lesson_model import Lesson
 from api.serializers.chapter_serializer import ChapterSerializer
-from api.serializers.lesson_serializer import LessonSerializer, SimpleLessonSerializer
+from api.serializers.lesson_serializer import SimpleLessonSerializer
 from api.roles import IsTeacher, IsCourseOfChapterOwner
 
 # Chapters list API view for listing all chapters
@@ -43,26 +43,26 @@ class ChapterCreateAPIView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                self.perform_create(serializer)
-            except Http404 as e:
-                return Response({
-                    'success': False,
-                    'message': str(e)
-                }, status=status.HTTP_404_NOT_FOUND)
-            headers = self.get_success_headers(serializer.data)
+        if not serializer.is_valid():
             return Response({
-                'success': True,
-                'message': 'Chapter created successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED, headers=headers)
+                'success': False,
+                'message': 'Chapter not created',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            self.perform_create(serializer)
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
         
         return Response({
-            'success': False,
-            'message': 'Chapter not created',
-            'error': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': True,
+            'message': 'Chapter created successfully',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED, headers=headers)
     
 
 # Chapter retrieve API view for retrieving a chapter
@@ -110,19 +110,19 @@ class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(instance, data=request.data)
-        if serializer.is_valid():
-            self.perform_update(serializer)
+        if not serializer.is_valid():
             return Response({
-                'success': True,
-                'message': 'Chapter updated successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
+                'success': False,
+                'message': 'Chapter not updated',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         
+        self.perform_update(serializer)
         return Response({
-            'success': False,
-            'message': 'Chapter not updated',
-            'error': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': True,
+            'message': 'Chapter updated successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
     
     def destroy(self, request, *args, **kwargs):
         try:

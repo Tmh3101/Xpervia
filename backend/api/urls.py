@@ -1,5 +1,5 @@
 from django.urls import path
-from api.views import user_view, category_view, course_view, chapter_view, lesson_view
+from api.views import user_view, category_view, course_detail_view, chapter_view, lesson_view
 
 urlpatterns = [
     # User URLs
@@ -20,12 +20,12 @@ urlpatterns = [
     path('courses/categories/<int:id>/delete/', category_view.CategoryUpdateDeleteAPIView.as_view(), name='category-delete'),
 
     # Course URLs
-    path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),
-    path('courses/create/', course_view.CourseCreateAPIView.as_view(), name='course-create'),
-    path('courses/<int:id>/', course_view.CourseRetrievelAPIView.as_view(), name='course-detail'),
-    path('courses/<int:id>/update/', course_view.CourseUpdateDeleteAPIView.as_view(), name='course-update'),
-    path('courses/<int:id>/delete/', course_view.CourseUpdateDeleteAPIView.as_view(), name='course-delete'),
-    path('courses/<int:id>/detail/', course_view.CourseDetailAPIView.as_view(), name='course-lesson-list'),
+    path('courses/', course_detail_view.CourseDetailListAPIView.as_view(), name='course-list'),
+    path('courses/create/', course_detail_view.CourseDetailCreateAPIView.as_view(), name='course-create'),
+    path('courses/<int:id>/', course_detail_view.CourseDetailRetrieveAPIView.as_view(), name='course-detail'),
+    path('courses/<int:id>/update/', course_detail_view.CourseDetailUpdateAPIView.as_view(), name='course-update'),
+    path('courses/<int:id>/delete/', course_detail_view.CourseDetailDeleteAPIView.as_view(), name='course-delete'),
+    # path('courses/<int:id>/detail/', course_detail_view.CourseDetailAPIView.as_view(), name='course-lesson-list'),
 
     # Chapter URLs
     path('courses/<int:course_id>/chapters/', chapter_view.ChapterListAPIView.as_view(), name='chapter-list'),

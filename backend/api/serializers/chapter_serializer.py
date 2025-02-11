@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from api.models.chapter_model import Chapter
-from api.serializers.course_serializer import SimpleCourseSerializer
+from api.serializers.course_serializer import CourseSerializer
 
 class ChapterSerializer(serializers.ModelSerializer):
-    course = SimpleCourseSerializer(read_only=True)
+    course = CourseSerializer(read_only=True)
     class Meta:
         model = Chapter
         fields = '__all__'

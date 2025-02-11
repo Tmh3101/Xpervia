@@ -3,38 +3,58 @@ from rest_framework import serializers
 
 User = get_user_model()
 
-# User Serializer for Admin to list, create, update, and delete users
+# User Serializer for Admin to list, create and delete user
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'date_of_birth', 'role', 'password', 'is_active', 'date_joined']
         extra_kwargs = {
-            'id': {'read_only': True},
             'password': {'write_only': True},
+            'is_active': {'read_only': True},
             'date_joined': {'read_only': True}
         }
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
-    
-    def update(self, instance, validated_data):
-        instance.email = validated_data.get('email', instance.email)
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
-        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
-        instance.role = validated_data.get('role', instance.role)
-        instance.is_active = validated_data.get('is_active', instance.is_active)
-        instance.set_password(validated_data.get('password', instance.password))
-        instance.save()
-        return instance
-    
+
 
 class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name']
+        fields = ['id', 'email', 'first_name', 'last_name']  
     
+
+# User Serializer for Admin to update user
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'date_of_birth', 'role', 'is_active']
+        extra_kwargs = {
+            'email': {'required': False}
+        }
+
+        def update(self, instance, validated_data):
+            instance.email = validated_data.get('email', instance.email)
+            instance.first_name = validated_data.get('first_name', instance.first_name)
+            instance.last_name = validated_data.get('last_name', instance.last_name)
+            instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
+            instance.role = validated_data.get('role', instance.role)
+            instance.is_active = validated_data.get('is_active', instance.is_active)
+            instance.set_password(validated_data.get('password', instance.password))
+            instance.save()
+            return instance
+        
+class UserUpdatePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if not self.context['request'].user.check_password(data.get('old_password')):
+            raise serializers.ValidationError({'old_password': 'Wrong password'})
+        if data.get('old_password') == data.get('new_password'):
+            raise serializers.ValidationError({'new_password': 'New password must be different from old password'})
+        return data  
     
 # User Register Serializer for User to register
 class UserRegisterSerializer(serializers.ModelSerializer):
