@@ -18,3 +18,10 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             'course': {'read_only': True},
             'discount': {'required': False}
         }
+
+# Course detail detail serializer
+class CourseDetailDetailSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+    class Meta:
+        model = CourseDetail
+        fields = '__all__'

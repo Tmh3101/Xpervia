@@ -25,17 +25,18 @@ class LessonListByCourseAPIView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
-            serializer = self.get_serializer(queryset, many=True)
-            return Response({
-                'success': True,
-                'message': 'Lessons for the course have been listed successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
         except Http404 as e:
             return Response({
                 'success': False,
                 'message': str(e)
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'success': True,
+            'message': 'Lessons for the course have been listed successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
         
 
 # Lessons list API view for listing all lessons by course_id and chapter_id
@@ -74,37 +75,45 @@ class LessonCreateAPIView(generics.CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOfLessonOwner]
-
-    def perform_create(self, serializer):
-        try:
-            course_id = self.kwargs.get('course_id')
-            course = Course.objects.get(id=course_id)
-            serializer.save(course=course)
-        except Course.DoesNotExist:
-            raise Http404("Course does not exist")
+    permission_classes = [IsAuthenticated, IsTeacher]
 
     def create(self, request, *args, **kwargs):
-        # Check if the course exists
-        if request.data['chapter_id']:
-            chapter = Chapter.objects.filter(id=request.data['chapter_id']).first()
+
+        # Check if the course_id
+        course = Course.objects.filter(id=self.kwargs.get('course_id')).first()
+        if not course:
+            return Response({
+                'success': False,
+                'message': 'Course does not exist'
+            }, status=status.HTTP_404_NOT_FOUND)
+        if course.teacher != request.user:
+            return Response({
+                'success': False,
+                'message': 'You are not the teacher of this course'
+            }, status=status.HTTP_403_FORBIDDEN)
+        request.data['course_id'] = course.id
+
+        chapter_id = self.request.data.get('chapter_id')
+        if chapter_id:
+            chapter = Chapter.objects.filter(id=chapter_id).first()
             if not chapter:
                 return Response({
                     'success': False,
                     'message': 'Chapter does not exist'
                 }, status=status.HTTP_404_NOT_FOUND)
-            request.data['chapter'] = chapter.id
-            request.data.pop('chapter_id')
+            
+            if chapter.course.id != self.kwargs.get('course_id'):
+                return Response({
+                    'success': False,
+                    'message': 'Chapter does not belong to the specified course'
+                }, status=status.HTTP_400_BAD_REQUEST) 
 
         # Upload the video, subtitle, and attachment to Google Drive
-        files = ['video', 'subtitle', 'attachment']
         file_id_list = []
-        for file in files:
+        for file in ['video', 'subtitle', 'attachment']:
             if request.FILES.get(file):
                 try:
                     file_id = upload_file(request.FILES.get(file))
-                    file_id_list.append(file_id)
-                    request.data[f'{file}_id'] = file_id
                 except Exception as e:
                     for file_id in file_id_list:
                         delete_file(file_id)
@@ -113,32 +122,36 @@ class LessonCreateAPIView(generics.CreateAPIView):
                         'message': f'Error uploading {file}',
                         'error': str(e)
                     }, status=status.HTTP_400_BAD_REQUEST)
+                file_id_list.append(file_id)
+                request.data[f'{file}_id'] = file_id
 
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                self.perform_create(serializer)
-            except Http404 as e:
-                for file_id in file_id_list:
-                    delete_file(file_id)
-                return Response({
-                    'success': False,
-                    'message': str(e)
-                }, status=status.HTTP_404_NOT_FOUND)
-            headers = self.get_success_headers(serializer.data)
+        if not serializer.is_valid():
+            for file_id in file_id_list:
+                delete_file(file_id)
             return Response({
-                'success': True,
-                'message': 'Lesson created successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED, headers=headers)
+                'success': False,
+                'message': 'Lesson not created (invalid data)',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        for file_id in file_id_list:
-            delete_file(file_id)
+        try:
+            self.perform_create(serializer)
+        except Http404 as e:
+            for file_id in file_id_list:
+                delete_file(file_id)
+            return Response({
+                'success': False,
+                'message': 'Lesson not created',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        headers = self.get_success_headers(serializer.data)
         return Response({
-            'success': False,
-            'message': 'Lesson not created',
-            'error': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': True,
+            'message': 'Lesson created successfully',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED, headers=headers)
     
 
 # Lesson retrieve API view for retrieving a lesson

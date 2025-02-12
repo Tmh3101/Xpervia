@@ -8,8 +8,3 @@ class CategorySerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'id': {'read_only': True},
         }
-
-class SimpleCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name']

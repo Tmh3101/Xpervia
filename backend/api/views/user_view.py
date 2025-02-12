@@ -29,20 +29,20 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
+        if not serializer.is_valid():
             return Response({
-                'success': True,
-                'message': 'User created successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED, headers=headers)
+                'success': False,
+                'message': 'User not created',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
         return Response({
-            'success': False,
-            'message': 'User not created',
-            'error': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': True,
+            'message': 'User created successfully',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED, headers=headers)
             
 
 # User API to retrieve, update, and delete user by id for Admin
@@ -119,6 +119,37 @@ class UserUpdateAPIView(generics.UpdateAPIView):
         }, status=status.HTTP_200_OK)
     
 
+# User API to delete User
+class UserDeleteAPIView(generics.DestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+
+    def perform_destroy(self, instance):
+        if Token.objects.filter(user=instance).exists():
+            token = Token.objects.get(user=instance)
+            token.delete()
+        return super().perform_destroy(instance)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'User not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        self.perform_destroy(instance)
+        return Response({
+            'success': True,
+            'message': 'User deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)
+    
+# User API to update password for User
 class UserPasswordUpdateAPIView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdatePasswordSerializer

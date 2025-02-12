@@ -33,18 +33,19 @@ class CategoryCreateAPIView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
+        if not serializer.is_valid():
             return Response({
-                'success': True,
-                'message': 'Category created successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED, headers=headers)
-        return Response({
             'success': False,
             'message': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+        
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response({
+            'success': True,
+            'message': 'Category created successfully',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED, headers=headers)
 
 # Category retrieve API view for retrieving a category
 class CategoryRetrieveAPIView(generics.RetrieveAPIView):
@@ -72,7 +73,7 @@ class CategoryRetrieveAPIView(generics.RetrieveAPIView):
     
 
 # Category update API view for updating a category
-class CategoryUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+class CategoryUpdateAPIView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     authentication_classes = [TokenAuthentication]
@@ -81,7 +82,6 @@ class CategoryUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -92,19 +92,27 @@ class CategoryUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
             }, status=status.HTTP_404_NOT_FOUND)
         
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        if serializer.is_valid():
-            self.perform_update(serializer)
+        if not serializer.is_valid():
             return Response({
-                'success': True,
-                'message': 'Category updated successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
+                'success': False,
+                'message': 'Category not updated',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         
+        self.perform_update(serializer)
         return Response({
-            'success': False,
-            'message': 'Category not updated',
-            'error': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': True,
+            'message': 'Category updated successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+# Category delete API view for updating a category
+class CategoryDeleteAPIView(generics.DestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -121,3 +129,4 @@ class CategoryUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
             'success': True,
             'message': 'Category deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
+    

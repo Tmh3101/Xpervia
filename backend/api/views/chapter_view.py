@@ -17,8 +17,22 @@ class ChapterListAPIView(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+    def get_queryset(self):
+        course_id = self.kwargs.get('course_id')
+        if not Course.objects.filter(id=course_id).exists():
+            raise Http404("Course does not exist")
+        return Chapter.objects.filter(course_id=course_id)
+
+    def list(self, request, *args, **kwargs):    
+        try:
+            queryset = self.get_queryset()
+        except Http404 as e:
+            return Response({
+                'success': False,
+                'message': 'Chapters not found',
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = ChapterSerializer(queryset, many=True)
         return Response({
             'success': True,
@@ -37,9 +51,13 @@ class ChapterCreateAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         try:
             course = Course.objects.get(id=self.kwargs.get('course_id'))
-            serializer.save(course=course)
         except Course.DoesNotExist:
             raise Http404("Course does not exist")
+        
+        if course.teacher != self.request.user:
+            raise Http404("Course does not belong to you")
+
+        serializer.save(course=course)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -58,6 +76,7 @@ class ChapterCreateAPIView(generics.CreateAPIView):
                 'message': str(e)
             }, status=status.HTTP_404_NOT_FOUND)
         
+        headers = self.get_success_headers(serializer.data)
         return Response({
             'success': True,
             'message': 'Chapter created successfully',
@@ -65,7 +84,7 @@ class ChapterCreateAPIView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED, headers=headers)
     
 
-# Chapter retrieve API view for retrieving a chapter
+# Chapter retrieve API view for retrieving a chapter with all lessons
 class ChapterRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
@@ -74,7 +93,7 @@ class ChapterRetrieveAPIView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
-        try:
+        try:    
             instance = self.get_object()
         except Http404 as e:
             return Response({
@@ -82,17 +101,22 @@ class ChapterRetrieveAPIView(generics.RetrieveAPIView):
                 'message': 'Chapter not found',
                 'error': str(e)
             }, status=status.HTTP_404_NOT_FOUND)
+
+        lessons = Lesson.objects.filter(chapter=instance)
+        lessons_serializer = SimpleLessonSerializer(lessons, many=True)
         
         serializer = self.get_serializer(instance)
+        chapter_detail_data = serializer.data.copy()
+        chapter_detail_data['lessons'] = lessons_serializer.data
+
         return Response({
             'success': True,
             'message': 'Chapter retrieved successfully',
-            'data': serializer.data
+            'data': chapter_detail_data
         }, status=status.HTTP_200_OK)
-
-
-# Chapter update and delete API view for updating and deleting a chapter
-class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+    
+# Chapter update API view for updating and deleting a chapter
+class ChapterUpdateAPIView(generics.UpdateAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
@@ -123,6 +147,15 @@ class ChapterUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
             'message': 'Chapter updated successfully',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+    
+
+# Chapter delete API view for deleting a chapter
+class ChapterDeleteAPIView(generics.DestroyAPIView):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOfChapterOwner]
+    lookup_field = 'id'
     
     def destroy(self, request, *args, **kwargs):
         try:
