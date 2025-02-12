@@ -4,9 +4,9 @@ from api.enums.payment_status_enum import PaymentStatusEnum
 class Payment(models.Model):
     id = models.AutoField(primary_key=True)
     amount = models.IntegerField()
-    payment_method = models.CharField(max_length=50)
+    payment_method = models.CharField(max_length=50, null=True, default=None)
     status = models.CharField(
-        max_length=50,
+        max_length=10,
         choices=[(status.name, status.value) for status in PaymentStatusEnum],
         default=PaymentStatusEnum.COMPLETED.name
     )

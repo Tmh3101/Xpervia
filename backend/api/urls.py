@@ -1,5 +1,5 @@
 from django.urls import path
-from api.views import user_view, category_view, course_detail_view, chapter_view, lesson_view
+from api.views import user_view, category_view, course_detail_view, chapter_view, lesson_view, enrollment_view
 
 urlpatterns = [
     # User URLs
@@ -26,6 +26,8 @@ urlpatterns = [
     path('courses/<int:id>/', course_detail_view.CourseDetailRetrieveAPIView.as_view(), name='course-detail'),
     path('courses/<int:id>/update/', course_detail_view.CourseDetailUpdateAPIView.as_view(), name='course-update'),
     path('courses/<int:id>/delete/', course_detail_view.CourseDetailDeleteAPIView.as_view(), name='course-delete'),
+
+    path('courses/<int:course_id>/enroll/', enrollment_view.CourseEnrollAPIView.as_view(), name='course-enroll'),
 
     # Chapter URLs
     path('courses/<int:course_id>/chapters/', chapter_view.ChapterListAPIView.as_view(), name='chapter-list'),
