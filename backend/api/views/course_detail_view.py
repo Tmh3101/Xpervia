@@ -1,6 +1,8 @@
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound, ValidationError
+from api.exceptions.exceptions import FileUploadException
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.models.course_detail_model import CourseDetail
@@ -19,7 +21,7 @@ def create_course(request):
         thumbnail_id = upload_file(request.FILES.get('thumbnail'))
         request.data['thumbnail_id'] = thumbnail_id
     except Exception as e:
-        raise Exception(f'Error uploading thumbnail: {str(e)}')
+        raise FileUploadException(f'Error uploading thumbnail: {str(e)}')
 
     # Chuyển đổi categories thành danh sách nếu nó là một chuỗi
     categories = request.data.get('categories')
@@ -36,7 +38,7 @@ def create_course(request):
     course_serializer = CourseSerializer(data=course_data)
     if not course_serializer.is_valid():
         delete_file(request.data.get('thumbnail_id'))
-        raise Exception(f'Error creating course: {course_serializer.errors}')
+        raise ValidationError(f'Error creating course: {course_serializer.errors}')
     
     course = course_serializer.save()
     course.categories.set(categories)
@@ -56,21 +58,15 @@ class CourseDetailCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def create(self, request, *args, **kwargs):
+
         # Create the course
-        try:
-            course = create_course(request)
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': 'Error creating course',
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        course = create_course(request)
 
         # Create the course detail
         course_detail_data = {  
             'course_id': course.id,
             'price': request.data.get('price'),
-            'discount': request.data.get('discount') | 0,
+            'discount': request.data.get('discount') or '0',
             'is_visible': request.data.get('is_visible'),
             'start_date': request.data.get('start_date'),
             'regis_start_date': request.data.get('regis_start_date'),
@@ -81,27 +77,20 @@ class CourseDetailCreateAPIView(generics.CreateAPIView):
         course_detail_serializer = CourseDetailSerializer(data=course_detail_data)
         if not course_detail_serializer.is_valid():
             delete_course(course.id)
-            return Response({
-                'success': False,
-                'message': 'Error creating course detail',
-                'error': course_detail_serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Error creating course detail: {course_detail_serializer.errors}')
         
         try:
-            course_detail_serializer.save()
+            self.perform_create(course_detail_serializer)
         except Exception as e:
             delete_course(course.id)
-            return Response({
-                'success': False,
-                'message': f'Error creating course detail',
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Error creating course detail: {str(e)}')
         
+        headers = self.get_success_headers(course_detail_serializer.data)
         return Response({
             'success': True,
             'message': 'Course and course detail created successfully',
             'data': course_detail_serializer.data
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_201_CREATED, headers=headers)
         
     
 # Course Detail API View to list all course details
@@ -112,7 +101,7 @@ class CourseDetailListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()        
+        queryset = self.get_queryset().filter(is_visible=True)      
         serializer = CourseDetailSerializer(queryset, many=True)
         return Response({
             'success': True,
@@ -133,11 +122,7 @@ class CourseDetailRetrieveAPIView(generics.RetrieveAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Course detail not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Course detail not found')
         
         # Lấy tất cả các chapters liên quan đến course của course detail hiện tại
         chapters = instance.course.chapters.all()
@@ -175,19 +160,15 @@ class CourseDetailUpdateAPIView(generics.UpdateAPIView):
     queryset = CourseDetail.objects.all()
     serializer_class = CourseDetailSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
+    permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Course detail not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
-
+            raise NotFound('Course detail not found')
+        
         # Update the thumbnail
         old_thumbnail_id = None
         if request.FILES.get('thumbnail'):
@@ -196,21 +177,13 @@ class CourseDetailUpdateAPIView(generics.UpdateAPIView):
                 request.data['thumbnail_id'] = thumbnail_id
                 old_thumbnail_id = instance.course.thumbnail_id
             except Exception as e:
-                return Response({
-                    'success': False,
-                    'message': 'Error uploading thumbnail',
-                    'error': str(e)
-                }, status=status.HTTP_400_BAD_REQUEST)
-
+                raise FileUploadException(f'Error uploading thumbnail: {str(e)}')
+            
         # Update the course detail
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
             delete_file(serializer.data.get('thumbnail_id'))
-            return Response({
-                'success': False,
-                'message': 'Error updating course detail',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Error updating course detail: {serializer.errors}')
         
         # Delete the old thumbnail
         if old_thumbnail_id:
@@ -236,12 +209,8 @@ class CourseDetailDeleteAPIView(generics.DestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Course detail not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
-
+            raise NotFound('Course detail not found')
+        
         # Delete the course detail
         course_id = instance.course.id
         instance.delete()

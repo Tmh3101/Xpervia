@@ -11,8 +11,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from dotenv import load_dotenv
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -90,17 +88,6 @@ DATABASES = {
     }
 }
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Google Drive API credentials
-GOOGLE_DRIVE_CREDENTIALS = {
-    "client_id": os.getenv("GOOGLE_DRIVE_CLIENT_ID"),
-    "client_secret": os.getenv("GOOGLE_DRIVE_CLIENT_SECRET"),
-    "refresh_token": os.getenv("GOOGLE_DRIVE_REFRESH_TOKEN"),
-    "folder_id": os.getenv("GOOGLE_DRIVE_FOLDER_ID"),
-}
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -128,6 +115,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'EXCEPTION_HANDLER': 'api.exceptions.exception_handler.custom_exception_handler'
 }
 
 # Internationalization

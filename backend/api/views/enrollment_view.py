@@ -1,11 +1,10 @@
-from django.contrib.auth import get_user_model
-from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from api.exceptions.exceptions import Existed
 from api.models.enrollment_model import Enrollment
-from api.models.payment_model import Payment
 from api.models.course_detail_model import CourseDetail
 from api.serializers.enrollment_serializer import EnrollmentSerializer
 from api.serializers.payment_serializer import PaymentSerializer
@@ -39,39 +38,25 @@ class CourseEnrollAPIView(generics.CreateAPIView):
         course_detail_id = self.kwargs.get('course_id')
         course_detail = CourseDetail.objects.get(id=course_detail_id)
         if not course_detail:
-            return Response({
-                'success': False,
-                'message': 'Course detail not found'
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Course not found')
         request.data['course_detail_id'] = course_detail.id
 
         student = request.user
         if course_detail.enrollments.filter(student=student).exists():
-            return Response({
-                'success': False,
-                'message': 'You have already enrolled in this course'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise Existed('You have already enrolled in this course')
         request.data['student_id'] = student.id
 
         if not course_detail.price == 0:
             # Create payment
             payment_serializer = PaymentSerializer(data={'amount': course_detail.price})
             if not payment_serializer.is_valid():
-                return Response({
-                    'success': False,
-                    'message': 'Payment not successful',
-                    'error': payment_serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError(f'Payment not created: {payment_serializer.errors}')
             payment = payment_serializer.save()
             request.data['payment_id'] = payment.id
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'Enrollment not created',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Enrollment not created: {serializer.errors}')
         
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)

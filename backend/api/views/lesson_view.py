@@ -1,13 +1,16 @@
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from api.exceptions.exceptions import FileUploadException
 from api.models.lesson_model import Lesson
 from api.models.chapter_model import Chapter
 from api.models.course_model import Course
 from api.serializers.lesson_serializer import LessonSerializer
 from api.roles.teacher_role import IsTeacher, IsCourseOwner
+from api.roles.student_role import WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
 
 # Lessons list API view for listing all lessons by course_id
@@ -23,14 +26,7 @@ class LessonListByCourseAPIView(generics.ListAPIView):
         return Lesson.objects.filter(course_id=course_id)
 
     def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.get_queryset()
-        except Http404 as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
-        
+        queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({
             'success': True,
@@ -55,19 +51,13 @@ class LessonListByChapterAPIView(generics.ListAPIView):
         return Lesson.objects.filter(course_id=course_id, chapter_id=chapter_id)
 
     def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.get_queryset()
-            serializer = self.get_serializer(queryset, many=True)
-            return Response({
-                'success': True,
-                'message': 'Lessons for the course and chapter have been listed successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
-        except Http404 as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'success': True,
+            'message': 'Lessons for the course and chapter have been listed successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
         
 
 # Lesson create API view for creating a new lesson
@@ -75,38 +65,23 @@ class LessonCreateAPIView(generics.CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher]
+    permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
-
         # Check if the course_id
         course = Course.objects.filter(id=self.kwargs.get('course_id')).first()
         if not course:
-            return Response({
-                'success': False,
-                'message': 'Course does not exist'
-            }, status=status.HTTP_404_NOT_FOUND)
-        if course.teacher != request.user:
-            return Response({
-                'success': False,
-                'message': 'You are not the teacher of this course'
-            }, status=status.HTTP_403_FORBIDDEN)
+            raise NotFound('Course not found')
         request.data['course_id'] = course.id
 
         chapter_id = self.request.data.get('chapter_id')
         if chapter_id:
             chapter = Chapter.objects.filter(id=chapter_id).first()
             if not chapter:
-                return Response({
-                    'success': False,
-                    'message': 'Chapter does not exist'
-                }, status=status.HTTP_404_NOT_FOUND)
-            
+                raise NotFound('Chapter not found')
+
             if chapter.course.id != self.kwargs.get('course_id'):
-                return Response({
-                    'success': False,
-                    'message': 'Chapter does not belong to the specified course'
-                }, status=status.HTTP_400_BAD_REQUEST) 
+                raise NotFound('Chapter does not belong to the specified course')
 
         # Upload the video, subtitle, and attachment to Google Drive
         file_id_list = []
@@ -117,11 +92,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
                 except Exception as e:
                     for file_id in file_id_list:
                         delete_file(file_id)
-                    return Response({
-                        'success': False,
-                        'message': f'Error uploading {file}',
-                        'error': str(e)
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    raise FileUploadException(f'Error uploading {file}: {str(e)}')
                 file_id_list.append(file_id)
                 request.data[f'{file}_id'] = file_id
 
@@ -129,22 +100,14 @@ class LessonCreateAPIView(generics.CreateAPIView):
         if not serializer.is_valid():
             for file_id in file_id_list:
                 delete_file(file_id)
-            return Response({
-                'success': False,
-                'message': 'Lesson not created (invalid data)',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Error creating lesson: {serializer.errors}')
         
         try:
             self.perform_create(serializer)
         except Http404 as e:
             for file_id in file_id_list:
                 delete_file(file_id)
-            return Response({
-                'success': False,
-                'message': 'Lesson not created',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise ValidationError(f'Error creating lesson: {str(e)}')
         
         headers = self.get_success_headers(serializer.data)
         return Response({
@@ -159,18 +122,14 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, WasCourseEnrolled or IsCourseOwner]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Lesson not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Lesson not found')
         
         serializer = self.get_serializer(instance)
         return Response({
@@ -185,18 +144,14 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
+    permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Lesson not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Lesson not found')
 
         # Upload the video, subtitle, and attachment to Google Drive
         files = ['video', 'subtitle', 'attachment']
@@ -216,40 +171,27 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
                 except Exception as e:
                     for file_id in file_id_list:  
                         delete_file(file_id) 
-                    return Response({
-                        'success': False,
-                        'message': f'Error uploading {file}',
-                        'error': str(e)
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    raise FileUploadException(f'Error uploading {file}: {str(e)}')
 
         serializer = self.get_serializer(instance, data=request.data)
-        if serializer.is_valid():
-            self.perform_update(serializer)
-
-            # Delete the old video, subtitle, and attachment from Google Drive
-            for file in old_files:
-                try:
-                    delete_file(file['id'])
-                except Exception as e:
-                    return Response({
-                        'success': False,
-                        'message': f'Error deleting old {file["name"]}',
-                        'error': str(e)
-                    }, status=status.HTTP_400_BAD_REQUEST)
-
-            return Response({
-                'success': True,
-                'message': 'Lesson updated successfully',
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
+        if not serializer.is_valid():
+            for file_id in file_id_list:
+                delete_file(file_id)
+            raise ValidationError(f'Error updating lesson: {serializer.errors}')
         
-        for file_id in file_id_list:
-            delete_file(file_id)
+        self.perform_update(serializer)
+        # Delete the old video, subtitle, and attachment from Google Drive
+        for file in old_files:
+            try:
+                delete_file(file['id'])
+            except Exception as e:
+                raise FileUploadException(f'Error deleting {file["name"]}: {str(e)}')
+
         return Response({
-            'success': False,
-            'message': 'Lesson not updated',
-            'error': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': True,
+            'message': 'Lesson updated successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
     
 
 # Lesson delete API view for deleting a lesson
@@ -264,24 +206,13 @@ class LessonDeleteAPIView(generics.DestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Lesson not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Lesson not found')
 
         # Delete the video, subtitle, and attachment from Google Drive
         files = ['video', 'subtitle', 'attachment']
         for file in files:
             if getattr(instance, f'{file}_id'):
-                try:
-                    delete_file(getattr(instance, f'{file}_id'))
-                except Exception as e:
-                    return Response({
-                        'success': False,
-                        'message': f'Error deleting {file}',
-                        'error': str(e)
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                delete_file(getattr(instance, f'{file}_id'))
 
         self.perform_destroy(instance)
         return Response({

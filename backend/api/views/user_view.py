@@ -2,10 +2,12 @@ from django.contrib.auth import get_user_model
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from api.exceptions.exceptions import LoginFailed
 from api.serializers.user_serializer import UserSerializer, UserUpdateSerializer, UserRegisterSerializer, UserUpdatePasswordSerializer
 from api.roles.admin_role import IsAdmin
 from api.roles.user_checking import IsUserOwner
@@ -31,11 +33,7 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'User not created',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(serializer.errors)
         
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -58,11 +56,7 @@ class UserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'User not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('User not found')
         
         serializer = self.get_serializer(instance)
         return Response({
@@ -75,11 +69,8 @@ class UserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'User not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('User not found')
+        
         self.perform_destroy(instance)
         return Response({
             'success': True,
@@ -98,19 +89,11 @@ class UserUpdateAPIView(generics.UpdateAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'User not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('User not found')
         
         serializer = self.get_serializer(instance, data=request.data, partial=False)
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'User information not updated',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'User not updated: {serializer.errors}')
         
         self.perform_update(serializer)
         return Response({
@@ -138,11 +121,7 @@ class UserDeleteAPIView(generics.DestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'User not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('User not found')
 
         self.perform_destroy(instance)
         return Response({
@@ -168,19 +147,11 @@ class UserPasswordUpdateAPIView(generics.UpdateAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'User not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('User not found')
         
         serializer = self.get_serializer(instance, data=request.data)
         if not serializer.is_valid():    
-            return Response({
-                'success': False,
-                'message': 'Password not updated',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Password not updated: {serializer.errors}')
         
         self.perform_update(serializer)
         return Response({
@@ -198,13 +169,9 @@ class UserRegisterAPIView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         serializer = UserRegisterSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'User not registered',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(serializer.errors)
 
-        serializer.save()
+        self.perform_create(serializer)
         return Response({
             'success': True,
             'message': 'User registered successfully',
@@ -219,20 +186,11 @@ class CustomAuthTokenAPIView(ObtainAuthToken):
         password = request.data.get('password')
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({
-                'success': False,
-                'message': 'Invalid email'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise LoginFailed('User not found')
         if not user.is_active:
-            return Response({
-                'success': False,
-                'message': 'User is not active'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise LoginFailed('User is not active')
         if not user.check_password(password):
-            return Response({
-                'success': False,
-                'message': 'Invalid password'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise LoginFailed('Password is incorrect')
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'success': True,

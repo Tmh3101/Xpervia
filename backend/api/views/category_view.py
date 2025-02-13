@@ -1,6 +1,7 @@
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.models.category_model import Category
@@ -34,10 +35,7 @@ class CategoryCreateAPIView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({
-            'success': False,
-            'message': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Category not created: {serializer.errors}')
         
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -58,11 +56,7 @@ class CategoryRetrieveAPIView(generics.RetrieveAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Category not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(f'Category not found: {str(e)}')
 
         serializer = self.get_serializer(instance)
         return Response({
@@ -85,19 +79,11 @@ class CategoryUpdateAPIView(generics.UpdateAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Category not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(f'Category does not exist: {str(e)}')
         
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'Category not updated',
-                'error': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(f'Category not updated => {serializer.errors}')
         
         self.perform_update(serializer)
         return Response({
@@ -118,11 +104,7 @@ class CategoryDeleteAPIView(generics.DestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            return Response({
-                'success': False,
-                'message': 'Category not found',
-                'error': str(e)
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(f'Category does not exist: {str(e)}')
         
         self.perform_destroy(instance)
         return Response({
