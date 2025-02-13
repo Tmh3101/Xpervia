@@ -7,7 +7,7 @@ from api.models.lesson_model import Lesson
 from api.models.chapter_model import Chapter
 from api.models.course_model import Course
 from api.serializers.lesson_serializer import LessonSerializer
-from api.roles import IsTeacher, IsCourseOfLessonOwner
+from api.roles.teacher_role import IsTeacher, IsCourseOwner
 from api.services.google_drive_service import upload_file, delete_file
 
 # Lessons list API view for listing all lessons by course_id
@@ -180,12 +180,12 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
         }, status=status.HTTP_200_OK)
 
 
-# Lesson update and delete API view for updating and deleting a lesson
-class LessonUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+# Lesson update API view for updating a lesson
+class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOfLessonOwner]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
@@ -250,6 +250,15 @@ class LessonUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
             'message': 'Lesson not updated',
             'error': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# Lesson delete API view for deleting a lesson
+class LessonDeleteAPIView(generics.DestroyAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsCourseOwner]
+    lookup_field = 'id'
     
     def destroy(self, request, *args, **kwargs):
         try:

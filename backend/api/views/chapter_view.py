@@ -8,7 +8,7 @@ from api.models.course_model import Course
 from api.models.lesson_model import Lesson
 from api.serializers.chapter_serializer import ChapterSerializer
 from api.serializers.lesson_serializer import SimpleLessonSerializer
-from api.roles import IsTeacher, IsCourseOfChapterOwner
+from api.roles.teacher_role import IsTeacher, IsCourseOwner
 
 # Chapters list API view for listing all chapters
 class ChapterListAPIView(generics.ListAPIView):
@@ -120,7 +120,7 @@ class ChapterUpdateAPIView(generics.UpdateAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOfChapterOwner]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
@@ -154,7 +154,7 @@ class ChapterDeleteAPIView(generics.DestroyAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOfChapterOwner]
+    permission_classes = [IsAuthenticated, IsTeacher & IsCourseOwner]
     lookup_field = 'id'
     
     def destroy(self, request, *args, **kwargs):

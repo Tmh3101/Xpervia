@@ -14,9 +14,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
         model = CourseDetail
         fields = '__all__'
         extra_kwargs = {
-            'id': {'read_only': True},
             'course': {'read_only': True},
-            'discount': {'required': False}
         }
 
 # Course detail detail serializer

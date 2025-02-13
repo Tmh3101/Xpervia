@@ -10,7 +10,7 @@ from api.serializers.course_serializer import CourseSerializer
 from api.serializers.course_detail_serializer import CourseDetailSerializer
 from api.serializers.chapter_serializer import ChapterSerializer
 from api.serializers.lesson_serializer import SimpleLessonSerializer
-from api.roles import IsTeacher, IsCourseOwner
+from api.roles.teacher_role import IsTeacher, IsCourseOwner
 from api.services.google_drive_service import upload_file, delete_file    
 
 def create_course(request):
@@ -70,7 +70,7 @@ class CourseDetailCreateAPIView(generics.CreateAPIView):
         course_detail_data = {  
             'course_id': course.id,
             'price': request.data.get('price'),
-            'discount': request.data.get('discount'),
+            'discount': request.data.get('discount') | 0,
             'is_visible': request.data.get('is_visible'),
             'start_date': request.data.get('start_date'),
             'regis_start_date': request.data.get('regis_start_date'),

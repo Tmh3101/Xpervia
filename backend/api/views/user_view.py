@@ -7,7 +7,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from api.serializers.user_serializer import UserSerializer, UserUpdateSerializer, UserRegisterSerializer, UserUpdatePasswordSerializer
-from api.roles import IsAdmin, IsUserOwner
+from api.roles.admin_role import IsAdmin
+from api.roles.user_checking import IsUserOwner
 
 User = get_user_model()
 

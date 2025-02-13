@@ -9,7 +9,7 @@ from api.models.payment_model import Payment
 from api.models.course_detail_model import CourseDetail
 from api.serializers.enrollment_serializer import EnrollmentSerializer
 from api.serializers.payment_serializer import PaymentSerializer
-from api.roles import IsAdmin
+from api.roles.admin_role import IsAdmin
 
 # Enrollment API to list
 class EnrollmentListAPIView(generics.ListAPIView):

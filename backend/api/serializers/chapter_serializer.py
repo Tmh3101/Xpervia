@@ -8,7 +8,6 @@ class ChapterSerializer(serializers.ModelSerializer):
         model = Chapter
         fields = '__all__'
         extra_kwargs = {
-            'id': {'read_only': True},
             'course': {'read_only': True},
         }
 

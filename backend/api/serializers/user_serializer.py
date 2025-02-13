@@ -11,7 +11,6 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},
             'is_active': {'read_only': True},
-            'date_joined': {'read_only': True}
         }
 
     def create(self, validated_data):
@@ -62,7 +61,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'date_of_birth', 'password']
         extra_kwargs = {
-            'id': {'read_only': True},
             'password': {'write_only': True}
         }
 

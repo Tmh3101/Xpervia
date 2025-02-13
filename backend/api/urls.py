@@ -1,5 +1,13 @@
 from django.urls import path
-from api.views import user_view, category_view, course_detail_view, chapter_view, lesson_view, enrollment_view
+from api.views import (
+    user_view,
+    category_view,
+    course_detail_view,
+    chapter_view,
+    lesson_view,
+    assignment_view,
+    enrollment_view
+)
 
 urlpatterns = [
     # User URLs
@@ -10,8 +18,8 @@ urlpatterns = [
     path('users/<uuid:id>/delete/', user_view.UserDeleteAPIView.as_view(), name='user-delete'),
 
     path('register/', user_view.UserRegisterAPIView.as_view(), name='user-register'),
-    path('token/login/', user_view.CustomAuthTokenAPIView.as_view(), name='token_obtain_pair'),
-    path('token/logout/', user_view.UserLogoutAPIView.as_view(), name='api_token_logout'),
+    path('token/login/', user_view.CustomAuthTokenAPIView.as_view(), name='api-token-login'),
+    path('token/logout/', user_view.UserLogoutAPIView.as_view(), name='api-token-logout'),
 
     # Course Category URLs
     path('courses/categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
@@ -41,5 +49,13 @@ urlpatterns = [
     path('courses/<int:course_id>/chapters/<int:chapter_id>/lessons/', lesson_view.LessonListByChapterAPIView.as_view(), name='lesson-list'),
     path('courses/<int:course_id>/lessons/create/', lesson_view.LessonCreateAPIView.as_view(), name='lesson-create'),
     path('courses/lessons/<int:id>/', lesson_view.LessonRetrieveAPIView.as_view(), name='lesson-detail'),
-    path('courses/lessons/<int:id>/update/', lesson_view.LessonUpdateDeleteAPIView.as_view(), name='lesson-update'),
+    path('courses/lessons/<int:id>/update/', lesson_view.LessonUpdateAPIView.as_view(), name='lesson-update'),
+    path('courses/lessons/<int:id>/delete/', lesson_view.LessonDeleteAPIView.as_view(), name='lesson-delete'),
+
+    # Assignment URLs
+    path('courses/lessons/<int:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),
+    path('courses/lessons/<int:lesson_id>/assignments/create/', assignment_view.AssignmentCreateAPIView.as_view(), name='assignment-create'),
+    path('courses/lessons/assignments/<int:id>/', assignment_view.AssignmentRetrieveAPIView.as_view(), name='assignment-detail'),
+    path('courses/lessons/assignments/<int:id>/update/', assignment_view.AssignmentUpdateAPIView.as_view(), name='assignment-update'),
+    path('courses/lessons/assignments/<int:id>/delete/', assignment_view.AssignmentDeleteAPIView.as_view(), name='assignment-delete'),
 ]
