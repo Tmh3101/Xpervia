@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from .course_model import Course
 
 class CourseDetail(models.Model):
-    id = models.AutoField(primary_key=True)
     course = models.OneToOneField(Course, on_delete=models.CASCADE)
     price = models.IntegerField(default=0)
     discount = models.FloatField(default=0)
@@ -26,6 +25,9 @@ class CourseDetail(models.Model):
 
         if self.regis_start_date > self.regis_end_date:
             raise ValidationError('Registration start date must be before registration end date')
+        
+    def get_discounted_price(self):
+        return self.price * (1 - self.discount)
 
     def __str__(self):
         return f'{self.course.id} - {self.price}'

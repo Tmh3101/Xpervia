@@ -7,8 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from api.models.assignment_model import Assignment
 from api.models.lesson_model import Lesson
 from api.serializers.assignment_serializer import AssignmentSerializer
-from api.roles.teacher_role import IsTeacher, IsCourseOwner
-from api.roles.student_role import WasCourseEnrolled
+from api.permissions.teacher_permissions_checker import IsTeacher, IsCourseOwner
+from api.permissions.student_permissions_checker import WasCourseEnrolled
 
 # View for handling assignment list
 class AssignmentListAPIView(generics.ListAPIView):

@@ -4,7 +4,6 @@ from .category_model import Category
 
 User = get_user_model()
 class Course(models.Model):
-    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     thumbnail_id = models.CharField(max_length=50, null=True, blank=True)

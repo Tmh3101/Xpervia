@@ -3,12 +3,12 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from api.exceptions.exceptions import Existed
+from api.exceptions.custom_exceptions import Existed
 from api.models.enrollment_model import Enrollment
 from api.models.course_detail_model import CourseDetail
 from api.serializers.enrollment_serializer import EnrollmentSerializer
 from api.serializers.payment_serializer import PaymentSerializer
-from api.roles.admin_role import IsAdmin
+from api.permissions.admin_permissions_checker import IsAdmin
 
 # Enrollment API to list
 class EnrollmentListAPIView(generics.ListAPIView):
@@ -36,7 +36,7 @@ class CourseEnrollAPIView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
 
         course_detail_id = self.kwargs.get('course_id')
-        course_detail = CourseDetail.objects.get(id=course_detail_id)
+        course_detail = CourseDetail.objects.filter(id=course_detail_id).first()
         if not course_detail:
             raise NotFound('Course not found')
         request.data['course_detail_id'] = course_detail.id
@@ -46,9 +46,9 @@ class CourseEnrollAPIView(generics.CreateAPIView):
             raise Existed('You have already enrolled in this course')
         request.data['student_id'] = student.id
 
-        if not course_detail.price == 0:
+        if not course_detail.get_discounted_price() == 0:
             # Create payment
-            payment_serializer = PaymentSerializer(data={'amount': course_detail.price})
+            payment_serializer = PaymentSerializer(data={'amount': course_detail.get_discounted_price()})
             if not payment_serializer.is_valid():
                 raise ValidationError(f'Payment not created: {payment_serializer.errors}')
             payment = payment_serializer.save()

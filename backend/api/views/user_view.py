@@ -7,10 +7,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from api.exceptions.exceptions import LoginFailed
+from api.exceptions.custom_exceptions import LoginFailed
 from api.serializers.user_serializer import UserSerializer, UserUpdateSerializer, UserRegisterSerializer, UserUpdatePasswordSerializer
-from api.roles.admin_role import IsAdmin
-from api.roles.user_checking import IsUserOwner
+from api.permissions.admin_permissions_checker import IsAdmin
+from api.permissions.user_permissions_checker import IsUserOwner
 
 User = get_user_model()
 
@@ -83,7 +83,7 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     serializer_class = UserUpdateSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
-    lookup_field = 'id'
+    lookup_field = 'id'       
 
     def update(self, request, *args, **kwargs):
         try:

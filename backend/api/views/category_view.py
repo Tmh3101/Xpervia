@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.models.category_model import Category
 from api.serializers.category_serializer import CategorySerializer
-from api.roles.admin_role import IsAdmin
+from api.permissions.admin_permissions_checker import IsAdmin
 
 # Categories list API view for listing all categories
 class CategoryListAPIView(generics.ListAPIView):

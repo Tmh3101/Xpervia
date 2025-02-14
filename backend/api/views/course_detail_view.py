@@ -2,7 +2,7 @@ from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
-from api.exceptions.exceptions import FileUploadException
+from api.exceptions.custom_exceptions import FileUploadException
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.models.course_detail_model import CourseDetail
@@ -12,7 +12,7 @@ from api.serializers.course_serializer import CourseSerializer
 from api.serializers.course_detail_serializer import CourseDetailSerializer
 from api.serializers.chapter_serializer import ChapterSerializer
 from api.serializers.lesson_serializer import SimpleLessonSerializer
-from api.roles.teacher_role import IsTeacher, IsCourseOwner
+from api.permissions.teacher_permissions_checker import IsTeacher, IsCourseOwner
 from api.services.google_drive_service import upload_file, delete_file    
 
 def create_course(request):

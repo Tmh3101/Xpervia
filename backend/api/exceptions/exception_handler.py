@@ -6,7 +6,7 @@ from rest_framework.exceptions import (
     PermissionDenied,
     ValidationError,
 )
-from .exceptions import (
+from .custom_exceptions import (
     FileUploadException,
     Existed,
     LoginFailed

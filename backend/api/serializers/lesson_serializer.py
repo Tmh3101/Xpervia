@@ -17,7 +17,8 @@ class LessonSerializer(serializers.ModelSerializer):
     chapter_id = serializers.PrimaryKeyRelatedField(
         queryset=Chapter.objects.all(),
         source='chapter',
-        write_only=True
+        write_only=True,
+        required=False
     )
     class Meta:
         model = Lesson

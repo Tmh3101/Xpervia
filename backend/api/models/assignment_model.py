@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from .lesson_model import Lesson
 
 class Assignment(models.Model):
-    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100)
     content = models.TextField(null=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='assignments')

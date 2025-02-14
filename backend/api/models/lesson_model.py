@@ -3,7 +3,6 @@ from api.models.course_model import Course
 from api.models.chapter_model import Chapter
 
 class Lesson(models.Model):
-    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
     content = models.TextField(blank=True, null=True)
     video_id = models.CharField(max_length=50)

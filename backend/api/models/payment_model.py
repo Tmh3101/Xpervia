@@ -2,7 +2,6 @@ from django.db import models
 from api.enums.payment_status_enum import PaymentStatusEnum
 
 class Payment(models.Model):
-    id = models.AutoField(primary_key=True)
     amount = models.IntegerField()
     payment_method = models.CharField(max_length=50, null=True, default=None)
     status = models.CharField(

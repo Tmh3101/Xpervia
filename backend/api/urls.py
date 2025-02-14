@@ -6,7 +6,9 @@ from api.views import (
     chapter_view,
     lesson_view,
     assignment_view,
-    enrollment_view
+    enrollment_view,
+    submission_view,
+    submission_score_view
 )
 
 urlpatterns = [
@@ -58,4 +60,15 @@ urlpatterns = [
     path('courses/lessons/assignments/<int:id>/', assignment_view.AssignmentRetrieveAPIView.as_view(), name='assignment-detail'),
     path('courses/lessons/assignments/<int:id>/update/', assignment_view.AssignmentUpdateAPIView.as_view(), name='assignment-update'),
     path('courses/lessons/assignments/<int:id>/delete/', assignment_view.AssignmentDeleteAPIView.as_view(), name='assignment-delete'),
+
+    # Submission URLs
+    path('courses/assignments/<int:assignment_id>/submissions/', submission_view.SubmissionListByAssignmentAPIView.as_view(), name='submission-list'),
+    path('courses/assignments/<int:assignment_id>/submissions/create/', submission_view.SubmissionCreateAPIView.as_view(), name='submission-create'),
+    # path('courses/assignments/submissions/<int:id>/', submission_view.SubmissionRetrieveAPIView.as_view(), name='submission-detail'),
+    # path('courses/assignments/submissions/<int:id>/update/', submission_view.SubmissionUpdateAPIView.as_view(), name='submission-update'),
+    # path('courses/assignments/submissions/<int:id>/delete/', submission_view.SubmissionDeleteAPIView.as_view(), name='submission-delete'),
+
+    # Submission Score URLs
+    path('courses/assignments/submissions/<int:submission_id>/score/', submission_score_view.SubmissionScoreDetailAPIView.as_view(), name='submission-score'),
+    path('courses/assignments/submissions/<int:submission_id>/score/create/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
 ]

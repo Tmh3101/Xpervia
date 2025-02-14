@@ -9,8 +9,8 @@ from api.models.course_model import Course
 from api.models.lesson_model import Lesson
 from api.serializers.chapter_serializer import ChapterSerializer
 from api.serializers.lesson_serializer import SimpleLessonSerializer
-from api.roles.teacher_role import IsTeacher, IsCourseOwner
-from api.roles.student_role import WasCourseEnrolled
+from api.permissions.teacher_permissions_checker import IsCourseOwner
+from api.permissions.student_permissions_checker import WasCourseEnrolled
 
 # Chapters list API view for listing all chapters
 class ChapterListAPIView(generics.ListAPIView):

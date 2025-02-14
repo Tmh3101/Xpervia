@@ -4,13 +4,13 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from api.exceptions.exceptions import FileUploadException
+from api.exceptions.custom_exceptions import FileUploadException
 from api.models.lesson_model import Lesson
 from api.models.chapter_model import Chapter
 from api.models.course_model import Course
 from api.serializers.lesson_serializer import LessonSerializer
-from api.roles.teacher_role import IsTeacher, IsCourseOwner
-from api.roles.student_role import WasCourseEnrolled
+from api.permissions.teacher_permissions_checker import IsCourseOwner
+from api.permissions.student_permissions_checker import WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
 
 # Lessons list API view for listing all lessons by course_id
@@ -22,7 +22,7 @@ class LessonListByCourseAPIView(generics.ListAPIView):
     def get_queryset(self):
         course_id = self.kwargs.get('course_id')
         if not Course.objects.filter(id=course_id).exists():
-            raise Http404("Course does not exist")
+            raise NotFound("Course does not exist")
         return Lesson.objects.filter(course_id=course_id)
 
     def list(self, request, *args, **kwargs):
