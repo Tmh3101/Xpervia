@@ -1,16 +1,17 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 from api.exceptions.custom_exceptions import Existed
-from api.models.enrollment_model import Enrollment
-from api.models.course_detail_model import CourseDetail
-from api.serializers.enrollment_serializer import EnrollmentSerializer
-from api.serializers.payment_serializer import PaymentSerializer
-from api.permissions.admin_permissions_checker import IsAdmin
+from api.models import Enrollment, CourseDetail
+from api.serializers import (
+    EnrollmentSerializer, PaymentSerializer
+)
+from api.permissions import IsAdmin, IsCourseOwner, IsStudent
 
-# Enrollment API to list
+
+# Enrollment API to list all enrollments
 class EnrollmentListAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
@@ -26,12 +27,35 @@ class EnrollmentListAPIView(generics.ListAPIView):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
     
-# Enrollment API to create
-class CourseEnrollAPIView(generics.CreateAPIView):
+
+# Enrollment API to list enrollments in a course
+class EnrollmentListByCourseAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
+    
+    def list(self, request, *args, **kwargs):
+        course_detail_id = self.kwargs.get('course_id')
+        course_detail = CourseDetail.objects.filter(id=course_detail_id).first()
+        if not course_detail:
+            raise NotFound('Course not found')
+        
+        queryset = course_detail.enrollments.all()
+        serializer = EnrollmentSerializer(queryset, many=True)
+        return Response({
+            'success': True,
+            'message': 'All enrollments in the course have been listed successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    
+# Enrollment API to create a enrollment
+class EnrollmentCreateAPIView(generics.CreateAPIView):
+    queryset = Enrollment.objects.all()
+    serializer_class = EnrollmentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsStudent]
 
     def create(self, request, *args, **kwargs):
 
@@ -65,5 +89,51 @@ class CourseEnrollAPIView(generics.CreateAPIView):
             'message': 'Enrollment created successfully',
             'data': serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
+    
+
+# Enrollment API to retrieve a enrollment
+class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Enrollment.objects.all()
+    serializer_class = EnrollmentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Enrollment.DoesNotExist:
+            raise NotFound('Enrollment not found')
+        
+        serializer = self.get_serializer(instance)
+        return Response({
+            'success': True,
+            'message': 'Enrollment retrieved successfully',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
 
 
+# Enrollment API to update a enrollment
+
+
+
+# Enrollment API to delete a enrollment
+class EnrollmentDeleteAPIView(generics.DestroyAPIView):
+    queryset = Enrollment.objects.all()
+    serializer_class = EnrollmentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Enrollment.DoesNotExist:
+            raise NotFound('Enrollment not found')
+        
+        self.perform_destroy(instance)
+        return Response({
+            'success': True,
+            'message': 'Enrollment deleted successfully',
+        }, status=status.HTTP_204_NO_CONTENT)

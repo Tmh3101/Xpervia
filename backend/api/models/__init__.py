@@ -1,1 +1,12 @@
-from .user_model import User, UserManager
+from .assignment_model import Assignment
+from .category_model import Category
+from .chapter_model import Chapter
+from .course_detail_model import CourseDetail
+from .course_model import Course
+from .enrollment_model import Enrollment
+from .lesson_completion_model import LessonCompletion
+from .lesson_model import Lesson
+from .payment_model import Payment
+from .submission_model import Submission
+from .submission_score_model import SubmissionScore
+from .user_model import User

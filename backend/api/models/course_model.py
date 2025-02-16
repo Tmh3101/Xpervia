@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth import get_user_model
+from .user_model import User
 from .category_model import Category
 
-User = get_user_model()
+
 class Course(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)

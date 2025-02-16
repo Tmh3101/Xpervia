@@ -5,6 +5,7 @@ from rest_framework.exceptions import (
     NotFound,
     PermissionDenied,
     ValidationError,
+    AuthenticationFailed
 )
 from .custom_exceptions import (
     FileUploadException,
@@ -14,6 +15,13 @@ from .custom_exceptions import (
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
+
+    if isinstance(exc, AuthenticationFailed):
+        return Response({
+            'success': False,
+            'message': 'Authentication failed',
+            'errors': exc.args
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
     if isinstance(exc, NotFound):
         return Response({
@@ -26,7 +34,7 @@ def custom_exception_handler(exc, context):
         return Response({
             'success': False,
             'message': 'Permission denied',
-            'errors': exc.args
+            'errors': exc.args if exc.args else 'You do not have permission to perform this action'
         }, status=status.HTTP_403_FORBIDDEN)
     
     if isinstance(exc, ValidationError):

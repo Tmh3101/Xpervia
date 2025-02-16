@@ -1,15 +1,14 @@
 from django.db import models
-from api.enums.payment_status_enum import PaymentStatusEnum
+from api.enums import PaymentStatusEnum
+
 
 class Payment(models.Model):
     amount = models.IntegerField()
     payment_method = models.CharField(max_length=50, null=True, default=None)
-    status = models.CharField(
-        max_length=10,
-        choices=[(status.name, status.value) for status in PaymentStatusEnum],
-        default=PaymentStatusEnum.COMPLETED.name
-    )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    PAYMENT_STATUS_CHOICES = [(status.name, status.value) for status in PaymentStatusEnum]
+    status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default=PaymentStatusEnum.COMPLETED.name)
 
     class Meta:
         db_table = 'payments'

@@ -1,20 +1,19 @@
 from django.http import Http404
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from api.models.assignment_model import Assignment
-from api.models.lesson_model import Lesson
-from api.serializers.assignment_serializer import AssignmentSerializer
-from api.permissions.teacher_permissions_checker import IsTeacher, IsCourseOwner
-from api.permissions.student_permissions_checker import WasCourseEnrolled
+from rest_framework.exceptions import NotFound, ValidationError
+from api.models import Assignment, Lesson
+from api.serializers import AssignmentSerializer
+from api.permissions import IsCourseOwner, WasCourseEnrolled
 
-# View for handling assignment list
+
+# Assignment API to list all assignments by lesson
 class AssignmentListAPIView(generics.ListAPIView):
     serializer_class = AssignmentSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, WasCourseEnrolled]
+    permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
         lesson_id = self.kwargs.get('lesson_id')
@@ -31,20 +30,18 @@ class AssignmentListAPIView(generics.ListAPIView):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
 
-# View for handling assignment create
+
+# Assignment API to create a assignment
 class AssignmentCreateAPIView(generics.CreateAPIView):
     serializer_class = AssignmentSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsTeacher]
+    permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
         lesson_id = self.kwargs.get('lesson_id')
         if not Lesson.objects.filter(id=lesson_id).exists():
             raise NotFound('Lesson does not exist')
         request.data['lesson_id'] = lesson_id
-
-        if Lesson.objects.get(id=lesson_id).course.teacher != request.user:
-            raise PermissionDenied('You are not allowed to create assignment for this lesson')
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -59,19 +56,19 @@ class AssignmentCreateAPIView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED, headers=header)
     
 
-# View for handling assignment retrieve
+# Assignment API to retrieve a assignment
 class AssignmentRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, WasCourseEnrolled]
+    permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
         except Http404 as e:
-            raise NotFound(f'Assignment does not exist: {str(e)}')
+            raise NotFound('Assignment does not exist')
         
         serializer = self.get_serializer(instance)
         return Response({
@@ -90,16 +87,12 @@ class AssignmentUpdateAPIView(generics.UpdateAPIView):
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
         try:
             instance = self.get_object()
         except Http404 as e:
             raise NotFound(f'Assignment does not exist: {str(e)}')
-        
-        if instance.lesson.course.teacher != request.user:
-            raise PermissionDenied('You are not allowed to update this assignment')
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
             raise ValidationError(f'Assignment not updated: {serializer.errors}')
         
@@ -123,10 +116,7 @@ class AssignmentDeleteAPIView(generics.DestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            raise NotFound(f'Assignment does not exist: {str(e)}')
-        
-        if instance.lesson.course.teacher != request.user:
-            raise PermissionDenied('You are not allowed to delete this assignment')
+            raise NotFound('Assignment does not exist')
 
         self.perform_destroy(instance)
         return Response({

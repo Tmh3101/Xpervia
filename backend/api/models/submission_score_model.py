@@ -1,6 +1,7 @@
 from django.db import models
 from .submission_model import Submission
 
+
 class SubmissionScore(models.Model):
     score = models.FloatField()
     feedback = models.TextField(null=True, blank=True)

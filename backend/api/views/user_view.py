@@ -1,21 +1,21 @@
-from django.contrib.auth import get_user_model
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 from api.exceptions.custom_exceptions import LoginFailed
-from api.serializers.user_serializer import UserSerializer, UserUpdateSerializer, UserRegisterSerializer, UserUpdatePasswordSerializer
-from api.permissions.admin_permissions_checker import IsAdmin
-from api.permissions.user_permissions_checker import IsUserOwner
+from api.models import User
+from api.serializers import (
+    UserSerializer, UserUpdateSerializer, UserRegisterSerializer, UserUpdatePasswordSerializer
+)
+from api.permissions import IsAdmin, IsUserOwner
 
-User = get_user_model()
 
-# User API to list and create users for Admin
-class UserListCreateAPIView(generics.ListCreateAPIView):
+# User API to list users
+class UserListAPIView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     authentication_classes = [TokenAuthentication]
@@ -28,7 +28,14 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
             'success': True,
             'message': 'All users have been listed successfully',
             'data': serializer.data
-        }, status=status.HTTP_200_OK)    
+        }, status=status.HTTP_200_OK)
+    
+
+# User API to create user
+class UserCreateAPIView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegisterSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -36,27 +43,38 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
             raise ValidationError(serializer.errors)
         
         self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
         return Response({
             'success': True,
             'message': 'User created successfully',
             'data': serializer.data
-        }, status=status.HTTP_201_CREATED, headers=headers)
+        }, status=status.HTTP_201_CREATED)
             
 
-# User API to retrieve, update, and delete user by id for Admin
-class UserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+# User API to retrieve user by id
+class UserRetrieveAPIView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin | IsUserOwner]
     lookup_field = 'id'
 
+    def check_permissions(self, request):
+        results = []
+        for permission in self.get_permissions():
+            if not isinstance(permission, IsAuthenticated):
+                try:
+                    permission.has_permission(request, self)
+                    results.append(True)
+                except PermissionDenied:
+                    results.append(False)
+        if not any(results):
+            raise PermissionDenied('You are not allowed to perform this action')
+
     def retrieve(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
         except Http404 as e:
-            raise NotFound('User not found')
+            raise NotFound(f'User not found {str(e)}')
         
         serializer = self.get_serializer(instance)
         return Response({
@@ -64,20 +82,9 @@ class UserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             'message': 'User retrieved successfully',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
-
-    def destroy(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-        except Http404 as e:
-            raise NotFound('User not found')
-        
-        self.perform_destroy(instance)
-        return Response({
-            'success': True,
-            'message': 'User deleted successfully'
-        }, status=status.HTTP_204_NO_CONTENT)
     
 
+# User API to update user information
 class UserUpdateAPIView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
@@ -89,9 +96,9 @@ class UserUpdateAPIView(generics.UpdateAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            raise NotFound('User not found')
+            raise NotFound(f'User not found {str(e)}')
         
-        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
             raise ValidationError(f'User not updated: {serializer.errors}')
         
@@ -121,15 +128,15 @@ class UserDeleteAPIView(generics.DestroyAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            raise NotFound('User not found')
+            raise NotFound(f'User not found {str(e)}')
 
         self.perform_destroy(instance)
         return Response({
             'success': True,
-            'message': 'User deleted successfully'
+            'message': f'User "{instance}" deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
     
-# User API to update password for User
+# User API to update password
 class UserPasswordUpdateAPIView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdatePasswordSerializer
@@ -147,7 +154,7 @@ class UserPasswordUpdateAPIView(generics.UpdateAPIView):
         try:
             instance = self.get_object()
         except Http404 as e:
-            raise NotFound('User not found')
+            raise NotFound(f'User not found: {str(e)}')
         
         serializer = self.get_serializer(instance, data=request.data)
         if not serializer.is_valid():    
@@ -160,7 +167,7 @@ class UserPasswordUpdateAPIView(generics.UpdateAPIView):
         }, status=status.HTTP_200_OK)
 
     
-# User API to register user for User
+# User API to register user
 class UserRegisterAPIView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
@@ -179,39 +186,43 @@ class UserRegisterAPIView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
     
 
-# Custom Auth Token API to login user
-class CustomAuthTokenAPIView(ObtainAuthToken):
+# User API to login user
+class UserLoginAPIView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
         user = User.objects.filter(email=email).first()
+
         if not user:
             raise LoginFailed('User not found')
         if not user.is_active:
             raise LoginFailed('User is not active')
         if not user.check_password(password):
             raise LoginFailed('Password is incorrect')
+        
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'success': True,
-            'message': 'Login successful',
+            'message': f'Login successful ({'created' if created else 'existing'} token)',
             'token': token.key
-        })        
+        })            
     
-    
+
+# User API to logout user
 class UserLogoutAPIView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsUserOwner]
 
     def delete(self, request, *args, **kwargs):
         try:
             token = Token.objects.get(user=request.user)
-            token.delete()
-            return Response({
-                'success': True,
-                'message': 'Logout successful'
-            }, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
             return Response({
                 'success': False,
                 'message': 'Invalid token'
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+        token.delete()
+        return Response({
+            'success': True,
+            'message': 'Logout successful'
+        }, status=status.HTTP_200_OK)

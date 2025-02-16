@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .lesson_model import Lesson
 
+
 class Assignment(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField(null=True)

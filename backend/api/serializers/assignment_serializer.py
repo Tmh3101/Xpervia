@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from api.models.assignment_model import Assignment
-from api.models.lesson_model import Lesson
-from .lesson_serializer import LessonSerializer, SimpleLessonSerializer
+from api.models import Assignment, Lesson
+from .lesson_serializer import SimpleLessonSerializer
+
 
 class AssignmentSerializer(serializers.ModelSerializer):
     lesson = SimpleLessonSerializer(read_only=True)
@@ -10,9 +10,11 @@ class AssignmentSerializer(serializers.ModelSerializer):
         source='lesson',
         write_only=True)
 
+
     class Meta:
         model = Assignment
         fields = '__all__'
+
 
 class SimpleAssignmentSerializer(serializers.ModelSerializer):
     class Meta:

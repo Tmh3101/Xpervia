@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from api.enums.role_enum import RoleEnum
+from api.enums import RoleEnum
 import uuid
 
 # Create UserManager class to set email as username field

@@ -2,6 +2,7 @@ from django.db import models
 from api.models.course_model import Course
 from api.models.chapter_model import Chapter
 
+
 class Lesson(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField(blank=True, null=True)

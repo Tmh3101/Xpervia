@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .course_model import Course
 
+
 class CourseDetail(models.Model):
     course = models.OneToOneField(Course, on_delete=models.CASCADE)
     price = models.IntegerField(default=0)
@@ -30,4 +31,4 @@ class CourseDetail(models.Model):
         return self.price * (1 - self.discount)
 
     def __str__(self):
-        return f'{self.course.id} - {self.price}'
+        return f'{self.course} - {self.start_date}'

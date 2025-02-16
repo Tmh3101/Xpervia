@@ -1,11 +1,9 @@
-from api.models.enrollment_model import Enrollment
-from api.models.payment_model import Payment
-from api.models.user_model import User
-from api.models.course_detail_model import CourseDetail
-from api.serializers.payment_serializer import PaymentSerializer
-from api.serializers.user_serializer import SimpleUserSerializer
-from api.serializers.course_detail_serializer import CourseDetailSerializer
+from api.models import Enrollment, CourseDetail, Payment, User
+from .payment_serializer import PaymentSerializer
+from .user_serializer import SimpleUserSerializer
+from .course_detail_serializer import CourseDetailSerializer
 from rest_framework import serializers
+
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     student = SimpleUserSerializer(read_only=True)
@@ -28,6 +26,8 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         source='payment',
         write_only=True
     )
+
+    
     class Meta:
         model = Enrollment
         fields = '__all__'

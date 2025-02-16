@@ -1,9 +1,7 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from api.models import User
 
-User = get_user_model()
 
-# User Serializer for Admin to list, create and delete user
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -27,7 +25,6 @@ class SimpleUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'first_name', 'last_name']  
     
 
-# User Serializer for Admin to update user
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -46,6 +43,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data.get('password', instance.password))
             instance.save()
             return instance
+    
         
 class UserUpdatePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)
@@ -58,7 +56,7 @@ class UserUpdatePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({'new_password': 'New password must be different from old password'})
         return data  
     
-# User Register Serializer for User to register
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

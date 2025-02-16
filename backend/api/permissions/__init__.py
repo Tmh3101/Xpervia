@@ -1,0 +1,4 @@
+from .admin_permissions_checker import IsAdmin
+from .student_permissions_checker import IsStudent, WasCourseEnrolled, IsSubmissionOwner
+from .teacher_permissions_checker import IsTeacher, IsCourseOwner
+from .user_permissions_checker import IsUserOwner

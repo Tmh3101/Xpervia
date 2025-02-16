@@ -1,9 +1,8 @@
 from rest_framework import serializers
-from api.models.submission_model import Submission
-from api.models.assignment_model import Assignment
-from api.models.user_model import User
-from api.serializers.user_serializer import SimpleUserSerializer
-from api.serializers.assignment_serializer import SimpleAssignmentSerializer
+from api.models import Submission, Assignment, User
+from .user_serializer import SimpleUserSerializer
+from .assignment_serializer import SimpleAssignmentSerializer
+
 
 class SubmissionSerializer(serializers.ModelSerializer):
     assignment = SimpleAssignmentSerializer(read_only=True)
@@ -20,6 +19,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
+    
     class Meta:
         model = Submission
         fields = '__all__'

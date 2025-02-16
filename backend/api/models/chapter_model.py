@@ -1,6 +1,7 @@
 from django.db import models
 from api.models.course_model import Course
 
+
 class Chapter(models.Model):
     title = models.CharField(max_length=255)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='chapters')

@@ -4,11 +4,12 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from api.models.category_model import Category
-from api.serializers.category_serializer import CategorySerializer
-from api.permissions.admin_permissions_checker import IsAdmin
+from api.models import Category
+from api.serializers import CategorySerializer
+from api.permissions import IsAdmin
 
-# Categories list API view for listing all categories
+
+# Category API to list categories
 class CategoryListAPIView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -25,7 +26,7 @@ class CategoryListAPIView(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
 
-# Category create API view for creating a category
+# Category API to create a category
 class CategoryCreateAPIView(generics.CreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -45,14 +46,17 @@ class CategoryCreateAPIView(generics.CreateAPIView):
             'data': serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
 
-# Category retrieve API view for retrieving a category
+
+# Category API to retrieve a category
 class CategoryRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
+
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -66,7 +70,7 @@ class CategoryRetrieveAPIView(generics.RetrieveAPIView):
         }, status=status.HTTP_200_OK)
     
 
-# Category update API view for updating a category
+# Category API to update a category
 class CategoryUpdateAPIView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -92,7 +96,7 @@ class CategoryUpdateAPIView(generics.UpdateAPIView):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
     
-# Category delete API view for updating a category
+# Category API to delete a category
 class CategoryDeleteAPIView(generics.DestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -109,6 +113,6 @@ class CategoryDeleteAPIView(generics.DestroyAPIView):
         self.perform_destroy(instance)
         return Response({
             'success': True,
-            'message': 'Category deleted successfully'
+            'message': f'Category "{instance}" deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
     

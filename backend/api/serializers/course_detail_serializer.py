@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from api.models.course_detail_model import CourseDetail
-from api.models.course_model import Course
-from api.serializers.course_serializer import CourseSerializer
+from api.models import CourseDetail, Course
+from .course_serializer import CourseSerializer
+
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
@@ -10,6 +10,8 @@ class CourseDetailSerializer(serializers.ModelSerializer):
         source='course',
         write_only=True
     )
+
+
     class Meta:
         model = CourseDetail
         fields = '__all__'
@@ -17,7 +19,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             'course': {'read_only': True},
         }
 
-# Course detail detail serializer
+
 class CourseDetailDetailSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
     class Meta:

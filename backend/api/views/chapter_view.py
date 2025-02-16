@@ -1,23 +1,20 @@
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from api.models.chapter_model import Chapter
-from api.models.course_model import Course
-from api.models.lesson_model import Lesson
-from api.serializers.chapter_serializer import ChapterSerializer
-from api.serializers.lesson_serializer import SimpleLessonSerializer
-from api.permissions.teacher_permissions_checker import IsCourseOwner
-from api.permissions.student_permissions_checker import WasCourseEnrolled
+from rest_framework.exceptions import NotFound, ValidationError
+from api.models import Chapter, Course, Lesson
+from api.serializers import ChapterSerializer, SimpleLessonSerializer
+from api.permissions import IsCourseOwner, WasCourseEnrolled
 
-# Chapters list API view for listing all chapters
+
+# Chapters API to list all chapters of a course
 class ChapterListAPIView(generics.ListAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, WasCourseEnrolled]
+    permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
         course_id = self.kwargs.get('course_id')
@@ -35,25 +32,19 @@ class ChapterListAPIView(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
 
 
-# Chapter create API view for creating a chapter
+# Chapter API to create a chapter
 class ChapterCreateAPIView(generics.CreateAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
-    def perform_create(self, serializer):
-        try:
-            course = Course.objects.get(id=self.kwargs.get('course_id'))
-        except Course.DoesNotExist:
-            raise NotFound("Course does not exist")
-        
-        if course.teacher != self.request.user:
-            raise PermissionDenied("You are not allowed to create chapter for this course")
-
-        serializer.save(course=course)
-
     def create(self, request, *args, **kwargs):
+        course_id = self.kwargs.get('course_id')
+        if not Course.objects.filter(id=course_id).exists():
+            raise NotFound("Course does not exist")
+        request.data['course_id'] = course_id
+
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             raise ValidationError(f'Chapter not created: {serializer.errors}')
@@ -67,12 +58,12 @@ class ChapterCreateAPIView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED, headers=headers)
     
 
-# Chapter retrieve API view for retrieving a chapter with all lessons
+# Chapter API to retrieve a chapter
 class ChapterRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, WasCourseEnrolled]
+    permission_classes = [IsAuthenticated, IsCourseOwner | WasCourseEnrolled]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
@@ -94,7 +85,8 @@ class ChapterRetrieveAPIView(generics.RetrieveAPIView):
             'data': chapter_detail_data
         }, status=status.HTTP_200_OK)
     
-# Chapter update API view for updating and deleting a chapter
+
+# Chapter API to update a chapter
 class ChapterUpdateAPIView(generics.UpdateAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
@@ -108,6 +100,7 @@ class ChapterUpdateAPIView(generics.UpdateAPIView):
         except Http404 as e:
             raise NotFound(f'Chapter not found: {str(e)}')
 
+        request.data['course_id'] = instance.course.id
         serializer = self.get_serializer(instance, data=request.data)
         if not serializer.is_valid():
             raise ValidationError(f'Chapter not updated: {serializer.errors}')
@@ -120,7 +113,7 @@ class ChapterUpdateAPIView(generics.UpdateAPIView):
         }, status=status.HTTP_200_OK)
     
 
-# Chapter delete API view for deleting a chapter
+# Chapter API to delete a chapter
 class ChapterDeleteAPIView(generics.DestroyAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
@@ -137,5 +130,5 @@ class ChapterDeleteAPIView(generics.DestroyAPIView):
         self.perform_destroy(instance)
         return Response({
             'success': True,
-            'message': 'Chapter deleted successfully'
+            'message': f'Chapter "{instance}" deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
