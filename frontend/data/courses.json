@@ -1,0 +1,243 @@
+[
+  {
+    "id": 5,
+    "course": {
+      "id": 7,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 1,
+          "name": "Technology",
+          "description": "Courses related to various technological fields."
+        }
+      ],
+      "title": "Lập trình Web với Django",
+      "description": "Khóa học giúp bạn xây dựng website hoàn chỉnh với Django.",
+      "thumbnail_id": "1fXuuvKco-eOw1E-7IBStTORZjrGsl8hn"
+    },
+    "price": 500000,
+    "discount": 0.2,
+    "is_visible": true,
+    "created_at": "2025-02-15T17:06:12.881587Z",
+    "start_date": "2025-04-01T00:00:00Z",
+    "regis_start_date": "2025-03-15T00:00:00Z",
+    "regis_end_date": "2025-03-30T00:00:00Z",
+    "max_students": 100
+  },
+  {
+    "id": 6,
+    "course": {
+      "id": 8,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 2,
+          "name": "Data Science",
+          "description": "Learn about data analysis, machine learning, and AI."
+        }
+      ],
+      "title": "Khai phá dữ liệu với Python",
+      "description": "Tìm hiểu cách khai phá dữ liệu bằng Python và các thư viện phổ biến như Pandas, NumPy.",
+      "thumbnail_id": "2gJk9Llmo-wDp5E-8ZKTrQRSKhmFsl9xy"
+    },
+    "price": 700000,
+    "discount": 0.15,
+    "is_visible": true,
+    "created_at": "2025-02-16T10:20:30.102587Z",
+    "start_date": "2025-04-10T00:00:00Z",
+    "regis_start_date": "2025-03-20T00:00:00Z",
+    "regis_end_date": "2025-04-05T00:00:00Z",
+    "max_students": 80
+  },
+  {
+    "id": 7,
+    "course": {
+      "id": 9,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 1,
+          "name": "Technology",
+          "description": "Courses related to various technological fields."
+        }
+      ],
+      "title": "Lập trình Java từ cơ bản đến nâng cao",
+      "description": "Khóa học giúp bạn thành thạo Java từ cơ bản đến nâng cao.",
+      "thumbnail_id": "3hLm9Mpno-aXp6F-9YKXzTSJLklGmn5zz"
+    },
+    "price": 600000,
+    "discount": 0.1,
+    "is_visible": true,
+    "created_at": "2025-02-17T12:45:50.581587Z",
+    "start_date": "2025-04-15T00:00:00Z",
+    "regis_start_date": "2025-03-25T00:00:00Z",
+    "regis_end_date": "2025-04-10T00:00:00Z",
+    "max_students": 120
+  },
+  {
+    "id": 8,
+    "course": {
+      "id": 10,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 1,
+          "name": "Technology",
+          "description": "Courses related to various technological fields."
+        }
+      ],
+      "title": "Triển khai ứng dụng trên AWS",
+      "description": "Khóa học giúp bạn triển khai ứng dụng web trên AWS từ A đến Z.",
+      "thumbnail_id": "4iLn0Nqpo-bYq7G-0ZLKyUTNMklHnm6aa"
+    },
+    "price": 800000,
+    "discount": 0.25,
+    "is_visible": true,
+    "created_at": "2025-02-18T15:30:00.123456Z",
+    "start_date": "2025-05-01T00:00:00Z",
+    "regis_start_date": "2025-04-10T00:00:00Z",
+    "regis_end_date": "2025-04-25T00:00:00Z",
+    "max_students": 90
+  },
+  {
+    "id": 9,
+    "course": {
+      "id": 11,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 1,
+          "name": "Technology",
+          "description": "Courses related to various technological fields."
+        }
+      ],
+      "title": "Nhập môn An ninh mạng",
+      "description": "Khóa học giúp bạn nắm vững kiến thức cơ bản về bảo mật mạng.",
+      "thumbnail_id": "5jOm1Ospo-cZr8H-1ALMzVUPNmlIop7bb"
+    },
+    "price": 750000,
+    "discount": 0.2,
+    "is_visible": true,
+    "created_at": "2025-02-19T14:15:00.654321Z",
+    "start_date": "2025-05-10T00:00:00Z",
+    "regis_start_date": "2025-04-15T00:00:00Z",
+    "regis_end_date": "2025-05-05T00:00:00Z",
+    "max_students": 110
+  },
+  {
+    "id": 10,
+    "course": {
+      "id": 12,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 6,
+          "name": "AI/ML",
+          "description": "Learn about deep learning, NLP, and AI applications."
+        }
+      ],
+      "title": "Deep Learning với TensorFlow",
+      "description": "Khóa học giúp bạn nắm vững các kỹ thuật Deep Learning sử dụng TensorFlow.",
+      "thumbnail_id": "6kPq2Qtrp-dAs9I-2BLN1XVRMnmJqr8cc"
+    },
+    "price": 900000,
+    "discount": 0.3,
+    "is_visible": true,
+    "created_at": "2025-02-20T12:40:00.987654Z",
+    "start_date": "2025-05-20T00:00:00Z",
+    "regis_start_date": "2025-05-01T00:00:00Z",
+    "regis_end_date": "2025-05-15T00:00:00Z",
+    "max_students": 70
+  },
+  {
+    "id": 11,
+    "course": {
+      "id": 13,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 1,
+          "name": "Technology",
+          "description": "Courses related to various technological fields."
+        }
+      ],
+      "title": "Blockchain và hợp đồng thông minh",
+      "description": "Khóa học giúp bạn hiểu về Blockchain và cách tạo Smart Contract trên Ethereum.",
+      "thumbnail_id": "7lQr3Rurp-eBt0J-3CLM2YWRNolKrs9dd"
+    },
+    "price": 850000,
+    "discount": 0.2,
+    "is_visible": true,
+    "created_at": "2025-02-21T11:25:00.321098Z",
+    "start_date": "2025-05-25T00:00:00Z",
+    "regis_start_date": "2025-05-05T00:00:00Z",
+    "regis_end_date": "2025-05-20T00:00:00Z",
+    "max_students": 95
+  },
+  {
+    "id": 12,
+    "course": {
+      "id": 14,
+      "teacher": {
+        "id": "627a8bb9-1a1a-442b-9f4e-343b79c19ec3",
+        "email": "teacher@gmail.com",
+        "first_name": "teacher",
+        "last_name": "user"
+      },
+      "categories": [
+        {
+          "id": 1,
+          "name": "Technology",
+          "description": "Courses related to various technological fields."
+        }
+      ],
+      "title": "Phát triển ứng dụng di động với Flutter",
+      "description": "Khóa học giúp bạn xây dựng ứng dụng di động đa nền tảng bằng Flutter.",
+      "thumbnail_id": "8mRs4Stvp-fDu1K-4DLN3ZXRPolMst0ee"
+    },
+    "price": 720000,
+    "discount": 0.15,
+    "is_visible": true,
+    "created_at": "2025-02-22T10:10:00.564738Z",
+    "start_date": "2025-06-01T00:00:00Z",
+    "regis_start_date": "2025-05-10T00:00:00Z",
+    "regis_end_date": "2025-05-25T00:00:00Z",
+    "max_students": 85
+  }
+]
+

@@ -14,13 +14,14 @@ class ChapterListAPIView(generics.ListAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         course_id = self.kwargs.get('course_id')
         if not Course.objects.filter(id=course_id).exists():
             raise NotFound("Course does not exist")
-        return Chapter.objects.filter(course_id=course_id)
+        course = Course.objects.get(id=course_id)
+        return Chapter.objects.filter(course_content_id=course.course_content.id)
 
     def list(self, request, *args, **kwargs):    
         queryset = self.get_queryset()    
@@ -43,7 +44,8 @@ class ChapterCreateAPIView(generics.CreateAPIView):
         course_id = self.kwargs.get('course_id')
         if not Course.objects.filter(id=course_id).exists():
             raise NotFound("Course does not exist")
-        request.data['course_id'] = course_id
+        course = Course.objects.get(id=course_id)
+        request.data['course_content_id'] = course.course_content.id
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -63,7 +65,7 @@ class ChapterRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsCourseOwner | WasCourseEnrolled]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
@@ -100,7 +102,7 @@ class ChapterUpdateAPIView(generics.UpdateAPIView):
         except Http404 as e:
             raise NotFound(f'Chapter not found: {str(e)}')
 
-        request.data['course_id'] = instance.course.id
+        request.data['course_content_id'] = instance.course_content.id
         serializer = self.get_serializer(instance, data=request.data)
         if not serializer.is_valid():
             raise ValidationError(f'Chapter not updated: {serializer.errors}')

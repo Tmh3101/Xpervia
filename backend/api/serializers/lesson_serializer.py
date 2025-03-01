@@ -1,14 +1,14 @@
 from rest_framework import serializers
-from api.models import Lesson, Course, Chapter
-from .course_serializer import SimpleCourseSerializer
+from api.models import Lesson, CourseContent, Chapter
+from .course_content_serializer import SimpleCourseContentSerializer
 from .chapter_serializer import SimpleChapterSerializer
 
 
 class LessonSerializer(serializers.ModelSerializer):
-    course = SimpleCourseSerializer(read_only=True)
-    course_id = serializers.PrimaryKeyRelatedField(
-        queryset=Course.objects.all(),
-        source='course',
+    course_content = SimpleCourseContentSerializer(read_only=True)
+    course_content_id = serializers.PrimaryKeyRelatedField(
+        queryset=CourseContent.objects.all(),
+        source='course_content',
         write_only=True
     )
 
@@ -31,7 +31,7 @@ class LessonSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if not validated_data.get('order'):
-            validated_data['order'] = Lesson.objects.filter(course=validated_data['course']).count() + 1
+            validated_data['order'] = Lesson.objects.filter(course_content=validated_data['course_content']).count() + 1
         return super().create(validated_data)
 
 
@@ -40,4 +40,4 @@ class SimpleLessonSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Lesson
-        fields = ['id', 'title', 'order', 'created_at']
+        fields = ['id', 'title', 'order', 'is_visible', 'created_at']

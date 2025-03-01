@@ -1,7 +1,7 @@
-from api.models import Enrollment, CourseDetail, Payment, User
+from api.models import Enrollment, Course, Payment, User
 from .payment_serializer import PaymentSerializer
 from .user_serializer import SimpleUserSerializer
-from .course_detail_serializer import CourseDetailSerializer
+from .course_serializer import CourseSerializer
 from rest_framework import serializers
 
 
@@ -13,10 +13,10 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    course_detail = CourseDetailSerializer(read_only=True)
-    course_detail_id = serializers.PrimaryKeyRelatedField(
-        queryset=CourseDetail.objects.all(),
-        source='course_detail',
+    course = CourseSerializer(read_only=True)
+    course_id = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(),
+        source='course',
         write_only=True
     )
 

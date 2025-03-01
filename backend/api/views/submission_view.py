@@ -29,7 +29,7 @@ class SubmissionListByAssignmentAPIView(generics.ListAPIView):
         return Response({
             'success': True,
             'message': 'Submissions for the assignment have been listed successfully',
-            'data': serializer.data
+            'submissions': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -61,7 +61,7 @@ class SubmissionCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Submission has been created successfully',
-            'data': serializer.data
+            'submission': serializer.data
         }, status=status.HTTP_201_CREATED)
     
 
@@ -83,7 +83,7 @@ class SubmissionRetrieveAPIView(generics.RetrieveAPIView):
         return Response({
             'success': True,
             'message': 'Submission has been retrieved successfully',
-            'data': serializer.data
+            'submission': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -117,7 +117,7 @@ class SubmissionUpdateAPIView(generics.RetrieveUpdateAPIView):
         return Response({
             'success': True,
             'message': 'Submission has been updated successfully',
-            'data': serializer.data
+            'submission': serializer.data
         }, status=status.HTTP_200_OK)
     
 

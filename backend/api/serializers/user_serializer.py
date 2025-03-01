@@ -66,8 +66,5 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        password = validated_data.get('password')
-        if password and len(password) < 8:
-            raise serializers.ValidationError('Password must be at least 8 characters long')
         user = User.objects.create_user(**validated_data)
         return user

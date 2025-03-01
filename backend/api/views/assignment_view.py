@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError
-from api.models import Assignment, Lesson
-from api.serializers import AssignmentSerializer
+from api.models import Assignment, Lesson, Submission
+from api.serializers import AssignmentSerializer, SimpleSubmissionSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
 
 
@@ -24,10 +24,18 @@ class AssignmentListAPIView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        assingments_serializer = serializer.data.copy()
+        for assignment in assingments_serializer:
+            submission = Submission.objects.filter(assignment_id=assignment['id'], student_id=request.user.id).first()
+            if submission:
+                assignment['submission'] = SimpleSubmissionSerializer(submission).data
+            else:
+                assignment['submission'] = None
+
         return Response({
             'success': True,
             'message': 'All assignments have been listed successfully',
-            'data': serializer.data
+            'assignments': assingments_serializer
         }, status=status.HTTP_200_OK)
 
 
@@ -52,7 +60,7 @@ class AssignmentCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Assignment has been created successfully',
-            'data': serializer.data
+            'assignment': serializer.data
         }, status=status.HTTP_201_CREATED, headers=header)
     
 
@@ -74,7 +82,7 @@ class AssignmentRetrieveAPIView(generics.RetrieveAPIView):
         return Response({
             'success': True,
             'message': 'Assignment has been retrieved successfully',
-            'data': serializer.data
+            'assignment': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -100,7 +108,7 @@ class AssignmentUpdateAPIView(generics.UpdateAPIView):
         return Response({
             'success': True,
             'message': 'Assignment has been updated successfully',
-            'data': serializer.data
+            'assignment': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -122,7 +130,7 @@ class AssignmentDeleteAPIView(generics.DestroyAPIView):
         return Response({
             'success': True,
             'message': 'Assignment has been deleted successfully',
-            'data': instance.id
+            'assignment': instance
         }, status=status.HTTP_204_NO_CONTENT)
 
         

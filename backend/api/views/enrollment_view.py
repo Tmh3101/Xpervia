@@ -4,9 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 from api.exceptions.custom_exceptions import Existed
-from api.models import Enrollment, CourseDetail
+from api.models import Enrollment, Course
 from api.serializers import (
-    EnrollmentSerializer, PaymentSerializer
+    EnrollmentSerializer, PaymentSerializer, CourseSerializer
 )
 from api.permissions import IsAdmin, IsCourseOwner, IsStudent
 
@@ -36,17 +36,36 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     
     def list(self, request, *args, **kwargs):
-        course_detail_id = self.kwargs.get('course_id')
-        course_detail = CourseDetail.objects.filter(id=course_detail_id).first()
-        if not course_detail:
+        course_id = self.kwargs.get('course_id')
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
             raise NotFound('Course not found')
         
-        queryset = course_detail.enrollments.all()
+        queryset = course.enrollments.all()
         serializer = EnrollmentSerializer(queryset, many=True)
         return Response({
             'success': True,
             'message': 'All enrollments in the course have been listed successfully',
             'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+# Enrollment API to list all courses a student has enrolled in
+class EnrolledCoursesByStudentAPIView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        student = self.request.user
+        return Course.objects.filter(enrollments__student=student, is_visible=True)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = CourseSerializer(queryset, many=True)
+        return Response({
+            'success': True,
+            'message': 'All enrolled courses have been listed successfully',
+            'courses': serializer.data
         }, status=status.HTTP_200_OK)
 
     
@@ -59,20 +78,20 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
 
-        course_detail_id = self.kwargs.get('course_id')
-        course_detail = CourseDetail.objects.filter(id=course_detail_id).first()
-        if not course_detail:
+        course_id = self.kwargs.get('course_id')
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
             raise NotFound('Course not found')
-        request.data['course_detail_id'] = course_detail.id
+        request.data['course_id'] = course.id
 
         student = request.user
-        if course_detail.enrollments.filter(student=student).exists():
+        if course.enrollments.filter(student=student).exists():
             raise Existed('You have already enrolled in this course')
         request.data['student_id'] = student.id
 
-        if not course_detail.get_discounted_price() == 0:
+        if not course.get_discounted_price() == 0:
             # Create payment
-            payment_serializer = PaymentSerializer(data={'amount': course_detail.get_discounted_price()})
+            payment_serializer = PaymentSerializer(data={'amount': course.get_discounted_price()})
             if not payment_serializer.is_valid():
                 raise ValidationError(f'Payment not created: {payment_serializer.errors}')
             payment = payment_serializer.save()

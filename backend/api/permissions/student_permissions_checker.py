@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 from api.enums import RoleEnum
-from api.models import Enrollment, Lesson, Chapter, Assignment, Course
+from api.models import Enrollment, Lesson, Chapter, Assignment, CourseContent, Course
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):
@@ -12,46 +12,47 @@ class WasCourseEnrolled(BasePermission):
         if 'lesson_id' in view.kwargs:
             try:
                 lesson = Lesson.objects.get(id=view.kwargs.get('lesson_id'))
-                course = lesson.course
+                course_content = lesson.course_content
             except Lesson.DoesNotExist:
                 return True
         
         if 'course_id' in view.kwargs:
             try:
                 course = Course.objects.get(id=view.kwargs.get('course_id'))
+                course_content = course.course_content
             except Course.DoesNotExist:
                 return True
         
         if 'chapter_id' in view.kwargs:
             try:
                 chapter = Chapter.objects.get(id=view.kwargs.get('chapter_id'))
-                course = chapter.course
+                course_content = chapter.course_content
             except Chapter.DoesNotExist:
                 return True
             
         if 'assignment_id' in view.kwargs:
             try:
                 assignment = Assignment.objects.get(id=view.kwargs.get('assignment_id'))
-                course = assignment.lesson.course
+                course_content = assignment.lesson.course_content
             except Assignment.DoesNotExist:
                 return True
             
         return Enrollment.objects.filter(
             student=request.user,
-            course_detail__course=course
+            course__course_content=course_content
         ).exists()
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Chapter) or isinstance(obj, Lesson):
-            course = obj.course
+            course_content = obj.course_content
         elif isinstance(obj, Assignment):
-            course = obj.lesson.course     
+            course_content = obj.lesson.course_content    
         else:
             return True
 
         return Enrollment.objects.filter(
             student=request.user,
-            course_detail__course=course
+            course__course_content=course_content
         ).exists()
     
 

@@ -1,6 +1,6 @@
 from django.db import models
-from api.models.course_model import Course
-from api.models.chapter_model import Chapter
+from .course_content_model import CourseContent
+from .chapter_model import Chapter
 
 
 class Lesson(models.Model):
@@ -9,7 +9,7 @@ class Lesson(models.Model):
     video_id = models.CharField(max_length=50)
     subtitle_vi_id = models.CharField(max_length=50, blank=True, null=True)
     attachment_id = models.CharField(max_length=50, blank=True, null=True)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
+    course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE, related_name="lessons")
     chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True, related_name="lessons")
     is_visible = models.BooleanField(default=True)
     order = models.IntegerField()

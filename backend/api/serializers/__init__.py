@@ -1,12 +1,12 @@
 from .assignment_serializer import AssignmentSerializer, SimpleAssignmentSerializer
 from .category_serializer import CategorySerializer
 from .chapter_serializer import ChapterSerializer, SimpleChapterSerializer
-from .course_detail_serializer import CourseDetailSerializer, CourseDetailDetailSerializer
-from .course_serializer import CourseSerializer, SimpleCourseSerializer
+from .course_serializer import CourseDetailSerializer, CourseSerializer
+from .course_content_serializer import CourseContentSerializer, SimpleCourseContentSerializer
 from .enrollment_serializer import EnrollmentSerializer
 from .lesson_completion_serializer import LessonCompletionSerializer
 from .lesson_serializer import LessonSerializer, SimpleLessonSerializer
 from .payment_serializer import PaymentSerializer
 from .submission_score_serializer import SubmissionScoreSerializer
-from .submission_serializer import SubmissionSerializer
+from .submission_serializer import SubmissionSerializer, SimpleSubmissionSerializer
 from .user_serializer import UserSerializer, SimpleUserSerializer, UserUpdateSerializer, UserUpdatePasswordSerializer, UserRegisterSerializer

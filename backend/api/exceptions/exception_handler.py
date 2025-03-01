@@ -20,49 +20,59 @@ def custom_exception_handler(exc, context):
         return Response({
             'success': False,
             'message': 'Authentication failed',
-            'errors': exc.args
+            'error': exc.args
         }, status=status.HTTP_401_UNAUTHORIZED)
 
     if isinstance(exc, NotFound):
         return Response({
             'success': False,
             'message': 'Not found',
-            'errors': exc.args
+            'error': exc.args
         }, status=status.HTTP_404_NOT_FOUND)
 
     if isinstance(exc, PermissionDenied):
         return Response({
             'success': False,
             'message': 'Permission denied',
-            'errors': exc.args if exc.args else 'You do not have permission to perform this action'
+            'error': exc.args if exc.args else 'You do not have permission to perform this action'
         }, status=status.HTTP_403_FORBIDDEN)
     
     if isinstance(exc, ValidationError):
+        # Lấy lỗi đầu tiên từ exc.detail
+        first_error = None
+        if isinstance(exc.detail, dict):
+            for key, value in exc.detail.items():
+                if isinstance(value, list) and value:
+                    first_error = value[0]
+                    break
+        elif isinstance(exc.detail, list) and exc.detail:
+            first_error = exc.detail[0]
+        
         return Response({
             'success': False,
             'message': 'Validation error',
-            'errors': exc.args
+            'error': first_error if first_error else exc.args
         }, status=status.HTTP_400_BAD_REQUEST)
     
     if isinstance(exc, FileUploadException):
         return Response({
             'success': False,
             'message': 'File upload failed',
-            'errors': exc.args
+            'error': exc.args
         }, status=status.HTTP_400_BAD_REQUEST)
     
     if isinstance(exc, Existed):
         return Response({
             'success': False,
             'message': 'Existed',
-            'errors': exc.args
+            'error': exc.args
         }, status=status.HTTP_400_BAD_REQUEST)
     
     if isinstance(exc, LoginFailed):
         return Response({
             'success': False,
             'message': 'Login failed',
-            'errors': exc.args
+            'error': exc.args
         }, status=status.HTTP_400_BAD_REQUEST)
     
     if response is None:

@@ -19,7 +19,11 @@ class SubmissionSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    
     class Meta:
         model = Submission
         fields = '__all__'
+
+class SimpleSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Submission
+        fields = ['id', 'file_id', 'created_at']

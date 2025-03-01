@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Chapter, Lesson
+from api.models import CourseContent, Chapter, Lesson, Course
 from api.serializers import LessonSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
@@ -21,7 +21,8 @@ class LessonListByCourseAPIView(generics.ListAPIView):
         course_id = self.kwargs.get('course_id')
         if not Course.objects.filter(id=course_id).exists():
             raise NotFound("Course does not exist")
-        return Lesson.objects.filter(course_id=course_id)
+        course = Course.objects.get(id=course_id)
+        return Lesson.objects.filter(course_content_id=course.course_content.id)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -67,15 +68,16 @@ class LessonCreateAPIView(generics.CreateAPIView):
         course = Course.objects.filter(id=self.kwargs.get('course_id')).first()
         if not course:
             raise NotFound('Course not found')
-        request.data['course_id'] = course.id
+        request.data['course_content_id'] = course.course_content.id
 
         chapter_id = self.request.data.get('chapter_id')
         if chapter_id:
             chapter = Chapter.objects.filter(id=chapter_id).first()
             if not chapter:
                 raise NotFound('Chapter not found')
-
-            if chapter.course.id != self.kwargs.get('course_id'):
+            
+            course = Course.objects.filter(id=self.kwargs.get('course_id')).first()
+            if course and (chapter.course_content.id != course.course_content.id):
                 raise NotFound('Chapter does not belong to the specified course')
 
         # Upload the video, subtitle, and attachment to Google Drive

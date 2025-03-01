@@ -2,14 +2,14 @@ from django.urls import path
 from api.views import (
     user_view,
     category_view,
-    course_detail_view,
     chapter_view,
     lesson_view,
     assignment_view,
     enrollment_view,
     submission_view,
     submission_score_view,
-    lesson_completion_view
+    lesson_completion_view,
+    course_view
 )
 
 urlpatterns = [
@@ -32,11 +32,12 @@ urlpatterns = [
     path('courses/categories/<int:id>/delete/', category_view.CategoryDeleteAPIView.as_view(), name='category-delete'),
 
     # Course URLs
-    path('courses/', course_detail_view.CourseDetailListAPIView.as_view(), name='course-list'),
-    path('courses/create/', course_detail_view.CourseDetailCreateAPIView.as_view(), name='course-create'),
-    path('courses/<int:id>/', course_detail_view.CourseDetailRetrieveAPIView.as_view(), name='course-detail'),
-    path('courses/<int:id>/update/', course_detail_view.CourseDetailUpdateAPIView.as_view(), name='course-update'),
-    path('courses/<int:id>/delete/', course_detail_view.CourseDetailDeleteAPIView.as_view(), name='course-delete'),
+    path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),
+    path('courses/create/', course_view.CourseCreateAPIView.as_view(), name='course-create'),
+    path('courses/<int:id>/', course_view.CourseRetrieveAPIView.as_view(), name='course-detail'),
+    path('courses/<int:id>/update/', course_view.CourseUpdateAPIView.as_view(), name='course-update'),
+    path('courses/<int:id>/delete/', course_view.CourseDeleteAPIView.as_view(), name='course-delete'),
+    path('courses/<int:id>/detail-lessons/', course_view.CourseRetrieveWithDetailLessonsAPIView.as_view(), name='course-detail-lessons'),
 
     # Enrollment URLs
     path('courses/enrollments/', enrollment_view.EnrollmentListAPIView.as_view(), name='enrollment-list'),
@@ -45,6 +46,7 @@ urlpatterns = [
     path('courses/enrollments/<int:id>/', enrollment_view.EnrollmentRetrieveAPIView.as_view(), name='enrollment-detail'),
     # path('courses/enrollments/<int:id>/update/', enrollment_view.EnrollmentUpdateAPIView.as_view(), name='enrollment-update'),
     path('courses/enrollments/<int:id>/delete/', enrollment_view.EnrollmentDeleteAPIView.as_view(), name='enrollment-delete'),
+    path('courses/enrollments/student/', enrollment_view.EnrolledCoursesByStudentAPIView.as_view(), name='enrollment-student-list'),
 
     # Chapter URLs
     path('courses/<int:course_id>/chapters/', chapter_view.ChapterListAPIView.as_view(), name='chapter-list'),

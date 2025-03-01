@@ -27,7 +27,7 @@ class UserListAPIView(generics.ListAPIView):
         return Response({
             'success': True,
             'message': 'All users have been listed successfully',
-            'data': serializer.data
+            'users': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -46,7 +46,7 @@ class UserCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'User created successfully',
-            'data': serializer.data
+            'user': serializer.data
         }, status=status.HTTP_201_CREATED)
             
 
@@ -80,7 +80,7 @@ class UserRetrieveAPIView(generics.RetrieveAPIView):
         return Response({
             'success': True,
             'message': 'User retrieved successfully',
-            'data': serializer.data
+            'user': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -106,7 +106,7 @@ class UserUpdateAPIView(generics.UpdateAPIView):
         return Response({
             'success': True,
             'message': 'User information updated successfully',
-            'data': serializer.data
+            'user': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -163,7 +163,7 @@ class UserPasswordUpdateAPIView(generics.UpdateAPIView):
         self.perform_update(serializer)
         return Response({
             'success': True,
-            'message': 'Password updated successfully'
+            'message': 'Password updated successfully',
         }, status=status.HTTP_200_OK)
 
     
@@ -182,7 +182,7 @@ class UserRegisterAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'User registered successfully',
-            'data': serializer.data
+            'user': serializer.data
         }, status=status.HTTP_201_CREATED)
     
 
@@ -194,17 +194,19 @@ class UserLoginAPIView(ObtainAuthToken):
         user = User.objects.filter(email=email).first()
 
         if not user:
-            raise LoginFailed('User not found')
+            raise LoginFailed('Email does not exist')
         if not user.is_active:
-            raise LoginFailed('User is not active')
+            raise LoginFailed('Account is not active')
         if not user.check_password(password):
             raise LoginFailed('Password is incorrect')
         
         token, created = Token.objects.get_or_create(user=user)
+        user_serializer = UserSerializer(user)
         return Response({
             'success': True,
             'message': f'Login successful ({'created' if created else 'existing'} token)',
-            'token': token.key
+            'token': token.key,
+            'user': user_serializer.data
         })            
     
 
@@ -225,4 +227,4 @@ class UserLogoutAPIView(generics.DestroyAPIView):
         return Response({
             'success': True,
             'message': 'Logout successful'
-        }, status=status.HTTP_200_OK)
+        }, status=status.HTTP_200_OK)    

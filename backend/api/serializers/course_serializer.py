@@ -1,34 +1,24 @@
 from rest_framework import serializers
-from api.models import Course, User
-from .category_serializer import CategorySerializer
-from .user_serializer import SimpleUserSerializer
+from api.models import CourseContent, Course
+from .course_content_serializer import CourseContentSerializer
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    teacher = SimpleUserSerializer(read_only=True)
-    teacher_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        source='teacher',
+    course_content = CourseContentSerializer(read_only=True)
+    course_content_id = serializers.PrimaryKeyRelatedField(
+        queryset=CourseContent.objects.all(),
+        source='course_content',
         write_only=True
     )
-    categories = CategorySerializer(many=True, read_only=True)
-
 
     class Meta:
         model = Course
         fields = '__all__'
-        extra_kwargs = {
-            'categories': {'required': False}
-        }
+
+
+class CourseDetailSerializer(serializers.ModelSerializer):
+    course_content = CourseContentSerializer(read_only=True)
     
-
-class SimpleCourseSerializer(serializers.ModelSerializer):
-    teacher = SimpleUserSerializer(read_only=True)
-    categories = CategorySerializer(many=True, read_only=True)
-
     class Meta:
         model = Course
-        fields = ['id', 'title', 'teacher', 'categories']
-        extra_kwargs = {
-            'categories': {'required': False}
-        }
+        fields = '__all__'

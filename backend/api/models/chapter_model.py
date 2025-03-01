@@ -1,10 +1,10 @@
 from django.db import models
-from api.models.course_model import Course
+from .course_content_model import CourseContent
 
 
 class Chapter(models.Model):
     title = models.CharField(max_length=255)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='chapters')
+    course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE, related_name='chapters')
     order = models.IntegerField()
 
     class Meta:
