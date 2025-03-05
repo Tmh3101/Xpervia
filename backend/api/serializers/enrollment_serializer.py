@@ -1,7 +1,7 @@
 from api.models import Enrollment, Course, Payment, User
 from .payment_serializer import PaymentSerializer
 from .user_serializer import SimpleUserSerializer
-from .course_serializer import CourseSerializer
+from .course_serializer import CourseSerializer, SimpleCourseSerializer
 from rest_framework import serializers
 
 
@@ -34,3 +34,11 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'created_at': {'read_only': True}
         }
+
+
+class SimpleEnrollmentSerializer(serializers.ModelSerializer):
+    course = SimpleCourseSerializer(read_only=True)
+    payment = PaymentSerializer(read_only=True)
+    class Meta:
+        model = Enrollment
+        fields = ['id', 'course', 'payment', 'created_at']

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from api.models import CourseContent, Course
-from .course_content_serializer import CourseContentSerializer
+from .course_content_serializer import CourseContentSerializer, SimpleCourseContentSerializer
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -15,6 +15,11 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = '__all__'
 
+class SimpleCourseSerializer(serializers.ModelSerializer):
+    course_content = SimpleCourseContentSerializer(read_only=True)
+    class Meta:
+        model = Course
+        fields = ['id', 'course_content']
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     course_content = CourseContentSerializer(read_only=True)

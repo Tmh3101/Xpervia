@@ -1,6 +1,7 @@
 from django.db import models
 from .course_content_model import CourseContent
 from .chapter_model import Chapter
+from .file_model import File
 
 
 class Lesson(models.Model):
@@ -8,7 +9,7 @@ class Lesson(models.Model):
     content = models.TextField(blank=True, null=True)
     video_id = models.CharField(max_length=50)
     subtitle_vi_id = models.CharField(max_length=50, blank=True, null=True)
-    attachment_id = models.CharField(max_length=50, blank=True, null=True)
+    attachment = models.OneToOneField(File, on_delete=models.SET_NULL, null=True, blank=True, related_name="lesson")
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE, related_name="lessons")
     chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True, related_name="lessons")
     is_visible = models.BooleanField(default=True)

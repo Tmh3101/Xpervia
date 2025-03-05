@@ -1,21 +1,7 @@
-import { SimpleUser } from './user';
-import { Chapter, ChapterDetail } from './chapter';
-import { Lesson, LessonDetail } from './lesson';
-
-interface Category {
-    id: number;
-    name: string;
-    description: string;
-}
-
-interface CourseContent {
-    id: number;
-    teacher: SimpleUser;
-    categories: Category[];
-    title: string;
-    description: string;
-    thumbnail_id: string;
-}
+import {
+    CourseContent,
+    CourseContentWithDetailLessons
+} from './course-content';
 
 export interface Course {
     id: number;
@@ -28,22 +14,12 @@ export interface Course {
     regis_start_date: string;
     regis_end_date: string;
     max_students: number;
-}
-
-interface CourseContentDetail extends CourseContent {
-    chapters: Chapter[];
-    lessons_without_chapter: Lesson[];
-}
-
-interface CourseContentWithDetailLessons extends CourseContent {
-    chapters: ChapterDetail[];
-    lessons_without_chapter: LessonDetail[];
-}    
-
-export interface CourseDetail extends Course {
-    course_content: CourseContentDetail;
-}
+}   
 
 export interface CourseWithDetailLessons extends Course {
     course_content: CourseContentWithDetailLessons;
+}
+
+export interface EnrolledCourse extends Course {
+    progress: number;
 }

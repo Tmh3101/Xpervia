@@ -39,37 +39,37 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
     setServerError("")
 
     if (!data.email) {
-      setServerError("Email is required")
+      setServerError("Email là bắt buộc")
       return
     }
 
     if (!data.firstName) {
-      setServerError("First name is required")
+      setServerError("Tên là bắt buộc")
       return
     }
 
     if (!data.lastName) {
-      setServerError("Last name is required")
+      setServerError("Họ là bắt buộc")
       return
     }
 
     if (!data.dateOfBirth) {
-      setServerError("Date of birth is required")
+      setServerError("Ngày sinh là bắt buộc")
       return
     }
 
     if (!data.password) {
-      setServerError("Password is required")
+      setServerError("Mật khẩu là bắt buộc")
       return
     }
 
     if (data.password.length < 8) {
-      setServerError("Password must be at least 8 characters")
+      setServerError("Mật khẩu phải chứa ít nhất 8 ký tự")
       return
     }
 
     if (data.password !== data.confirmPassword) {
-      setServerError("Passwords do not match")
+      setServerError("Mật khẩu không khớp")
       return
     }
 
@@ -99,7 +99,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
         <div>
           <Input
             type="email"
-            placeholder="Email Address"
+            placeholder="Địa chỉ email"
             className={`rounded-xl py-5`}
             {...register("email")}
           />
@@ -109,7 +109,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
           <div className="w-1/2">
             <Input
               type="text"
-              placeholder="First Name"
+              placeholder="Tên"
               className={`rounded-xl py-5`}
               {...register("firstName")}
             />
@@ -117,7 +117,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
           <div className="w-1/2">
             <Input
               type="text"
-              placeholder="Last Name"
+              placeholder="Họ"
               className={`rounded-xl py-5`}
               {...register("lastName")}
             />
@@ -127,8 +127,8 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
         <div>
           <Input
             type="date"
-            placeholder="Select Date"
-            className="rounded-xl py-5"
+            placeholder="Ngày sinh"
+            className="rounded-xl py-5 text-gray-500"
             {...register("dateOfBirth")}
           />
         </div>
@@ -136,7 +136,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
         <div>
           <Input
             type="password"
-            placeholder="Password"
+            placeholder="Mật khẩu"
             className={`rounded-xl py-5`}
             {...register("password")}
           />
@@ -145,22 +145,22 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
         <div>
           <Input
             type="password"
-            placeholder="Confirm Password"
+            placeholder="Nhập lại mật khẩu"
             className={`rounded-xl py-4`}
             {...register("confirmPassword")}
           />
         </div>
 
         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 rounded-xl py-4 text-base">
-          Sign Up
+          Đăng ký
         </Button>
       </form>
 
       <div className="text-center mt-2">
         <p className="text-sm text-gray-600">
-          Already have an account?{" "}
+          Bạn đã có tài khoản?{" "}
           <Button variant="link" className="text-primary p-0" onClick={onLoginClick}>
-            Login
+            Đăng nhập ngay
           </Button>
         </p>
       </div>

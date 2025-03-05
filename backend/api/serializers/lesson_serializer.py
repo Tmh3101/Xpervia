@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from api.models import Lesson, CourseContent, Chapter
+from api.models import Lesson, CourseContent, Chapter, File
 from .course_content_serializer import SimpleCourseContentSerializer
 from .chapter_serializer import SimpleChapterSerializer
+from .file_serializer import FileSerializer
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -20,6 +21,13 @@ class LessonSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    attachment = FileSerializer(read_only=True)
+    attachment_id = serializers.PrimaryKeyRelatedField(
+        queryset=File.objects.all(),
+        source='attachment',
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = Lesson

@@ -20,11 +20,9 @@ export function PaymentModal({ isOpen, onClose, onSuccess, courseTitle, price }:
 
   const handlePayment = () => {
     setIsProcessing(true)
-    // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false)
       setIsComplete(true)
-      // Simulate a delay before closing the modal
       setTimeout(() => {
         onSuccess()
         onClose()
@@ -37,7 +35,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess, courseTitle, price }:
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl">Complete Your Purchase</DialogTitle>
+          <DialogTitle className="text-center text-xl text-destructive">Thanh toán</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
           {isComplete ? (
@@ -45,16 +43,16 @@ export function PaymentModal({ isOpen, onClose, onSuccess, courseTitle, price }:
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold text-green-600">Payment Successful!</h3>
-              <p className="text-sm text-gray-500 text-center mt-2">You have successfully enrolled in the course.</p>
+              <h3 className="text-lg font-semibold text-green-600">Thanh toán thành công!</h3>
+              <p className="text-sm text-gray-500 text-center mt-2">Bạn đã tham gia vào khóa học thành công!</p>
             </div>
           ) : (
             <>
               <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                <h3 className="font-medium mb-2">Order Summary</h3>
+                <h3 className="font-medium mb-2 text-destructive">Chi tiết</h3>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">{courseTitle}</span>
-                  <span className="font-semibold">{price.toLocaleString("vi-VN")}</span>
+                  <span className="font-semibold text-destructive">{price.toLocaleString("vi-VN")}</span>
                 </div>
               </div>
 
@@ -67,18 +65,18 @@ export function PaymentModal({ isOpen, onClose, onSuccess, courseTitle, price }:
                   {isProcessing ? (
                     <div className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                      Processing...
+                      Đang xử lý...
                     </div>
                   ) : (
                     <>
                       <CreditCard className="mr-2 h-4 w-4" />
-                      Pay {price.toLocaleString("vi-VN")}
+                      Thanh toán ngay {price.toLocaleString("vi-VN")}
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-gray-500">
-                  By completing your purchase you agree to our Terms of Service
+                  Thông qua việc hoàn tất giao dịch, bạn đồng ý với điều khoản dịch vụ của chúng tôi
                 </p>
               </div>
             </>

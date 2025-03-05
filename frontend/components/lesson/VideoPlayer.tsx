@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { getGoogleDriveVideoUrl } from "@/lib/google-drive-url"
 
 interface VideoPlayerProps {

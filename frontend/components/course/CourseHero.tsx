@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PaymentModal } from "./PaymentModal"
 import { useRouter } from "next/navigation"
-import { enrollCourseApi, getCourseDetailApi } from "@/lib/api/course-api"
+import { enrollCourseApi } from "@/lib/api/enrollment-api"
 
 interface CourseHeroProps {
   id: number
@@ -96,7 +96,7 @@ export function CourseHero({
                     className="w-[200px] bg-[#1ABC9C] hover:bg-[#1ABC9C]/90 rounded-full"
                     onClick={handleBuyClick}
                   >
-                    Buy Now
+                    Tham gia ngay
                   </Button>
                 </div>
               </div>

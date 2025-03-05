@@ -33,6 +33,7 @@ urlpatterns = [
 
     # Course URLs
     path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),
+    path('courses/teacher/', course_view.CourseListByTeacherAPIView.as_view(), name='course-list-teacher'),
     path('courses/create/', course_view.CourseCreateAPIView.as_view(), name='course-create'),
     path('courses/<int:id>/', course_view.CourseRetrieveAPIView.as_view(), name='course-detail'),
     path('courses/<int:id>/update/', course_view.CourseUpdateAPIView.as_view(), name='course-update'),
@@ -46,7 +47,7 @@ urlpatterns = [
     path('courses/enrollments/<int:id>/', enrollment_view.EnrollmentRetrieveAPIView.as_view(), name='enrollment-detail'),
     # path('courses/enrollments/<int:id>/update/', enrollment_view.EnrollmentUpdateAPIView.as_view(), name='enrollment-update'),
     path('courses/enrollments/<int:id>/delete/', enrollment_view.EnrollmentDeleteAPIView.as_view(), name='enrollment-delete'),
-    path('courses/enrollments/student/', enrollment_view.EnrolledCoursesByStudentAPIView.as_view(), name='enrollment-student-list'),
+    path('courses/enrollments/student/', enrollment_view.EnrollmentListByStudentAPIView.as_view(), name='enrollment-student-list'),
 
     # Chapter URLs
     path('courses/<int:course_id>/chapters/', chapter_view.ChapterListAPIView.as_view(), name='chapter-list'),
@@ -65,7 +66,9 @@ urlpatterns = [
 
     # Lesson Completion URLs
     path('courses/lessons/<int:lesson_id>/completions/', lesson_completion_view.LessonCompletionListAPIView.as_view(), name='lesson-complete-list'),
+    path('courses/<int:course_id>/lessons/completions/student/', lesson_completion_view.LessonCompletionListByStudentAPIView.as_view(), name='lesson-complete-list'),
     path('courses/lessons/<int:lesson_id>/completions/create/', lesson_completion_view.LessonCompletionCreateAPIView.as_view(), name='lesson-complete'),
+    path('courses/lessons/<int:lesson_id>/completions/delete/', lesson_completion_view.LessonCompletionDeleteAPIView.as_view(), name='lesson-complete-delete'),
 
     # Assignment URLs
     path('courses/lessons/<int:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),

@@ -1,21 +1,31 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Course } from "@/lib/types/course"
-import { CourseCard } from "@/components/CourseCard"
-import { getEnrolledCoursesApi } from "@/lib/api/course-api"
+import { EnrolledCourse } from "@/lib/types/course"
+import { CourseCard } from "@/components/course/CourseCard"
+import { getCoursesApi } from "@/lib/api/course-api"
+import { getEnrollmentsApi } from "@/lib/api/enrollment-api"
 
 export default function MyCourses() {
 
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        const courses = await getEnrolledCoursesApi();
-        console.log("Enrolled courses", courses);
-        setEnrolledCourses(courses);
+        const courses = await getCoursesApi();
+        const enrollments = await getEnrollmentsApi();
+        const enrolledCourseIds = enrollments.map((enrollment) => enrollment.course.id);
+        const coursesData = courses.filter((course) => enrolledCourseIds.includes(course.id));
+        const enrolledCoursesData : EnrolledCourse[] = coursesData.map((course) => {
+          const enrollment = enrollments.find((enrollment) => enrollment.course.id === course.id);
+          return {
+            ...course,
+            progress: enrollment?.progress || 0
+          };
+        });
+        setEnrolledCourses(enrolledCoursesData);
       } catch (error) {
         console.error("Failed to fetch enrolled courses", error);
       } finally {
@@ -40,7 +50,12 @@ export default function MyCourses() {
         {enrolledCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {enrolledCourses.map((course) => (
-              <CourseCard key={course.id} {...course} mode="enrolled" />
+              <CourseCard
+                key={course.id}
+                {...course}
+                mode="enrolled"
+                progress={course.progress}
+              />
             ))}
           </div>
         ) : (

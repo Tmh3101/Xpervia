@@ -1,4 +1,5 @@
 import os
+from api.models import File
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.service_account import Credentials
@@ -27,7 +28,7 @@ def upload_file_to_drive(file_path, file_name):
     media = MediaFileUpload(file_path, resumable=True)
 
     file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
-    return file.get("id")
+    return {'file_id': file.get("id"), 'file_name': file_name}
 
 def delete_file_from_drive(file_id):
     """Xóa file trên Google Drive"""
@@ -46,7 +47,7 @@ def upload_file(file):
                 destination.write(chunk)
 
         # Upload the file to Google Drive
-        file_id = upload_file_to_drive(file_path, file.name)
+        file = upload_file_to_drive(file_path, file.name)
     except Exception as e:
         raise Exception(f"Error uploading file: {str(e)}")
     finally:
@@ -56,11 +57,13 @@ def upload_file(file):
                 os.remove(file_path)
             except PermissionError as e:
                 print(f"Error deleting file: {str(e)}")
-    return file_id
+    return file
 
 # Delete file method for calling
 def delete_file(file_id):
     try:
-        delete_file_from_drive(file_id)
+        file = File.objects.get(id=file_id)
+        delete_file_from_drive(file.file_id)
+        file.delete()
     except Exception as e:
         raise Exception(f"Error deleting file: {str(e)}")

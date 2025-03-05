@@ -3,37 +3,34 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
 import { getGoogleDriveDownloadFileUrl, getGoogleDriveFileUrl } from "@/lib/google-drive-url"
+import { File } from "@/lib/types/file"
 
 
 interface LessonAttachmentsProps {
-  attachments: string[]
+  attachment: File
 }
 
-export function LessonAttachments({ attachments }: LessonAttachmentsProps) {
-  const [selectedAttachment, setSelectedAttachment] = useState<string | null>(null)
+export function LessonAttachment({ attachment }: LessonAttachmentsProps) {
+  const [selectedAttachment, setSelectedAttachment] = useState<File | null>(null)
 
   const handleDownload = () => {
     if (selectedAttachment) {
-      window.open(getGoogleDriveDownloadFileUrl(selectedAttachment), "_blank")
+      window.open(getGoogleDriveDownloadFileUrl(selectedAttachment.file_id), "_blank")
     }
   }
 
-  if (!attachments?.length) return null
-
   return (
     <div className="mt-4 bg-white rounded-xl px-6 py-4 border">
-      <h3 className="text-lg text-destructive font-semibold mb-3">Lesson Resources</h3>
+      <h3 className="text-lg text-destructive font-semibold mb-3">Đính kèm</h3>
       <div className="flex flex-wrap gap-3">
-        {attachments.map((attachment, index) => (
-          <Button
-            key={index}
-            variant="outline"
-            className="flex items-center gap-2 bg-primary text-white hover:bg-secondary hover:text-white"
-            onClick={() => setSelectedAttachment(attachment)}
-          >
-            <FileText className="w-4 h-4" />
-          </Button>
-        ))}
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 bg-primary text-white hover:bg-secondary hover:text-white"
+          onClick={() => setSelectedAttachment(attachment)}
+        >
+          <FileText className="w-4 h-4" />
+          <p className="text-sm font-medium">{attachment.file_name}</p>
+        </Button>
       </div>
 
       <Dialog open={!!selectedAttachment} onOpenChange={() => setSelectedAttachment(null)}>
@@ -56,7 +53,7 @@ export function LessonAttachments({ attachments }: LessonAttachmentsProps) {
           <div className="flex-1 w-full min-h-0 -mt-[220px] h-auto">
             {selectedAttachment && (
               <iframe
-                src={getGoogleDriveFileUrl(selectedAttachment)}
+                src={getGoogleDriveFileUrl(selectedAttachment.file_id)}
                 className="w-full h-full rounded-md"
                 allow="autoplay"
               />

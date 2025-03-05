@@ -31,12 +31,12 @@ export function LoginForm({ onSignUpClick, onClose }: LoginFormProps) {
     setServerError("")
 
     if (!data.email) {
-      setServerError("Email is required")
+      setServerError("Email là bắt buộc")
       return
     }
 
     if (!data.password) {
-      setServerError("Password is required")
+      setServerError("Mật khẩu là bắt buộc")
       return
     }
 
@@ -59,7 +59,7 @@ export function LoginForm({ onSignUpClick, onClose }: LoginFormProps) {
         <div>
           <Input
             type="email"
-            placeholder="Email Address"
+            placeholder="Địa chỉ email"
             className={`rounded-xl py-5`}
             {...register("email")}
           />
@@ -67,21 +67,21 @@ export function LoginForm({ onSignUpClick, onClose }: LoginFormProps) {
         <div>
           <Input
             type="password"
-            placeholder="Password"
+            placeholder="Mật khẩu"
             className={`rounded-xl py-5`}
             {...register("password")}
           />
         </div>
         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 rounded-xl py-4 text-base">
-          Login
+          Đăng nhập
         </Button>
       </form>
 
       <div className="text-center mt-2">
         <p className="text-sm text-gray-600">
-          Need an Account?{" "}
+          Bạn chưa có tài khoản?{" "}
           <Button variant="link" className="text-primary p-0" onClick={onSignUpClick}>
-            Sign Up
+            Đăng ký ngay
           </Button>
         </p>
       </div>

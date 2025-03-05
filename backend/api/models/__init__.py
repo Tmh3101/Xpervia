@@ -10,3 +10,4 @@ from .payment_model import Payment
 from .submission_model import Submission
 from .submission_score_model import SubmissionScore
 from .user_model import User
+from .file_model import File

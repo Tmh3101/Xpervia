@@ -13,7 +13,6 @@ class CourseContentSerializer(serializers.ModelSerializer):
     )
     categories = CategorySerializer(many=True, read_only=True)
 
-
     class Meta:
         model = CourseContent
         fields = '__all__'

@@ -3,10 +3,11 @@ from .category_serializer import CategorySerializer
 from .chapter_serializer import ChapterSerializer, SimpleChapterSerializer
 from .course_serializer import CourseDetailSerializer, CourseSerializer
 from .course_content_serializer import CourseContentSerializer, SimpleCourseContentSerializer
-from .enrollment_serializer import EnrollmentSerializer
+from .enrollment_serializer import EnrollmentSerializer, SimpleEnrollmentSerializer
 from .lesson_completion_serializer import LessonCompletionSerializer
 from .lesson_serializer import LessonSerializer, SimpleLessonSerializer
 from .payment_serializer import PaymentSerializer
 from .submission_score_serializer import SubmissionScoreSerializer
 from .submission_serializer import SubmissionSerializer, SimpleSubmissionSerializer
 from .user_serializer import UserSerializer, SimpleUserSerializer, UserUpdateSerializer, UserUpdatePasswordSerializer, UserRegisterSerializer
+from .file_serializer import FileSerializer

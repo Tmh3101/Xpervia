@@ -8,6 +8,7 @@ import { usePathname, redirect } from "next/navigation"
 import { useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { Inter } from 'next/font/google';
+import logo from '@/public/logo-vuong.png'
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -43,6 +44,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
           <title>Xpervia</title>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" href={logo.src} />
       </head>
       <body className={inter.className}>
           <AuthProvider>

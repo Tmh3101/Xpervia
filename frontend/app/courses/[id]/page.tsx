@@ -1,44 +1,45 @@
 "use client"
 
 import { CourseHero } from "@/components/course/CourseHero"
-import { Badge } from "@/components/ui/badge"
 import { Description } from "@/components/Description"
 import { LessonCurriculum } from "@/components/lesson/LessonCurriculum"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
-import { CourseDetail } from "@/lib/types/course"
+import { Course } from "@/lib/types/course"
 import { getCourseDetailApi } from "@/lib/api/course-api"
-import { getCategoryColor } from "@/lib/category-color"
+import { Chapter } from "@/lib/types/chapter"
+import { CourseCategories } from "@/components/course/CourseCategories"
 
 export default function CourseDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const [courseDetailData, setCourseDetailData] = useState<CourseDetail>()
-  const [firstLessonId, setFirstLessonId] = useState(1)
+  const [courseDetailData, setCourseDetailData] = useState<Course>()
+  const [firstLessonId, setFirstLessonId] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
       if (params.id) {
-        const courseId = parseInt(params.id[0], 10)
-        const courseDetail = await getCourseDetailApi(courseId)
-        setCourseDetailData(courseDetail)
+        const courseId = parseInt(params.id[0], 10);
+        const courseDetail = await getCourseDetailApi(courseId);
+        setCourseDetailData(courseDetail);
         const lessons = courseDetail.course_content.chapters
-          .flatMap((chapter) => chapter.lessons)
-          .concat(courseDetail.course_content.lessons_without_chapter)
-        setFirstLessonId(lessons[0].id)
+          .flatMap((chapter: Chapter) => chapter.lessons)
+          .concat(courseDetail.course_content.lessons_without_chapter);
+        setFirstLessonId(lessons[0]?.id || null);
       }
-    }
+    };
 
-    fetchCourseDetail()
-  }, [params.id, user?.id])
+    fetchCourseDetail();
+  }, [params.id]);
 
   if (!courseDetailData) {
     return <div>Loading...</div>
   }
 
   const handleEnrollSuccess = () => {
+    console.log("Enroll success")
     if (user?.role === "student") {
       router.push(`/student/lessons/${courseDetailData.id}/${firstLessonId}`)
     }
@@ -62,21 +63,10 @@ export default function CourseDetailPage() {
         <div className="container mx-auto px-4 pt-4 pb-12">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                  <div className="mb-4">
-                    {courseConent.categories.map(c => c.name).map((category, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className={`
-                          bg-${getCategoryColor(category)} text-xs text-white
-                          hover:bg-white hover:text-${getCategoryColor(category)}
-                        `}
-                      >
-                        {category}
-                      </Badge>
-                    ))}
+                  <div className="mb-4 flex flex-wrap gap-1">
+                    <CourseCategories categories={courseDetailData.course_content.categories.map(c => c.name)} />
                   </div>
-                  <Description title={'Course About'} description={courseConent.description} />
+                  <Description title={'Thông tin khóa học'} description={courseConent.description} />
                 </div>
                 <div className="lg:col-span-1">
                     <LessonCurriculum
@@ -85,6 +75,7 @@ export default function CourseDetailPage() {
                       lessonsWithoutChapter={courseConent.lessons_without_chapter}
                       currentLessonId={null}
                       status="notEnrolled"
+                      completedLessonIds={null}
                       onLessonSelect={() => {}}
                     />
                 </div>

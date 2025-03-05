@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.exceptions.custom_exceptions import FileUploadException
 from api.models import CourseContent, Chapter, Lesson, Course
-from api.serializers import LessonSerializer
+from api.serializers import LessonSerializer, FileSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
 
@@ -82,30 +82,39 @@ class LessonCreateAPIView(generics.CreateAPIView):
 
         # Upload the video, subtitle, and attachment to Google Drive
         file_id_list = []
-        for file in ['video', 'subtitle', 'attachment']:
-            if request.FILES.get(file):
+        for file_type in ['video', 'subtitle_vi']:
+            if request.FILES.get(file_type):
                 try:
-                    file_id = upload_file(request.FILES.get(file))
+                    file = upload_file(request.FILES.get(file_type))
                 except Exception as e:
                     for file_id in file_id_list:
                         delete_file(file_id)
                     raise FileUploadException(f'Error uploading {file}: {str(e)}')
+                file_id = file.get('file_id')
+                request.data[f'{file_type}_id'] = file_id
                 file_id_list.append(file_id)
-                request.data[f'{file}_id'] = file_id
 
+        if request.FILES.get('attachment'):
+            try:
+                file = upload_file(request.FILES.get('attachment'))
+                file_serializer = FileSerializer(data=file)
+                if not file_serializer.is_valid():
+                    raise FileUploadException(f'Error uploading {file}: {file_serializer.errors}')
+                attachment = file_serializer.save()
+            except Exception as e:
+                for file_id in file_id_list:
+                    delete_file(file_id)
+                raise FileUploadException(f'Error uploading {file}: {str(e)}')
+            file_id_list.append(file_id)
+            request.data['attachment_id'] = attachment.id
+    
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             for file_id in file_id_list:
                 delete_file(file_id)
             raise ValidationError(f'Error creating lesson: {serializer.errors}')
         
-        try:
-            self.perform_create(serializer)
-        except Http404 as e:
-            for file_id in file_id_list:
-                delete_file(file_id)
-            raise ValidationError(f'Error creating lesson: {str(e)}')
-        
+        self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response({
             'success': True,
@@ -151,27 +160,43 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
             raise NotFound('Lesson not found')
 
         # Upload the video, subtitle, and attachment to Google Drive
-        files = ['video', 'subtitle', 'attachment']
         file_id_list = []
         old_file_ids = []
-        for file in files:
-            if request.FILES.get(file):
+        
+        for file_type in ['video', 'subtitle_vi']:
+            if request.FILES.get(file_type):
                 try:
-                    file_id = upload_file(request.FILES.get(file))
-                    request.data[f'{file}_id'] = file_id
-                    file_id_list.append(file_id)
-                    old_file_ids.append(getattr(instance, f'{file}_id'))
+                    file = upload_file(request.FILES.get(file_type))
                 except Exception as e:
-                    for file_id in file_id_list:  
-                        delete_file(file_id) 
+                    for file_id in file_id_list:
+                        delete_file(file_id)
                     raise FileUploadException(f'Error uploading {file}: {str(e)}')
+                file_id = file.get('file_id')
+                request.data[f'{file_type}_id'] = file_id
+                file_id_list.append(file_id)
+                old_file_ids.append(getattr(instance, f'{file_type}_id'))
+            
+        if request.FILES.get('attachment'):
+            try:
+                file = upload_file(request.FILES.get(file_type))
+                file_serializer = FileSerializer(data=file)
+                if not file_serializer.is_valid():
+                    raise FileUploadException(f'Error uploading {file}: {file_serializer.errors}')
+                attachment = file_serializer.save()
+            except Exception as e:
+                for file_id in file_id_list:  
+                    delete_file(file_id) 
+                raise FileUploadException(f'Error uploading {file}: {str(e)}')
+            request.data['attachment_id'] = attachment.id
+            file_id_list.append(file_id)
+            old_file_ids.append(getattr(instance, 'attachment_id'))
  
-    
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
             for file_id in file_id_list:
                 delete_file(file_id)
             raise ValidationError(f'Error updating lesson: {serializer.errors} ===> {instance}')
+        
         self.perform_update(serializer)
 
         # Delete the old video, subtitle, and attachment from Google Drive

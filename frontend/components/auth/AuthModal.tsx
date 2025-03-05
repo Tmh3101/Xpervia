@@ -23,7 +23,7 @@ export function AuthModal({ isOpen, onClose, defaultView = "login" }: AuthModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogTitle className="hidden"></DialogTitle>
         <Button
           variant="ghost"

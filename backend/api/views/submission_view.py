@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
 from api.models import Assignment, Submission
-from api.serializers import SubmissionSerializer
+from api.serializers import SubmissionSerializer, FileSerializer
 from api.permissions import IsSubmissionOwner, IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
 
@@ -48,16 +48,28 @@ class SubmissionCreateAPIView(generics.CreateAPIView):
         request.data['student_id'] = request.user.id
 
         try:
-            request.data['file_id'] = upload_file(request.FILES.get('file'))
+            file = upload_file(request.FILES.get('file'))
+            file_serializer = FileSerializer(data=file)
+            if not file_serializer.is_valid():
+                raise ValidationError(file_serializer.errors)
+            file = file_serializer.save()
+            request.data['file_id'] = file.id
+            request.data.pop('file')
         except Exception as e:
             raise FileUploadException(f'File upload failed: {str(e)}')
         
         serializer = self.get_serializer(data=request.data)
+
         if not serializer.is_valid():
             delete_file(request.data['file_id'])
             raise ValidationError(serializer.errors)
         
-        self.perform_create(serializer)
+        try:
+            self.perform_create(serializer)
+        except Exception as e:
+            delete_file(request.data['file_id'])
+            raise ValidationError(str(e))
+        
         return Response({
             'success': True,
             'message': 'Submission has been created successfully',
@@ -103,7 +115,13 @@ class SubmissionUpdateAPIView(generics.RetrieveUpdateAPIView):
 
         old_file_id = instance.file_id
         try:
-            request.data['file_id'] = upload_file(request.FILES.get('file'))
+            file = upload_file(request.FILES.get('file'))
+            file_serializer = FileSerializer(data=file)
+            if not file_serializer.is_valid():
+                raise ValidationError(file_serializer.errors)
+            file = file_serializer.save()
+            request.data['file_id'] = file.id
+            request.data.pop('file')
         except Exception as e:
             raise FileUploadException(f'File upload failed: {str(e)}')
 
@@ -136,10 +154,10 @@ class SubmissionDeleteAPIView(generics.DestroyAPIView):
             raise NotFound('Submission does not exist')
         
         self.perform_destroy(instance)
-        delete_file(instance.file_id)
+        delete_file(instance.file.id)
         return Response({
             'success': True,
-            'message': 'Submission has been deleted successfully'
+            'message': 'Submission has been deleted successfully',
         }, status=status.HTTP_204_NO_CONTENT)
     
 

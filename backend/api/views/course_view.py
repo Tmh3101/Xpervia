@@ -6,9 +6,14 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Lesson
+from api.models import Course, Chapter, Lesson, LessonCompletion
 from api.serializers import (
-    CourseSerializer, CourseContentSerializer, ChapterSerializer, SimpleLessonSerializer, LessonSerializer
+    CourseSerializer,
+    CourseContentSerializer,
+    ChapterSerializer,
+    SimpleChapterSerializer,
+    SimpleLessonSerializer,
+    LessonSerializer
 )
 from api.permissions import IsTeacher, IsCourseOwner
 from api.services.google_drive_service import upload_file, delete_file    
@@ -59,8 +64,31 @@ def delete_course_content(course_content_id):
         delete_file(course_content.thumbnail_id)
         course_content.delete()
 
+def get_course_content_lessons(course_content):
+    chapters = course_content.chapters.all()
+    chapters_data = []
+    for chapter in chapters:
+        chapter_serializer = ChapterSerializer(chapter)
+        chapter_data = chapter_serializer.data.copy()
+        lessons = Lesson.objects.filter(chapter=chapter)
+        lessons_data = SimpleLessonSerializer(lessons, many=True).data.copy()
+        for lesson in lessons_data:
+            lesson.pop('chapter', None)
+            lesson.pop('course_content', None)
+        chapter_data['lessons'] = lessons_data
+        chapter_data.pop('course_content')
+        chapters_data.append(chapter_data)
 
-# Course Detail API to list all course details
+    lessons_without_chapter = Lesson.objects.filter(course_content=course_content, chapter__isnull=True)
+    lessons_without_chapter_data = SimpleLessonSerializer(lessons_without_chapter, many=True).data.copy()
+    for lesson in lessons_without_chapter_data:
+        lesson.pop('chapter', None)
+        lesson.pop('course_content', None)
+
+    return chapters_data, lessons_without_chapter_data
+
+
+# Course Detail API to list all course
 class CourseListAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -68,7 +96,32 @@ class CourseListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset().filter(is_visible=True)      
+        queryset = self.get_queryset().filter(is_visible=True)
+        courses_data = CourseSerializer(queryset, many=True).data.copy()
+
+        for course in courses_data:
+            course_content = Course.objects.get(id=course['id']).course_content
+            course_content_data = CourseContentSerializer(course_content).data.copy()
+            chapters_data, lessons_without_chapter = get_course_content_lessons(course_content)
+            course_content_data['chapters'] = chapters_data
+            course_content_data['lessons_without_chapter'] = lessons_without_chapter
+            course['course_content'] = course_content_data
+        
+        return Response({
+            'success': True,
+            'message': 'All courses have been listed successfully',
+            'courses': courses_data
+        }, status=status.HTTP_200_OK)
+    
+# Course Detail API to list all course of a teacher
+class CourseListByTeacherAPIView(generics.ListAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTeacher]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset().filter(course_content__teacher=request.user)
         serializer = CourseSerializer(queryset, many=True)
         return Response({
             'success': True,
@@ -138,35 +191,14 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
         except Http404 as e:
             raise NotFound('Course not found')
         
-        # Get all chapters and lessons of the course
-        chapters = instance.course_content.chapters.all()
-        chapters_data = []
-        for chapter in chapters:
-            chapter_data = ChapterSerializer(chapter).data
-            lessons = Lesson.objects.filter(chapter=chapter)
-            lessons_serializer = SimpleLessonSerializer(lessons, many=True)
-            for lesson in lessons_serializer.data:
-                lesson.pop('chapter', None)
-                lesson.pop('course_content', None)
-            chapter_data['lessons'] = lessons_serializer.data
-            chapter_data.pop('course_content')
-            chapters_data.append(chapter_data)
+        course_content = instance.course_content
+        course_content_data = CourseContentSerializer(course_content).data.copy()
+        chapters_data, lessons_without_chapter_data = get_course_content_lessons(course_content)
+        course_content_data['chapters'] = chapters_data
+        course_content_data['lessons_without_chapter'] = lessons_without_chapter_data
 
-        # Get all lessons without chapter
-        lessons_without_chapter = Lesson.objects.filter(course_content=instance.course_content, chapter__isnull=True)
-        lessons_without_chapter_serializer = SimpleLessonSerializer(lessons_without_chapter, many=True)
-        for lesson in lessons_without_chapter_serializer.data:
-            lesson.pop('chapter', None)
-            lesson.pop('course_content', None)
-
-        serializer = self.get_serializer(instance)
-        course_data = serializer.data.copy()
-        course_content = course_data['course_content']
-
-        # Add chapters and lessons to the course data
-        course_content['chapters'] = chapters_data
-        course_content['lessons_without_chapter'] = lessons_without_chapter_serializer.data
-        course_data['course_content'] = course_content
+        course_data = self.get_serializer(instance).data.copy()
+        course_data['course_content'] = course_content_data
 
         return Response({
             'success': True,

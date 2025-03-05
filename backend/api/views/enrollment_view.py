@@ -2,13 +2,20 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
+from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import Existed
-from api.models import Enrollment, Course
+from api.models import Enrollment, Course, LessonCompletion, CourseContent
 from api.serializers import (
-    EnrollmentSerializer, PaymentSerializer, CourseSerializer
+    EnrollmentSerializer, PaymentSerializer, SimpleEnrollmentSerializer, CourseContentSerializer
 )
 from api.permissions import IsAdmin, IsCourseOwner, IsStudent
+
+def get_course_progress(course_content, student):
+    total_lessons = course_content.lessons.count()
+    completed_lessons = LessonCompletion.objects.filter(
+        lesson__course_content=course_content, student=student
+    ).count()
+    return round(completed_lessons / total_lessons * 100, 2) if total_lessons > 0 else 0
 
 
 # Enrollment API to list all enrollments
@@ -50,22 +57,26 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
 # Enrollment API to list all courses a student has enrolled in
-class EnrolledCoursesByStudentAPIView(generics.ListAPIView):
-    serializer_class = CourseSerializer
+class EnrollmentListByStudentAPIView(generics.ListAPIView):
+    queryset = Enrollment.objects.all()
+    serializer_class = SimpleEnrollmentSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        student = self.request.user
-        return Course.objects.filter(enrollments__student=student, is_visible=True)
-
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = CourseSerializer(queryset, many=True)
+        queryset = self.get_queryset().filter(student=request.user)
+        enrollments = SimpleEnrollmentSerializer(queryset, many=True).data.copy()
+
+        for enrollment in enrollments:
+            course = enrollment['course']
+            course_conent_id = course['course_content']['id']
+            course_content = CourseContent.objects.filter(id=course_conent_id).first()
+            enrollment['progress'] = get_course_progress(course_content, request.user)
+
         return Response({
             'success': True,
             'message': 'All enrolled courses have been listed successfully',
-            'courses': serializer.data
+            'enrollments': enrollments
         }, status=status.HTTP_200_OK)
 
     

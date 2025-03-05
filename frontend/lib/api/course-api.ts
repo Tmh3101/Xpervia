@@ -1,28 +1,19 @@
 import axios from 'axios'
-import { Course, CourseDetail, CourseWithDetailLessons } from '@/lib/types/course'
-import { Assignment } from '@/lib/types/assignment'
+import { Course, CourseWithDetailLessons } from '@/lib/types/course'
+import { Response } from '@/lib/api/response'
 
 const baseUrl = 'http://localhost:8000/api/'
-
-interface Response {
-    success: boolean;
-    message: string;
-}
 
 interface CoursesResponse extends Response {
     courses: Course[];
 }
 
-interface CourseDetailResponse extends Response {
-    course: CourseDetail;
+interface CourseResponse extends Response {
+    course: Course;
 }
 
 interface CourseWithDetailLessonsResponse extends Response {
     course: CourseWithDetailLessons;
-}
-
-interface AssignmentResponse extends Response {
-    assignments: Assignment[];
 }
 
 export const getCoursesApi = async () : Promise<Course[]> => {
@@ -32,11 +23,22 @@ export const getCoursesApi = async () : Promise<Course[]> => {
     return response.data.courses
 }
 
-export const getCourseDetailApi = async (id: number) : Promise<CourseDetail> => {
-    const response = await axios.get<CourseDetailResponse>(
+export const getCourseDetailApi = async (id: number) : Promise<Course> => {
+    const response = await axios.get<CourseResponse>(
         `${baseUrl}courses/${id}/`
     )
     return response.data.course
+}
+
+export const getCourseByTeacherApi = async () : Promise<Course[]> => {
+    const headers = {
+        'Authorization': `Token ${sessionStorage.getItem("token")}`
+    }
+    const response = await axios.get<CoursesResponse>(
+        `${baseUrl}courses/teacher/`,
+        { headers }
+    )
+    return response.data.courses
 }
 
 export const getCourseWithDetailLessonsApi = async (id: number) : Promise<CourseWithDetailLessons> => {
@@ -48,38 +50,4 @@ export const getCourseWithDetailLessonsApi = async (id: number) : Promise<Course
         { headers }
     )
     return response.data.course
-}
-
-export const getEnrolledCoursesApi = async () : Promise<Course[]> => {
-    const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
-    }
-    const response = await axios.get<CoursesResponse>(
-        `${baseUrl}courses/enrollments/student/`,
-        { headers } )
-    return response.data.courses
-}
-
-export const enrollCourseApi = async (courseId: number) : Promise<boolean> => {
-    console.log('token', sessionStorage.getItem("token"))
-    const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
-    }
-    const response = await axios.post(
-        `${baseUrl}courses/${courseId}/enrollments/create/`,
-        {},
-        { headers }
-    )
-    return response.data.success
-}
-
-export const getLessonAssignmentsApi = async (lessonId: number) : Promise<Assignment[]> => {
-    const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
-    }
-    const response = await axios.get<AssignmentResponse>(
-        `${baseUrl}courses/lessons/${lessonId}/assignments/`,
-        { headers }
-    )
-    return response.data.assignments
 }

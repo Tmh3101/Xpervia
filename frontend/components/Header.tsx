@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
@@ -17,6 +18,7 @@ export function Header() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authView, setAuthView] = useState<"login" | "signup">("login")
   const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,21 +50,22 @@ export function Header() {
           <div className="flex items-center space-x-6">
             {user ? (
               <>
-                <Link
-                  href="/student/my-courses"
+                <Button
+                  variant="ghost"
                   className={`font-medium ${
                     isScrolled || pathname !== "/"
                       ? isActive("/student/my-courses")
                         ? "text-primary"
                         : "text-gray-800 hover:text-primary"
-                      : "text-white hover:text-white/90"
+                      : "text-white hover:text-destructive"
                   }`}
+                  onClick={() => router.push("/student/my-courses")}
                 >
-                  My Courses
-                </Link>
-                <Button variant="ghost" className={isScrolled || pathname !== "/" ? "text-gray-800" : "text-white"}>
-                  Become Instructor
+                  Khóa học của tôi
                 </Button>
+                {/* <Button variant="ghost" className={isScrolled || pathname !== "/" ? "text-gray-800" : "text-white"}>
+                  Become Instructor
+                </Button> */}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -90,7 +93,7 @@ export function Header() {
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       onClick={logout}
                     >
-                      Logout
+                      Đăng xuất
                     </Button>
                   </div>
                 </div>
@@ -104,13 +107,13 @@ export function Header() {
                   }`}
                   onClick={() => handleAuthClick("login")}
                 >
-                  Login
+                  Đăng nhập
                 </Button>
                 <Button
                   className="bg-primary hover:bg-primary/90 rounded-full"
                   onClick={() => handleAuthClick("signup")}
                 >
-                  Sign Up
+                  Đăng ký
                 </Button>
               </>
             )}

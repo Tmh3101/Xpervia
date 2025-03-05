@@ -11,7 +11,6 @@ class ChapterSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-
     class Meta:
         model = Chapter
         fields = '__all__'

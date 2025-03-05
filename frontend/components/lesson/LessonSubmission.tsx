@@ -5,95 +5,77 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Upload, X, FileText } from "lucide-react"
+import { Upload, X, FileText, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format, set } from "date-fns"
-import { Submission } from "@/lib/types/assignment"
 import { getGoogleDriveDownloadFileUrl } from "@/lib/google-drive-url"
+import { submitAssignmentApi, deleteSubmissionApi } from "@/lib/api/submission-api"
+import { Submission } from "@/lib/types/submission"
 
 interface SubmissionData {
+  assignmentId: number
   submission: Submission | null
 }
 
-export function LessonSubmission({ submission }: SubmissionData) {
-  const [fileId, setFileId] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
+export function LessonSubmission({ assignmentId, submission }: SubmissionData) {
+  const [file, setFile] = useState<File | null>(null)
+  const [submissionData, setSubmissionData] = useState<Submission | null>(submission || null)
 
   useEffect(() => {
-    if (submission){
-      setFileId(submission.file_id)
-    } else {
-      setFileId(null)
+    setSubmissionData(submission)
+  }, [submission, file])
+
+  const handleSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      setFile(selectedFile)
+
+      if (!submissionData) {
+        try {
+          const response = await submitAssignmentApi(assignmentId, selectedFile)
+          setSubmissionData(response)
+        } catch (error) {
+          console.error("Failed to submit assignment", error)
+        }
+      }
     }
-  }, [fileId])
+  }
 
   const handleDelete = () => {
-    console.log("Delete file", fileId)
-    setFileId(null)
+    if (submissionData) {
+      deleteSubmissionApi(submissionData.id)
+      setSubmissionData(null)
+      setFile(null)
+    }
   }
 
   const handleDownload = () => {
-    if (fileId) {
-      window.open(getGoogleDriveDownloadFileUrl(fileId), "_blank")
+    if (submissionData) {
+      window.open(getGoogleDriveDownloadFileUrl(submissionData.file.file_id), "_blank")
     }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // const selectedFile = e.target.files?.[0]
-    // if (selectedFile) {
-    //   setFileId(selectedFile)
-    //   //onSubmit?.(selectedFile)
-    // }
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    // e.preventDefault()
-    // setIsDragging(false)
-    // const droppedFile = e.dataTransfer.files[0]
-    // if (droppedFile) {
-    //   setFileId(droppedFile)
-    //   //onSubmit?.(droppedFile)
-    // }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    // e.preventDefault()
-    // setIsDragging(true)
-  }
-
-  const handleDragLeave = () => {
-    // setIsDragging(false)
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
   }
 
   return (
     <div className="mt-2">
-      <h3 className="text-lg font-semibold mb-4">Assignment Submission</h3>
-      {submission ? (
+      <h3 className="text-lg font-semibold mb-4">Bài nộp của học viên</h3>
+      {submissionData ? (
         <div className="space-y-4">
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
             <FileText className="w-4 h-4 text-primary" />
             <div className="flex-1">
-              {/* <p className="text-sm font-medium">{submission.file_id}</p> */}
+              <p className="text-sm font-medium">{submissionData.file.file_name}</p>
               <p className="text-xs text-muted-foreground">
-                Submitted on {format(new Date(submission.created_at), "MMM d, yyyy 'at' h:mm a")}
+                Submitted on {format(new Date(submissionData.created_at), "MMM d, yyyy 'at' h:mm a")}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="ghost"
+                variant="ghost" 
                 size="sm"
                 className="bg-primary text-white hover:bg-secondary hover:text-white"
                 onClick={handleDownload}
               >
-                Download
+                <Download className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -105,52 +87,22 @@ export function LessonSubmission({ submission }: SubmissionData) {
               </Button>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="w-full justify-center border border-primary text-primary hover:text-destructive hover:border-destructive"
-              onClick={() => document.getElementById("file-upload")?.click()}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Change Submission
-            </Button>
-          </div>
         </div>
       ) : (
-        <>
-          <div
-            className={cn(
-              "border-2 border-dashed rounded-lg p-8 transition-colors",
-              isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25",
-            )}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
+        <div className="mt-2 flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="w-full justify-center bg-primary text-white hover:bg-secondary hover:text-white"
+            onClick={() => document.getElementById("file-upload")?.click()}
           >
-            <div className="flex flex-col items-center justify-center gap-2 text-center">
-              <Upload className={cn("h-8 w-8", isDragging ? "text-primary" : "text-muted-foreground/50")} />
-              <p className="text-sm font-medium">Drag and drop your file here, or click to browse</p>
-              <p className="text-xs text-muted-foreground">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
-            </div>
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="w-full justify-center bg-primary text-white"
-              onClick={() => document.getElementById("file-upload")?.click()}
-            >
-            <Upload className="mr-2 h-4 w-4" />
-              Upload Submison File
-            </Button>
-          </div>
-        </>
+          <Upload className="mr-2 h-4 w-4" />
+            Upload Submison File
+          </Button>
+        </div>
       )}
-      <input id="file-upload" type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
+      <input id="file-upload" type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleSubmit} />
     </div>
   )
-
-
 
   // if (submission?.status === "graded") {
   //   return (
