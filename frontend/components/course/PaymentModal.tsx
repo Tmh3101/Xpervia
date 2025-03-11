@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { CreditCard, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
-import Image from "next/image"
 
 interface PaymentModalProps {
   isOpen: boolean

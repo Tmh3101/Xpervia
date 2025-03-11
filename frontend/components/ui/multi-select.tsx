@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Command, CommandGroup, CommandItem } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 
-interface Option {
+export interface Option {
   label: string
   value: string
 }

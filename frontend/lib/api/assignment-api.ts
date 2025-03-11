@@ -12,7 +12,7 @@ export const getLessonAssignmentsApi = async (lessonId: number) : Promise<Assign
         'Authorization': `Token ${sessionStorage.getItem("token")}`
     }
     const response = await axios.get<AssignmentResponse>(
-        `${baseUrl}courses/lessons/${lessonId}/assignments/`,
+        `${baseUrl}courses/lessons/${lessonId}/assignments/student/`,
         { headers }
     )
     return response.data.assignments

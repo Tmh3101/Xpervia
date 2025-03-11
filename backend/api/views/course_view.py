@@ -6,12 +6,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Chapter, Lesson, LessonCompletion
+from api.models import Course, Lesson
 from api.serializers import (
     CourseSerializer,
     CourseContentSerializer,
     ChapterSerializer,
-    SimpleChapterSerializer,
     SimpleLessonSerializer,
     LessonSerializer
 )
@@ -26,6 +25,7 @@ def get_course_content(request):
     if request.FILES.get('thumbnail'):
         try:
             thumbnail_id = upload_file(request.FILES.get('thumbnail'))
+            thumbnail_id = thumbnail_id.get('file_id')
         except Exception as e:
             raise FileUploadException(f'Error uploading thumbnail: {str(e)}')
         course_content['thumbnail_id'] = thumbnail_id
@@ -33,6 +33,7 @@ def get_course_content(request):
         course_content['title'] = request.data.get('title')
     if request.data.get('description'):
         course_content['description'] = request.data.get('description')
+    
 
     return course_content
 
@@ -145,14 +146,16 @@ class CourseCreateAPIView(generics.CreateAPIView):
             delete_file(request.data.get('thumbnail_id'))
             raise ValidationError(f'Error creating course: {course_content_serializer.errors}')
         course_content = course_content_serializer.save()
-
-        categories = request.data.get('categories')
-        if isinstance(categories, str):
-            try:
-                categories = json.loads(categories)
-            except json.JSONDecodeError:
-                categories = categories.split(',')
-        course_content.categories.set(categories)
+        
+        # Set the categories (categories: ['1', '2', '3'])
+        if request.data.get('categories'):
+            categories = request.data.get('categories')
+            if isinstance(categories, str):
+                try:
+                    categories = json.loads(categories)
+                except json.JSONDecodeError:
+                    categories = categories.split(',')
+            course_content.categories.set(categories)
 
         # Check & create the course detail
         course_data = get_course_data(request)
@@ -173,7 +176,7 @@ class CourseCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Course created successfully',
-            'data': course_serializer.data
+            'course': course_serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
 
     

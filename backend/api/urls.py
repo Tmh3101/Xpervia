@@ -72,6 +72,7 @@ urlpatterns = [
 
     # Assignment URLs
     path('courses/lessons/<int:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),
+    path('courses/lessons/<int:lesson_id>/assignments/student/', assignment_view.AssignmentListByStudentAPIView.as_view(), name='assignment-list-student'),
     path('courses/lessons/<int:lesson_id>/assignments/create/', assignment_view.AssignmentCreateAPIView.as_view(), name='assignment-create'),
     path('courses/lessons/assignments/<int:id>/', assignment_view.AssignmentRetrieveAPIView.as_view(), name='assignment-detail'),
     path('courses/lessons/assignments/<int:id>/update/', assignment_view.AssignmentUpdateAPIView.as_view(), name='assignment-update'),

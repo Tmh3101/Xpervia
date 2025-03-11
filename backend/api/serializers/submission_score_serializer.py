@@ -11,7 +11,6 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
         write_only=True
     )
     
-    
     class Meta:
         model = SubmissionScore
         fields = '__all__'

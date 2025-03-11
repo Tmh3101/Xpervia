@@ -22,7 +22,7 @@ class CategoryListAPIView(generics.ListAPIView):
         return Response({
             'success': True,
             'message': 'All categories have been listed successfully',
-            'data': serializer.data
+            'categories': serializer.data
         }, status=status.HTTP_200_OK)
     
 

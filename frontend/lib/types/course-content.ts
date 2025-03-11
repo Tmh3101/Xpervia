@@ -2,7 +2,7 @@ import { SimpleUser } from './user';
 import { Chapter, ChapterDetail } from './chapter';
 import { Lesson, LessonDetail } from './lesson';
 
-interface Category {
+export interface Category {
     id: number;
     name: string;
     description: string;

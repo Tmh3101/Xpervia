@@ -2,8 +2,6 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import coursesData from "@/data/courses.json"
-import courseDetails from "@/data/course-details.json"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Users } from "lucide-react"
 import Image from "next/image"
@@ -13,11 +11,17 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Submission } from "@/lib/types/submission"
+import { CourseWithDetailLessons } from "@/lib/types/course"
+import { Lesson } from "@/lib/types/lesson"
+import { AssignmentDetail } from "@/lib/types/assignment"
+import { getCourseWithDetailLessonsApi } from "@/lib/api/course-api"
+import { CourseCategories } from "@/components/course/CourseCategories"
 
 export default function CourseDetail() {
   const params = useParams()
   const router = useRouter()
-  const [course, setCourse] = useState<any>(null)
+  const [course, setCourse] = useState<CourseWithDetailLessons | null>(null)
+  const [assignmentDetails, setAssignmentDetails] = useState<AssignmentDetail[]>([])
   const [selectedLesson, setSelectedLesson] = useState<{
     title: string
     submissions: Submission[]
@@ -25,22 +29,15 @@ export default function CourseDetail() {
 
   useEffect(() => {
     if (params.id) {
-      // Merge course data with course details
-      const basicInfo = coursesData.courses.find((c) => c.id === Number(params.id))
-      const details = courseDetails.courses.find((c) => c.id === Number(params.id))
-
-      if (basicInfo) {
-        setCourse({
-          ...basicInfo,
-          chapters: details?.chapters || [],
-        })
-      }
+      getCourseWithDetailLessonsApi(parseInt(params.id[0])).then((courseDetail) => {
+        setCourse(courseDetail)
+      })
     }
   }, [params.id])
 
   const handleUpdateSubmission = (submissionId: string, score: number, feedback: string) => {
-    // In a real app, this would make an API call to update the submission
-    console.log("Updating submission:", { submissionId, score, feedback })
+    // // In a real app, this would make an API call to update the submission
+    // console.log("Updating submission:", { submissionId, score, feedback })
   }
 
   if (!course) {
@@ -51,7 +48,7 @@ export default function CourseDetail() {
     <div className="container mx-auto py-8">
       <Button variant="ghost" className="mb-6" onClick={() => router.push("/teacher")}>
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Courses
+        Trở về
       </Button>
 
       <div className="grid gap-6">
@@ -59,24 +56,20 @@ export default function CourseDetail() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-2xl font-bold mb-2">{course.title}</h1>
-              <div className="flex gap-2 mb-4">
-                {course.categories.map((category: string) => (
-                  <Badge key={category} variant="secondary">
-                    {category}
-                  </Badge>
-                ))}
+              <h1 className="text-2xl font-bold mb-2">{course.course_content.title}</h1>
+              <div className="flex items-center gap-2">
+                <CourseCategories categories={course.course_content.categories.map(c => c.name)} />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">{course.students_enrolled} students enrolled</span>
-            </div>
+            </div> */}
           </div>
           <div className="aspect-video relative rounded-lg overflow-hidden mb-4">
             <Image
-              src={getGoogleDriveImageUrl(course.thumnail_id) || "/placeholder.svg"}
-              alt={course.title}
+              src={getGoogleDriveImageUrl(course.course_content.thumbnail_id) || "/placeholder.svg"}
+              alt={course.course_content.title}
               fill
               className="object-cover"
             />
@@ -86,19 +79,19 @@ export default function CourseDetail() {
         {/* Course Content and Submissions */}
         <Tabs defaultValue="content" className="w-full">
           <TabsList>
-            <TabsTrigger value="content">Course Content</TabsTrigger>
-            <TabsTrigger value="submissions">Student Submissions</TabsTrigger>
+            <TabsTrigger value="content">Nội dung khóa học</TabsTrigger>
+            <TabsTrigger value="submissions">Bài nộp</TabsTrigger>
           </TabsList>
 
           <TabsContent value="content">
             <div className="space-y-6">
-              {course.chapters?.map((chapter: any, chapterIndex: number) => (
+              {course.course_content.chapters?.map((chapter: any, chapterIndex: number) => (
                 <Card key={chapter.id}>
                   <CardHeader>
                     <CardTitle>{chapter.title}</CardTitle>
-                    <CardDescription>
-                      {chapter.totalVideos} lessons • {chapter.totalDuration}
-                    </CardDescription>
+                    {/* <CardDescription>
+                      {chapter.totalVideos} bài học • {chapter.totalDuration}
+                    </CardDescription> */}
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -106,22 +99,27 @@ export default function CourseDetail() {
                         <div key={lesson.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                           <div>
                             <h4 className="font-medium">{lesson.title}</h4>
-                            <p className="text-sm text-gray-500">{lesson.duration}</p>
+                            {/* <p className="text-sm text-gray-500">{lesson.duration}</p> */}
                           </div>
-                          {lesson.assignment && (
+                          {assignmentDetails[lesson.id] && (
+                            <Badge color="success" className="text-sm">
+                              {assignmentDetails[lesson.id].content}
+                            </Badge>
+                          )}
+                          {/* {lesson.assignment && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() =>
-                                setSelectedLesson({
-                                  title: lesson.title,
-                                  submissions: mockSubmissions, // In a real app, fetch this data
-                                })
-                              }
+                              // onClick={() =>
+                              //   setSelectedLesson({
+                              //     title: lesson.title,
+                              //     submissions: mockSubmissions, // In a real app, fetch this data
+                              //   })
+                              // }
                             >
                               View Submissions
                             </Button>
-                          )}
+                          )} */}
                         </div>
                       ))}
                     </div>
@@ -138,7 +136,6 @@ export default function CourseDetail() {
                 <CardDescription>View and grade all student submissions for this course</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Add a comprehensive submissions view here */}
                 <div className="text-muted-foreground">Coming soon: Comprehensive submissions dashboard</div>
               </CardContent>
             </Card>
@@ -146,7 +143,7 @@ export default function CourseDetail() {
         </Tabs>
       </div>
 
-      {selectedLesson && (
+      {/* {selectedLesson && (
         <SubmissionsDialog
           open={!!selectedLesson}
           onOpenChange={() => setSelectedLesson(null)}
@@ -154,7 +151,7 @@ export default function CourseDetail() {
           submissions={selectedLesson.submissions}
           onUpdateSubmission={handleUpdateSubmission}
         />
-      )}
+      )} */}
     </div>
   )
 }

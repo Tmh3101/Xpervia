@@ -21,7 +21,7 @@ interface SignUpFormData {
   confirmPassword: string
 }
 
-export function SignUpForm({ onLoginClick }: SignUpFormProps) {
+export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
   const [serverError, setServerError] = useState<string>("")
   const {
     register,
