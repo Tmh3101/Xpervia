@@ -50,19 +50,21 @@ export function Header() {
           <div className="flex items-center space-x-6">
             {user ? (
               <>
-                <Button
-                  variant="ghost"
-                  className={`font-medium ${
-                    isScrolled || pathname !== "/"
-                      ? isActive("/student/my-courses")
-                        ? "text-primary"
-                        : "text-gray-800 hover:text-primary"
-                      : "text-white hover:text-destructive"
-                  }`}
-                  onClick={() => router.push("/student/my-courses")}
-                >
-                  Khóa học của tôi
-                </Button>
+                {user.role === "student" && (
+                  <Button
+                    variant="ghost"
+                    className={`font-medium ${
+                      isScrolled || pathname !== "/"
+                        ? isActive("/student/my-courses")
+                          ? "text-primary"
+                          : "text-gray-800 hover:text-primary"
+                        : "text-white hover:text-destructive"
+                    }`}
+                    onClick={() => router.push("/student/my-courses")}
+                  >
+                    Khóa học của tôi
+                  </Button>
+                )}
                 {/* <Button variant="ghost" className={isScrolled || pathname !== "/" ? "text-gray-800" : "text-white"}>
                   Become Instructor
                 </Button> */}

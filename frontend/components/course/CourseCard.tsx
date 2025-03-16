@@ -5,12 +5,11 @@ import { User, Edit2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
 import { Course } from "@/lib/types/course"
 import { CourseCategories } from "@/components/course/CourseCategories"
-
+  
 interface CourseCardProps extends Course {
   mode?: "enrolled" | "teacher" | "student"
   progress?: number | 0
@@ -51,13 +50,14 @@ export function CourseCard({
   return (
     <Card className="overflow-hidden rounded-2xl border-0 shadow-lg flex flex-col">
       <CardHeader className="p-0 relative">
-        <Image
-          src={getGoogleDriveImageUrl(course_content.thumbnail_id) || "/placeholder.svg"}
-          alt="thumbnail"
-          width={400}
-          height={200}
-          className="w-full h-38 object-cover"
-        />
+        <div className="w-full aspect-video overflow-hidden">
+          <Image
+            src={getGoogleDriveImageUrl(course_content.thumbnail_id) || "/placeholder.svg"}
+            alt="thumbnail"
+            fill
+            className="object-cover"
+          />
+        </div>
         <div className="absolute top-0 left-2 flex flex-wrap gap-1">
           <CourseCategories categories={course_content.categories.map(c => c.name)} />
         </div>

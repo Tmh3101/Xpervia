@@ -105,8 +105,8 @@ class LessonCreateAPIView(generics.CreateAPIView):
                 for file_id in file_id_list:
                     delete_file(file_id)
                 raise FileUploadException(f'Error uploading {file}: {str(e)}')
-            file_id_list.append(file_id)
             request.data['attachment_id'] = attachment.id
+            file_id_list.append(attachment.id)
     
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -119,7 +119,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Lesson created successfully',
-            'data': serializer.data
+            'lesson': serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
     
 

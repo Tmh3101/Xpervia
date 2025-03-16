@@ -56,7 +56,7 @@ class ChapterCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Chapter created successfully',
-            'data': serializer.data
+            'chapter': serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
     
 
@@ -111,7 +111,7 @@ class ChapterUpdateAPIView(generics.UpdateAPIView):
         return Response({
             'success': True,
             'message': 'Chapter updated successfully',
-            'data': serializer.data
+            'chapter': serializer.data
         }, status=status.HTTP_200_OK)
     
 

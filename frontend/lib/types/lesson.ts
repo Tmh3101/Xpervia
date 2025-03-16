@@ -19,3 +19,12 @@ export interface LessonDetail extends Lesson {
 export interface LessonWithSubmission extends LessonDetail {
     submissions: Submission[];
 }
+
+export interface CreateLessonRequest {
+    title: string;
+    content: string;
+    video: File;
+    subtitle_vi?: File;
+    attachment?: File;
+    is_visible: boolean;
+}

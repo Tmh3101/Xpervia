@@ -72,8 +72,8 @@ export const createCourseApi = async (data: CreateCourseRequest) : Promise<Cours
     formData.append('title', data.title)
     formData.append('description', data.description)
     formData.append('price', data.price.toString())
-    formData.append('start_date', data.start_date)
-    formData.append('regis_start_date', data.regis_start_date)
+    formData.append('start_date', data.start_date || '')
+    formData.append('regis_start_date', data.regis_start_date || '')
     formData.append('regis_end_date', data.regis_end_date || '')
     formData.append('max_students', data.max_students.toString())
     formData.append('is_visible', data.is_visible.toString())
@@ -82,6 +82,46 @@ export const createCourseApi = async (data: CreateCourseRequest) : Promise<Cours
  
     const response = await axios.post<CourseResponse>(
         `${baseUrl}courses/create/`,
+        formData,
+        { headers }
+    )
+    return response.data.course
+}
+
+export const updateCourseApi = async (id: number, data: CreateCourseRequest) : Promise<Course> => {
+    const headers = {
+        'Authorization': `Token ${sessionStorage.getItem("token")}`,
+        'Content-Type': 'multipart/form-data'
+    }
+
+    let formData = new FormData()
+    formData.append('thumbnail', data.thumbnail)
+    formData.append('title', data.title)
+    formData.append('description', data.description)
+    formData.append('price', data.price.toString())
+
+    if (data.start_date){
+        formData.append('start_date', data.start_date)
+    }
+
+    if (data.regis_start_date){
+        formData.append('regis_start_date', data.regis_start_date)
+    }
+
+    if (data.regis_end_date){
+        formData.append('regis_end_date', data.regis_end_date)
+    }
+
+    formData.append('max_students', data.max_students.toString())
+    formData.append('is_visible', data.is_visible.toString())
+    formData.append('categories', JSON.stringify(data.categories))
+
+    if (data.discount) {
+        formData.append('discount', data.discount.toString())
+    }
+
+    const response = await axios.put<CourseResponse>(
+        `${baseUrl}courses/${id}/update/`,
         formData,
         { headers }
     )

@@ -29,8 +29,8 @@ export interface CreateCourseRequest {
     title: string;
     description: string;
     price: number;
-    start_date: string;
-    regis_start_date: string;
+    start_date: string | null;
+    regis_start_date: string | null;
     regis_end_date: string | null;
     max_students: number;
     is_visible: boolean;
