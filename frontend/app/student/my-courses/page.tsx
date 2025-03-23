@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { EnrolledCourse } from "@/lib/types/course"
 import { CourseCard } from "@/components/course/CourseCard"
 import { getCoursesApi } from "@/lib/api/course-api"
-import { getEnrollmentsApi } from "@/lib/api/enrollment-api"
+import { getEnrollmentsByStudentApi } from "@/lib/api/enrollment-api"
 
 export default function MyCourses() {
 
@@ -15,7 +15,7 @@ export default function MyCourses() {
     const fetchEnrolledCourses = async () => {
       try {
         const courses = await getCoursesApi();
-        const enrollments = await getEnrollmentsApi();
+        const enrollments = await getEnrollmentsByStudentApi();
         const enrolledCourseIds = enrollments.map((enrollment) => enrollment.course.id);
         const coursesData = courses.filter((course) => enrolledCourseIds.includes(course.id));
         const enrolledCoursesData : EnrolledCourse[] = coursesData.map((course) => {

@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { Response } from './response'
 import { LessonCompletion } from '../types/lesson-completion'
-import { CreateLessonRequest } from '../types/lesson'
+import { CreateLessonRequest, LessonDetail } from '../types/lesson'
 
 const baseUrl = 'http://localhost:8000/api/'
 
@@ -9,9 +9,26 @@ interface LessonCompletionsResponse extends Response {
     lesson_completions: LessonCompletion[];
 }
 
+interface LessonDetailResponse extends Response {
+    lesson_detail: LessonDetail;
+}
+
+export const getLessonDetailApi = async (lessonId: number) : Promise<LessonDetail> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.get<LessonDetailResponse>(
+        `${baseUrl}courses/lessons/${lessonId}/`,
+        { headers }
+    )
+    console.log('response.data', response.data)
+    return response.data.lesson_detail
+}
+
+
 export const getLessonCompletionsApi = async (courseId: number) : Promise<LessonCompletion[]> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
     const response = await axios.get<LessonCompletionsResponse>(
         `${baseUrl}courses/${courseId}/lessons/completions/student/`,
@@ -22,7 +39,7 @@ export const getLessonCompletionsApi = async (courseId: number) : Promise<Lesson
 
 export const completeLessonApi = async (lessonId: number) : Promise<boolean> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
     const response = await axios.post(
         `${baseUrl}courses/lessons/${lessonId}/completions/create/`,
@@ -34,7 +51,7 @@ export const completeLessonApi = async (lessonId: number) : Promise<boolean> => 
 
 export const uncompleteLessonApi = async (lessonId: number) : Promise<boolean> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
     const response = await axios.delete(
         `${baseUrl}courses/lessons/${lessonId}/completions/delete/`,
@@ -45,7 +62,7 @@ export const uncompleteLessonApi = async (lessonId: number) : Promise<boolean> =
 
 export const createLessonApi = async (courseId: number, chapterId: number | null, data: CreateLessonRequest) : Promise<boolean> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`,
+        'Authorization': `Token ${localStorage.getItem("token")}`,
         'Content-Type': 'multipart/form-data'
     }
 
@@ -77,7 +94,7 @@ export const createLessonApi = async (courseId: number, chapterId: number | null
 
 export const updateLessonApi = async (lessonId: number, data: CreateLessonRequest) : Promise<boolean> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`,
+        'Authorization': `Token ${localStorage.getItem("token")}`,
         'Content-Type': 'multipart/form-data'
     }
 
@@ -109,6 +126,17 @@ export const updateLessonApi = async (lessonId: number, data: CreateLessonReques
     const response = await axios.put(
         `${baseUrl}courses/lessons/${lessonId}/update/`,
         formData,
+        { headers }
+    )
+    return response.data.success
+}
+
+export const deleteLessonApi = async (lessonId: number) : Promise<boolean> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.delete(
+        `${baseUrl}courses/lessons/${lessonId}/delete/`,
         { headers }
     )
     return response.data.success

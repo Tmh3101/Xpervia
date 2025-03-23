@@ -124,11 +124,12 @@ class ChapterDeleteAPIView(generics.DestroyAPIView):
     lookup_field = 'id'
     
     def destroy(self, request, *args, **kwargs):
+
         try:
             instance = self.get_object()
         except Http404 as e:
             raise NotFound(f'Chapter not found: {str(e)}')
-        
+    
         self.perform_destroy(instance)
         return Response({
             'success': True,

@@ -5,7 +5,12 @@ import { CourseCard } from "@/components/course/CourseCard"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { getCourseByTeacherApi, createCourseApi, updateCourseApi } from "@/lib/api/course-api"
+import {
+  getCourseByTeacherApi,
+  createCourseApi,
+  updateCourseApi,
+  deleteCourseApi
+} from "@/lib/api/course-api"
 import type { Course } from "@/lib/types/course"
 import { CourseFormDialog } from "@/components/course/CourseFormDialog"
 import type { CreateCourseRequest } from "@/lib/types/course"
@@ -15,8 +20,7 @@ export default function TeacherDashboard() {
   const { user } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isCourseFormOpen, setIsCourseFormOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
 
   useEffect(() => {
@@ -34,22 +38,33 @@ export default function TeacherDashboard() {
 
   const handleEditCourse = (course: Course) => {
     setEditingCourse(course)
-    setIsEditModalOpen(true)
+    setIsCourseFormOpen(true)
   }
 
   const handleCreateCourse = async (createCourseData: CreateCourseRequest) => {
-    const newCourse = await createCourseApi(createCourseData)
-    console.log("Creating course:", newCourse)
-    setIsCreateModalOpen(false)
-    router.push(`/teacher/courses/${newCourse.id}/detail`)
+    let newCourse = null
+    if (editingCourse) {
+      const course = await updateCourseApi(editingCourse.id, createCourseData)
+      newCourse = course
+      console.log("Updating course:", course)
+    } else {
+      const course = await createCourseApi(createCourseData)
+      newCourse = course
+      console.log("Creating course:", newCourse)
+    }
+    setIsCourseFormOpen(false)
+    if (newCourse) {
+      router.push(`/teacher/courses/${newCourse.id}/detail`)
+    }
   }
 
-  const handleUpdateCourse = async (updateCourseData: CreateCourseRequest) => {
+  const handleDeleteCourse = async () => {
     if (!editingCourse) return
-    const course = await updateCourseApi(editingCourse.id, updateCourseData)
-    console.log("Updating course:", course)
-    setIsEditModalOpen(false)
-    router.push(`/teacher/courses/${course.id}/detail`)
+    await deleteCourseApi(editingCourse.id)
+    setEditingCourse(null)
+    setIsCourseFormOpen(false)
+    const newCourses = courses.filter((course) => course.id !== editingCourse.id)
+    setCourses(newCourses)
   }
 
   return (
@@ -62,7 +77,7 @@ export default function TeacherDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <Button className="bg-primary hover:bg-primary/90 rounded-full" onClick={() => setIsCreateModalOpen(true)}>
+          <Button className="bg-primary hover:bg-primary/90 rounded-full" onClick={() => setIsCourseFormOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Tạo khóa học
           </Button>
@@ -76,21 +91,13 @@ export default function TeacherDashboard() {
       </div>
 
       <CourseFormDialog
-        open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        open={isCourseFormOpen}
+        onOpenChange={setIsCourseFormOpen}
         onSubmit={handleCreateCourse}
-        mode="create"
+        onDelete={handleDeleteCourse}
+        mode={editingCourse ? "edit" : "create"}
+        initialData={editingCourse ? editingCourse : undefined}
       />
-
-      {editingCourse && (
-        <CourseFormDialog
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSubmit={handleUpdateCourse}
-          mode="edit"
-          initialData={editingCourse}
-        />
-      )}
     </div>
   )
 }

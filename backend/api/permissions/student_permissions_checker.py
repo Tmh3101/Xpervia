@@ -9,6 +9,8 @@ class IsStudent(BasePermission):
 
 class WasCourseEnrolled(BasePermission):
     def has_permission(self, request, view):
+        course_content = None
+
         if 'lesson_id' in view.kwargs:
             try:
                 lesson = Lesson.objects.get(id=view.kwargs.get('lesson_id'))
@@ -37,6 +39,9 @@ class WasCourseEnrolled(BasePermission):
             except Assignment.DoesNotExist:
                 return True
             
+        if not course_content:
+            return True
+        
         return Enrollment.objects.filter(
             student=request.user,
             course__course_content=course_content

@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Lesson
+from api.models import Course, Lesson, CourseContent
 from api.serializers import (
     CourseSerializer,
     CourseContentSerializer,
@@ -60,7 +60,7 @@ def get_course_data(request):
 
 # Delete a course if course detail creation fails
 def delete_course_content(course_content_id):
-    course_content = Course.objects.get(id=course_content_id)
+    course_content = CourseContent.objects.get(id=course_content_id)
     if course_content:
         delete_file(course_content.thumbnail_id)
         course_content.delete()
@@ -339,6 +339,7 @@ class CourseDeleteAPIView(generics.DestroyAPIView):
         course_content_id = instance.course_content.id
         self.perform_destroy(instance)
         delete_course_content(course_content_id)
+
         return Response({
             'success': True,
             'message': f'Course "{instance}" deleted successfully'

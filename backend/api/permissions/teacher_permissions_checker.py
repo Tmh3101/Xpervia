@@ -11,6 +11,7 @@ class IsTeacher(BasePermission):
 # Owner permission for course, chapter, lesson
 class IsCourseOwner(BasePermission):
     def has_permission(self, request, view):
+
         if view.kwargs.get('course_id'):
             try:
                 course = Course.objects.get(id=view.kwargs.get('course_id'))
@@ -52,15 +53,14 @@ class IsCourseOwner(BasePermission):
         if isinstance(obj, Course):
             return obj.course_content.teacher == request.user
         elif isinstance(obj, Chapter) or isinstance(obj, Lesson):
-            return obj.course.teacher == request.user
+            return obj.course_content.teacher == request.user
         elif isinstance(obj, Assignment):
             course_content = obj.lesson.course_content
             return course_content.teacher == request.user
         elif isinstance(obj, Submission):
-            course_content = obj.assignment.lesson.course
+            course_content = obj.assignment.lesson.course_content
             return course_content.teacher == request.user
         elif isinstance(obj, SubmissionScore):
-            lesson = obj.submission.assignment.lesson
-            course_content = lesson.course_content
+            course_content = obj.submission.assignment.lesson.course_content
             return course_content.teacher == request.user
         return True

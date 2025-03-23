@@ -21,7 +21,7 @@ export default function CourseDetailPage() {
   useEffect(() => {
     const fetchCourseDetail = async () => {
       if (params.id) {
-        const courseId = parseInt(params.id[0], 10);
+        const courseId = parseInt(params.id);
         const courseDetail = await getCourseDetailApi(courseId);
         setCourseDetailData(courseDetail);
         const lessons = courseDetail.course_content.chapters
@@ -39,7 +39,6 @@ export default function CourseDetailPage() {
   }
 
   const handleEnrollSuccess = () => {
-    console.log("Enroll success")
     if (user?.role === "student") {
       router.push(`/student/lessons/${courseDetailData.id}/${firstLessonId}`)
     }

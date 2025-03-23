@@ -15,7 +15,7 @@ interface ChapterResponse extends Response {
 
 export const createChapterApi = async (courseId: number, chapter: CreateChapterRequest) : Promise<Chapter> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
     
     if (chapter.order === null) {
@@ -32,7 +32,7 @@ export const createChapterApi = async (courseId: number, chapter: CreateChapterR
 
 export const updateChapterApi = async (chapterId: number, chapter: CreateChapterRequest) : Promise<Chapter> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
 
     if (chapter.order === null) {
@@ -45,4 +45,15 @@ export const updateChapterApi = async (chapterId: number, chapter: CreateChapter
         { headers }
     )
     return response.data.chapter
+}
+
+export const deleteChapterApi = async (chapterId: number) : Promise<boolean> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.delete(
+        `${baseUrl}courses/chapters/${chapterId}/delete/`,
+        { headers }
+    )
+    return response.data.success
 }

@@ -45,12 +45,11 @@ export function CourseHero({
     }
   }
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = () => {
     try {
-      const success = await enrollCourseApi(id)
+      const success = enrollInCourse(id)
       console.log("Enroll success", success)
       if (success) {
-        enrollInCourse(id)
         onEnrollSuccess()
       } else {
         console.error("Failed to enroll in course")

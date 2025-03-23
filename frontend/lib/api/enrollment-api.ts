@@ -8,9 +8,9 @@ interface EnrollmentsResponse extends Response {
     enrollments: Enrollment[];
 }
 
-export const getEnrollmentsApi = async () : Promise<Enrollment[]> => {
+export const getEnrollmentsByStudentApi = async () : Promise<Enrollment[]> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
     const response = await axios.get<EnrollmentsResponse>(
         `${baseUrl}courses/enrollments/student/`,
@@ -19,10 +19,20 @@ export const getEnrollmentsApi = async () : Promise<Enrollment[]> => {
     return response.data.enrollments
 }
 
-export const enrollCourseApi = async (courseId: number) : Promise<boolean> => {
-    console.log('token', sessionStorage.getItem("token"))
+export const getEnrollmentsByCourseApi = async (courseId: number) : Promise<Enrollment[]> => {
     const headers = {
-        'Authorization': `Token ${sessionStorage.getItem("token")}`
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.get<EnrollmentsResponse>(
+        `${baseUrl}courses/${courseId}/enrollments/`,
+        { headers }
+    )
+    return response.data.enrollments
+}
+
+export const enrollCourseApi = async (courseId: number) : Promise<boolean> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
     }
     const response = await axios.post(
         `${baseUrl}courses/${courseId}/enrollments/create/`,

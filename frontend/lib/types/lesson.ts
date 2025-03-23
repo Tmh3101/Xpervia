@@ -16,10 +16,6 @@ export interface LessonDetail extends Lesson {
     attachment: File;
 }
 
-export interface LessonWithSubmission extends LessonDetail {
-    submissions: Submission[];
-}
-
 export interface CreateLessonRequest {
     title: string;
     content: string;

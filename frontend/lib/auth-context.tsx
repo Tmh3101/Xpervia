@@ -4,7 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
 import { loginApi, logoutApi } from "@/lib/api/auth-api"
-import { getEnrollmentsApi, enrollCourseApi } from "@/lib/api/enrollment-api"
+import { getEnrollmentsByStudentApi, enrollCourseApi } from "@/lib/api/enrollment-api"
 import { User } from "@/lib/types/user"
 import { Enrollment } from "@/lib/types/enrollment"
 
@@ -14,7 +14,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ error?: string }>
   logout: () => void
   enrollments: Enrollment[]
-  enrollInCourse: (courseId: number) => void
+  enrollInCourse: (courseId: number) => boolean
   fetchEnrollments: () => void
 }
 
@@ -29,8 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Kiểm tra và khởi tạo lại state của user khi component được mount
-    const storedUser = sessionStorage.getItem("user")
-    const storedToken = sessionStorage.getItem("token")
+    const storedUser = localStorage.getItem("user")
+    const storedToken = localStorage.getItem("token")
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser))
       setToken(storedToken)
@@ -38,13 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // Cập nhật sessionStorage khi state của user thay đổi
+    // Cập nhật localStorage khi state của user thay đổi
     if (user && token) {
-      sessionStorage.setItem("user", JSON.stringify(user))
-      sessionStorage.setItem("token", token || "")
+      localStorage.setItem("user", JSON.stringify(user))
+      localStorage.setItem("token", token || "")
     } else {
-      sessionStorage.removeItem("user")
-      sessionStorage.removeItem("token")
+      localStorage.removeItem("user")
+      localStorage.removeItem("token")
     }
   }, [token, user])
 
@@ -73,12 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const { token, user } = result
-    sessionStorage.setItem("token", token)
+    localStorage.setItem("token", token)
     setToken(token)
 
     // Remove password from user object before setting in state
     const { password: _, ...userWithoutPassword } = user
-    sessionStorage.setItem("user", user)
+    localStorage.setItem("user", user)
     setUser(userWithoutPassword)
     handleRoleBasedRedirect(userWithoutPassword.role)
 
@@ -98,14 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/")
   }
 
-  const enrollInCourse = (courseId: number) => {
-    if (!user || user.role !== "student") return
-    enrollCourseApi(courseId).then(() => fetchEnrollments())
+  const enrollInCourse = (courseId: number): boolean => {
+    if (!user || user.role !== "student") return false
+    enrollCourseApi(courseId)
+      .then(() => {
+        fetchEnrollments()
+      })
+      .catch(() => {
+        return false
+      })
+    return true
   }
 
   const fetchEnrollments = () => {
     if (token) {
-      getEnrollmentsApi().then(enrollments => setEnrollments(enrollments))
+      getEnrollmentsByStudentApi().then(enrollments => setEnrollments(enrollments))
     }
   }
 

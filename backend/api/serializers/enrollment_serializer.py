@@ -24,7 +24,8 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     payment_id = serializers.PrimaryKeyRelatedField(
         queryset=Payment.objects.all(),
         source='payment',
-        write_only=True
+        write_only=True,
+        required=False
     )
 
     
@@ -32,7 +33,8 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         model = Enrollment
         fields = '__all__'
         extra_kwargs = {
-            'created_at': {'read_only': True}
+            'created_at': {'read_only': True},
+            'payment': {'required': False}
         }
 
 

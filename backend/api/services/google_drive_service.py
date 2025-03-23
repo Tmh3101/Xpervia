@@ -62,11 +62,9 @@ def upload_file(file):
 # Delete file method for calling
 def delete_file(file_id):
     try:
+        delete_file_from_drive(file_id)
         file = File.objects.filter(file_id=file_id).first()
         if file:
-            delete_file_from_drive(file.file_id)
             file.delete()
-        else:
-            delete_file_from_drive(file_id)
     except Exception as e:
         raise Exception(f"Error deleting file: {str(e)}")

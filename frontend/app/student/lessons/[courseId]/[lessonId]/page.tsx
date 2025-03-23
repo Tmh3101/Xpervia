@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { CheckedState } from "@radix-ui/react-checkbox";
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { Description } from "@/components/Description"
 import { VideoPlayer } from "@/components/lesson/VideoPlayer"
 import { LessonCurriculum } from "@/components/lesson/LessonCurriculum"
@@ -12,17 +12,21 @@ import { LessonSubmission } from "@/components/lesson/LessonSubmission"
 import { getCourseWithDetailLessonsApi } from "@/lib/api/course-api"
 import { getLessonAssignmentsApi } from "@/lib/api/assignment-api"
 import { getLessonCompletionsApi, completeLessonApi, uncompleteLessonApi } from "@/lib/api/lesson-api"
-import { ChapterDetail } from "@/lib/types/chapter"
-import { LessonDetail } from "@/lib/types/lesson"
-import { AssignmentDetail } from "@/lib/types/assignment"
+import type { ChapterDetail } from "@/lib/types/chapter"
+import type { LessonDetail } from "@/lib/types/lesson"
+import type { AssignmentDetail } from "@/lib/types/assignment"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Loader2, CircleAlert } from "lucide-react"
+import { CourseWithDetailLessons } from "@/lib/types/course"
 
 export default function LessonPage() {
   const params = useParams()
-  const [courseData, setCourseData] = useState<any>(null)
+  const [courseData, setCourseData] = useState<CourseWithDetailLessons | null>(null)
   const [currentLesson, setCurrentLesson] = useState<any>(null)
   const [assignments, setAssignments] = useState<AssignmentDetail[] | null>(null)
   const [completedLessonIds, setCompletedLessonIds] = useState<number[]>([])
+  const [isCompletingLesson, setIsCompletingLesson] = useState(false)
+  const [isLoadingSubmission, setIsLoadingSubmission] = useState(false)
 
   useEffect(() => {
     if (params.courseId) {
@@ -32,7 +36,7 @@ export default function LessonPage() {
           const lessons = data.course_content.chapters
             .flatMap((chapter) => chapter.lessons)
             .concat(data.course_content.lessons_without_chapter)
-          const lesson = lessons.find((l) => l.id === parseInt(params.lessonId[0]))
+          const lesson = lessons.find((l) => l.id === Number.parseInt(params.lessonId[0]))
           setCurrentLesson(lesson)
         }
       })
@@ -51,8 +55,20 @@ export default function LessonPage() {
     }
   }, [currentLesson])
 
-  if (!courseData || !currentLesson) {
-    return <div>Loading...</div>
+  if (!courseData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Đang tải...</span>
+      </div>
+    )
+  } else if (!currentLesson) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <CircleAlert className="w-8 h-8 text-red-500" />
+        <span>Không tìm thấy bất cứ bài học nào!</span>
+      </div>
+    )
   }
 
   const handleLessonChange = (lessonId: number) => {
@@ -68,21 +84,28 @@ export default function LessonPage() {
   }
 
   const handleCheckboxChange = async (checked: CheckedState) => {
-    if (!currentLesson?.id) return;
+    if (!currentLesson?.id) return
 
+    setIsCompletingLesson(true)
     try {
       if (checked) {
         console.log("complete lesson")
-        await completeLessonApi(currentLesson.id);
-        setCompletedLessonIds((prev) => [...prev, currentLesson.id]);
+        await completeLessonApi(currentLesson.id)
+        setCompletedLessonIds((prev) => [...prev, currentLesson.id])
       } else {
         console.log("uncomplete lesson")
-        await uncompleteLessonApi(currentLesson.id);
-        setCompletedLessonIds((prev) => prev.filter((id) => id !== currentLesson.id));
+        await uncompleteLessonApi(currentLesson.id)
+        setCompletedLessonIds((prev) => prev.filter((id) => id !== currentLesson.id))
       }
     } catch (error) {
-      console.error("Failed to update lesson completion status:", error);
+      console.error("Failed to update lesson completion status:", error)
+    } finally {
+      setIsCompletingLesson(false)
     }
+  }
+
+  const handleSubmissionLoading = (isLoading: boolean) => {
+    setIsLoadingSubmission(isLoading)
   }
 
   return (
@@ -93,12 +116,16 @@ export default function LessonPage() {
             <div className="mt-[40px]">
               <VideoPlayer videoId={currentLesson.video_id} />
               <div className="pt-2 space-x-2 w-full flex justify-end items-center">
-                <Checkbox
-                  id="complete"
-                  name="complete"
-                  onCheckedChange={handleCheckboxChange}
-                  checked={completedLessonIds.includes(currentLesson.id)}
-                />
+                {isCompletingLesson ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Checkbox
+                    id="complete"
+                    name="complete"
+                    onCheckedChange={handleCheckboxChange}
+                    checked={completedLessonIds.includes(currentLesson.id)}
+                  />
+                )}
                 <label
                   htmlFor="complete"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -112,27 +139,29 @@ export default function LessonPage() {
                 title={currentLesson.title}
                 description={currentLesson.content || "No description available."}
               />
-              {currentLesson.attachments?.length != 0 && (
-                <LessonAttachment attachment={currentLesson.attachment} />
-              )}
+              {currentLesson.attachments?.length != 0 && <LessonAttachment attachment={currentLesson.attachment} />}
             </div>
             <div>
-              { assignments?.length != 0 && (
+              {isLoadingSubmission && (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="ml-2">Đang xử lý bài nộp...</span>
+                </div>
+              )}
+              {assignments?.length != 0 && (
                 <div className="mt-8 p-2">
                   <h1 className="text-2xl text-destructive font-bold mb-4">Bài tập</h1>
                   <div className="bg-white rounded-xl px-6 py-4 border space-y-6">
-                    {
-                      assignments?.map((assignment) => (
-                        <>
-                          <LessonAssignment
-                            key={assignment.id}
-                            title={assignment.title}
-                            content={assignment.content}
-                          />
-                          <LessonSubmission assignmentId={assignment.id} submission={assignment.submission} />
-                        </>
-                      ))
-                    }
+                    {assignments?.map((assignment) => (
+                      <div key={assignment.id}>
+                        <LessonAssignment title={assignment.title} content={assignment.content} />
+                        <LessonSubmission
+                          assignmentId={assignment.id}
+                          submission={assignment.submission}
+                          onLoadingChange={handleSubmissionLoading}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

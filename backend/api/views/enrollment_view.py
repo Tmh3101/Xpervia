@@ -31,7 +31,7 @@ class EnrollmentListAPIView(generics.ListAPIView):
         return Response({
             'success': True,
             'message': 'All enrollments have been listed successfully',
-            'data': serializer.data
+            'enrollments': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -49,23 +49,29 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
             raise NotFound('Course not found')
         
         queryset = course.enrollments.all()
-        serializer = EnrollmentSerializer(queryset, many=True)
+        enrollments = EnrollmentSerializer(queryset, many=True).data.copy()
+
+        for enrollment in enrollments:
+            student = enrollment['student']
+            student_id = student['id']
+            enrollment['progress'] = get_course_progress(course.course_content, student_id)
+
         return Response({
             'success': True,
             'message': 'All enrollments in the course have been listed successfully',
-            'data': serializer.data
+            'enrollments': enrollments
         }, status=status.HTTP_200_OK)
     
 # Enrollment API to list all courses a student has enrolled in
 class EnrollmentListByStudentAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
-    serializer_class = SimpleEnrollmentSerializer
+    serializer_class = EnrollmentSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset().filter(student=request.user)
-        enrollments = SimpleEnrollmentSerializer(queryset, many=True).data.copy()
+        enrollments = EnrollmentSerializer(queryset, many=True).data.copy()
 
         for enrollment in enrollments:
             course = enrollment['course']
