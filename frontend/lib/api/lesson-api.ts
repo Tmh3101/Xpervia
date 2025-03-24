@@ -1,23 +1,14 @@
 import axios from 'axios'
-import { Response } from './response'
 import { LessonCompletion } from '../types/lesson-completion'
 import { CreateLessonRequest, LessonDetail } from '../types/lesson'
 
 const baseUrl = 'http://localhost:8000/api/'
 
-interface LessonCompletionsResponse extends Response {
-    lesson_completions: LessonCompletion[];
-}
-
-interface LessonDetailResponse extends Response {
-    lesson_detail: LessonDetail;
-}
-
 export const getLessonDetailApi = async (lessonId: number) : Promise<LessonDetail> => {
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<LessonDetailResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/lessons/${lessonId}/`,
         { headers }
     )
@@ -29,7 +20,7 @@ export const getLessonCompletionsApi = async (courseId: number) : Promise<Lesson
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<LessonCompletionsResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/${courseId}/lessons/completions/student/`,
         { headers }
     )

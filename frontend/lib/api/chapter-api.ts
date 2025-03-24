@@ -1,17 +1,7 @@
 import axios from 'axios'
-import { Response } from '@/lib/api/response'
 import { Chapter, CreateChapterRequest } from '@/lib/types/chapter'
 
 const baseUrl = 'http://localhost:8000/api/'
-
-
-interface ChaptersResponse extends Response {
-    chapters: Chapter[];
-}
-
-interface ChapterResponse extends Response {
-    chapter: Chapter;
-}
 
 export const createChapterApi = async (courseId: number, chapter: CreateChapterRequest) : Promise<Chapter> => {
     const headers = {
@@ -22,7 +12,7 @@ export const createChapterApi = async (courseId: number, chapter: CreateChapterR
         delete chapter.order
     }
 
-    const response = await axios.post<ChapterResponse>(
+    const response = await axios.post(
         `${baseUrl}courses/${courseId}/chapters/create/`,
         chapter,
         { headers }
@@ -39,7 +29,7 @@ export const updateChapterApi = async (chapterId: number, chapter: CreateChapter
         delete chapter.order
     }
 
-    const response = await axios.put<ChapterResponse>(
+    const response = await axios.put(
         `${baseUrl}courses/chapters/${chapterId}/update/`,
         chapter,
         { headers }

@@ -89,7 +89,7 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdmin | IsUserOwner]
     lookup_field = 'id'       
 
     def update(self, request, *args, **kwargs):

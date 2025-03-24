@@ -23,6 +23,7 @@ import { createLessonApi, updateLessonApi, deleteLessonApi } from "@/lib/api/les
 import { getEnrollmentsByCourseApi } from "@/lib/api/enrollment-api"
 import type { Enrollment } from "@/lib/types/enrollment"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Progress } from "@/components/course/Progress"
 
 export default function CourseDetail() {
   const params = useParams()
@@ -327,39 +328,7 @@ export default function CourseDetail() {
                               <div className="text-sm text-gray-500">
                                 Đăng ký ngày: {new Date(enrollment.created_at).toLocaleDateString()}
                               </div>
-                              <div className="relative w-16 h-16">
-                                {/* Circular progress bar */}
-                                <svg className="w-full h-full" viewBox="0 0 100 100">
-                                  {/* Background circle */}
-                                  <circle
-                                    className="text-gray-200"
-                                    strokeWidth="8"
-                                    stroke="currentColor"
-                                    fill="transparent"
-                                    r="40"
-                                    cx="50"
-                                    cy="50"
-                                  />
-                                  {/* Progress circle */}
-                                  <circle
-                                    className="text-primary"
-                                    strokeWidth="8"
-                                    strokeLinecap="round"
-                                    stroke="currentColor"
-                                    fill="transparent"
-                                    r="40"
-                                    cx="50"
-                                    cy="50"
-                                    strokeDasharray={`${2 * Math.PI * 40}`}
-                                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - (enrollment.progress || 0) / 100)}`}
-                                    transform="rotate(-90 50 50)"
-                                  />
-                                </svg>
-                                {/* Percentage text */}
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-sm font-medium">{enrollment.progress || 0}%</span>
-                                </div>
-                              </div>
+                              <Progress progress={enrollment.progress} />
                             </div>
                           </div>
                         ))}

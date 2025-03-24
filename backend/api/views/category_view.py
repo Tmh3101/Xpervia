@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from api.models import Category
 from api.serializers import CategorySerializer
 from api.permissions import IsAdmin
@@ -13,8 +13,7 @@ from api.permissions import IsAdmin
 class CategoryListAPIView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

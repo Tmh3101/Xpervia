@@ -28,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Kiểm tra và khởi tạo lại state của user khi component được mount
     const storedUser = localStorage.getItem("user")
     const storedToken = localStorage.getItem("token")
     if (storedUser && storedToken) {
@@ -67,17 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const result = await loginApi(email, password)
-    
     if (!result.user) {
       return { error: result.error }
     }
 
     const { token, user } = result
-
     localStorage.setItem("token", token)
     setToken(token)
 
-    localStorage.setItem("user", user)
+    localStorage.setItem("user", JSON.stringify(user))
     setUser(user)
     handleRoleBasedRedirect(user.role)
 
@@ -109,9 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true
   }
 
-  const fetchEnrollments = () => {
+  const fetchEnrollments = async () => {
     if (token) {
-      getEnrollmentsByStudentApi().then(enrollments => setEnrollments(enrollments))
+      try {
+        const enrollments = await getEnrollmentsByStudentApi(token)
+        setEnrollments(enrollments)
+      } catch (error) {
+        console.error("Lỗi khi gọi API enrollments:", error)
+      }
     }
   }
 

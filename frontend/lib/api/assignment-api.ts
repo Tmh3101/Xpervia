@@ -3,19 +3,11 @@ import { AssignmentDetail, AssignmentSubmissions, CreateAssignmentRequest } from
 
 const baseUrl = 'http://localhost:8000/api/'
 
-interface AssignmentResponse {
-    assignments: AssignmentDetail[]
-}
-
-interface AssignmentSubmissionsResponse {
-    assignments: AssignmentSubmissions[];
-}
-
 export const getLessonAssignmentsApi = async (lessonId: number) : Promise<AssignmentDetail[]> => {
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<AssignmentResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/lessons/${lessonId}/assignments/student/`,
         { headers }
     )
@@ -26,7 +18,7 @@ export const getAssignmentSubmissionsApi = async (lessonId: number) : Promise<As
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<AssignmentSubmissionsResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/lessons/${lessonId}/assignments/`,
         { headers }
     )

@@ -1,20 +1,20 @@
 import axios from 'axios'
 import { Enrollment } from '../types/enrollment'
-import { Response } from '@/lib/api/response'
 
 const baseUrl = 'http://localhost:8000/api/'
 
-interface EnrollmentsResponse extends Response {
-    enrollments: Enrollment[];
-}
-
-export const getEnrollmentsByStudentApi = async () : Promise<Enrollment[]> => {
-    const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
+export const getEnrollmentsByStudentApi = async (token: string): Promise<Enrollment[]> => {
+    if (!token) {
+      throw new Error("Token không tồn tại. Vui lòng đăng nhập lại.")
     }
-    const response = await axios.get<EnrollmentsResponse>(
-        `${baseUrl}courses/enrollments/student/`,
-        { headers }
+  
+    const headers = {
+      'Authorization': `Token ${token}`
+    }
+  
+    const response = await axios.get(
+      `${baseUrl}courses/enrollments/student/`,
+      { headers }
     )
     return response.data.enrollments
 }
@@ -23,7 +23,7 @@ export const getEnrollmentsByCourseApi = async (courseId: number) : Promise<Enro
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<EnrollmentsResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/${courseId}/enrollments/`,
         { headers }
     )

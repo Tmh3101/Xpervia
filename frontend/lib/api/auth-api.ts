@@ -1,10 +1,10 @@
 import axios from 'axios'
 
-const baseURL = 'http://localhost:8000/api'
+const baseUrl = 'http://localhost:8000/api/'
 
 export const loginApi = async (email: string, password: string) => {
     try {
-        const response = await axios.post(`${baseURL}/token/login/`, {
+        const response = await axios.post(`${baseUrl}token/login/`, {
             email,
             password
         })
@@ -25,7 +25,7 @@ export const registerApi = async (
     password_value: string
 ) => {
     try {
-        const response = await axios.post(`${baseURL}/register/`, {
+        const response = await axios.post(`${baseUrl}register/`, {
             email: email_value,
             password: password_value,
             first_name: first_name_value,
@@ -45,6 +45,6 @@ export const logoutApi = async (token: string) => {
     const headers = {
         'Authorization': `Token ${token}`
     }
-    const response = await axios.delete(`${baseURL}/token/logout/`, { headers })
+    const response = await axios.delete(`${baseUrl}token/logout/`, { headers })
     return response.data.success
 }

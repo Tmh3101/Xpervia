@@ -5,35 +5,18 @@ import {
     CreateCourseRequest
 } from '@/lib/types/course'
 import { Category } from '@/lib/types/course-content'
-import { Response } from '@/lib/api/response'
 
 const baseUrl = 'http://localhost:8000/api/'
 
-interface CoursesResponse extends Response {
-    courses: Course[];
-}
-
-interface CourseResponse extends Response {
-    course: Course;
-}
-
-interface CourseWithDetailLessonsResponse extends Response {
-    course: CourseWithDetailLessons;
-}
-
-interface CategoriesResponse extends Response {
-    categories: Category[];
-}
-
 export const getCoursesApi = async () : Promise<Course[]> => {
-    const response = await axios.get<CoursesResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/`
     )
     return response.data.courses
 }
 
 export const getCourseDetailApi = async (id: number) : Promise<Course> => {
-    const response = await axios.get<CourseResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/${id}/`
     )
     return response.data.course
@@ -43,7 +26,7 @@ export const getCourseByTeacherApi = async () : Promise<Course[]> => {
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<CoursesResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/teacher/`,
         { headers }
     )
@@ -54,7 +37,7 @@ export const getCourseWithDetailLessonsApi = async (id: number) : Promise<Course
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
-    const response = await axios.get<CourseWithDetailLessonsResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/${id}/detail-lessons/`,
         { headers }
     )
@@ -80,7 +63,7 @@ export const createCourseApi = async (data: CreateCourseRequest) : Promise<Cours
     formData.append('categories', JSON.stringify(data.categories))
     formData.append('discount', data.discount?.toString() || '')
  
-    const response = await axios.post<CourseResponse>(
+    const response = await axios.post(
         `${baseUrl}courses/create/`,
         formData,
         { headers }
@@ -120,7 +103,7 @@ export const updateCourseApi = async (id: number, data: CreateCourseRequest) : P
         formData.append('discount', data.discount.toString())
     }
 
-    const response = await axios.put<CourseResponse>(
+    const response = await axios.put(
         `${baseUrl}courses/${id}/update/`,
         formData,
         { headers }
@@ -140,12 +123,8 @@ export const deleteCourseApi = async (id: number) : Promise<boolean> => {
 }
 
 export const getCategoriesApi = async () : Promise<Category[]> => {
-    const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
-    }
-    const response = await axios.get<CategoriesResponse>(
+    const response = await axios.get(
         `${baseUrl}courses/categories/`,
-        { headers }
     )
     return response.data.categories
 }

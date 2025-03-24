@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Lesson, CourseContent
+from api.models import Course, Lesson, CourseContent, Enrollment
 from api.serializers import (
     CourseSerializer,
     CourseContentSerializer,
@@ -123,11 +123,18 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset().filter(course_content__teacher=request.user)
-        serializer = CourseSerializer(queryset, many=True)
+        courses_serializer = CourseSerializer(queryset, many=True)
+        courses_data = courses_serializer.data.copy()
+
+        # Add num_students to each course
+        for course in courses_data:
+            enrollments = Enrollment.objects.filter(course=course['id'])
+            course['num_students'] = enrollments.count()
+
         return Response({
             'success': True,
             'message': 'All courses have been listed successfully',
-            'courses': serializer.data
+            'courses': courses_data
         }, status=status.HTTP_200_OK)
 
 

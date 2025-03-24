@@ -3,12 +3,20 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bell } from "lucide-react"
+import { Bell, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { AuthModal } from "./auth/AuthModal"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import logo from "@/public/logo-ngang.png"
 import userAvatar from "@/public/user-avatar.svg"
 
@@ -36,6 +44,16 @@ export function Header() {
 
   const isActive = (path: string) => pathname === path || pathname?.startsWith(path + "/")
 
+  const handleProfileClick = () => {
+    if (user) {
+      if (user.role === "student") {
+        router.push(`/profile/student/${user.id}`)
+      } else if (user.role === "teacher") {
+        router.push(`/profile/teacher/${user.id}`)
+      }
+    }
+  }
+
   return (
     <>
       <header
@@ -45,7 +63,12 @@ export function Header() {
       >
         <div className="container mx-auto flex items-center justify-between py-4">
           <Link href="/" className="flex items-center">
-            <Image src={logo} alt="Xpervia Logo" width={100} className="rounded-[14px]"/>
+            <Image
+              src={logo}
+              alt="Xpervia Logo"
+              width={100}
+              className="rounded-[14px]"
+            />
           </Link>
           <div className="flex items-center space-x-6">
             {user ? (
@@ -53,12 +76,12 @@ export function Header() {
                 {user.role === "student" && (
                   <Button
                     variant="ghost"
-                    className={`font-medium ${
+                    className={`font-medium rounded-xl ${
                       isScrolled || pathname !== "/"
                         ? isActive("/student/my-courses")
-                          ? "text-primary"
-                          : "text-gray-800 hover:text-primary"
-                        : "text-white hover:text-destructive"
+                          ? "text-white bg-primary hover:bg-primary/80 hover:text-white"
+                          : "text-gray-800 hover:text-white hover:bg-primary"
+                        : "text-white hover:bg-primary hover:text-white"
                     }`}
                     onClick={() => router.push("/student/my-courses")}
                   >
@@ -72,30 +95,40 @@ export function Header() {
                 >
                   <Bell className="h-5 w-5" />
                 </Button>
-                <div className="relative group">
-                  <div className="h-8 w-8 rounded-full bg-primary overflow-hidden cursor-pointer">
-                    <Image
-                      src={userAvatar}
-                      alt={`${user.first_name} ${user.last_name}`}
-                      width={32}
-                      height={32}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 invisible group-hover:visible">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium">{`${user.first_name} ${user.last_name}`}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="h-8 w-8 rounded-full bg-primary overflow-hidden cursor-pointer">
+                      <Image
+                        src={userAvatar}
+                        alt={`${user.first_name} ${user.last_name}`}
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
-                    <Button
-                      variant="ghost"
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 p-4 mt-6 rounded-xl">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{`${user.first_name} ${user.last_name}`}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Hồ sơ</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={logout}
+                      className="cursor-pointer text-red-500 focus:text-red-500"
                     >
-                      Đăng xuất
-                    </Button>
-                  </div>
-                </div>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Đăng xuất</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
