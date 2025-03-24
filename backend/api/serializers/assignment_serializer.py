@@ -14,6 +14,10 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = '__all__'
+        extra_kwargs = {
+            'due_at': {'required': False}
+        }
+
 
 
 class SimpleAssignmentSerializer(serializers.ModelSerializer):

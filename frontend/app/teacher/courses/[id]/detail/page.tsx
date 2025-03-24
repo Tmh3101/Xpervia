@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus, Edit, Users, User } from "lucide-react"
+import { ArrowLeft, Plus, Edit, User } from "lucide-react"
 import Image from "next/image"
 import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
 import { Badge } from "@/components/ui/badge"
@@ -310,19 +310,56 @@ export default function CourseDetail() {
                       Chưa có học viên nào đăng ký khóa học này
                     </div>
                   ) : (
-                    <ScrollArea className="h-[400px]">
+                    <ScrollArea className="">
                       <div className="space-y-2">
                         {enrollments.map((enrollment) => (
                           <div key={enrollment.id} className="flex items-center p-3 rounded-lg bg-gray-50">
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
                               <User className="w-5 h-5 text-primary" />
                             </div>
-                            <div>
-                              <h4 className="font-medium">{enrollment.student.first_name + " " + enrollment.student.last_name}</h4>
+                            <div className="flex-1">
+                              <h4 className="font-medium">
+                                {enrollment.student.first_name + " " + enrollment.student.last_name}
+                              </h4>
                               <p className="text-sm text-gray-500">{enrollment.student.email}</p>
                             </div>
-                            <div className="ml-auto text-sm text-gray-500">
-                              Đăng ký: {new Date(enrollment.created_at).toLocaleDateString()}
+                            <div className="flex items-center gap-4">
+                              <div className="text-sm text-gray-500">
+                                Đăng ký ngày: {new Date(enrollment.created_at).toLocaleDateString()}
+                              </div>
+                              <div className="relative w-16 h-16">
+                                {/* Circular progress bar */}
+                                <svg className="w-full h-full" viewBox="0 0 100 100">
+                                  {/* Background circle */}
+                                  <circle
+                                    className="text-gray-200"
+                                    strokeWidth="8"
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                    r="40"
+                                    cx="50"
+                                    cy="50"
+                                  />
+                                  {/* Progress circle */}
+                                  <circle
+                                    className="text-primary"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                    r="40"
+                                    cx="50"
+                                    cy="50"
+                                    strokeDasharray={`${2 * Math.PI * 40}`}
+                                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - (enrollment.progress || 0) / 100)}`}
+                                    transform="rotate(-90 50 50)"
+                                  />
+                                </svg>
+                                {/* Percentage text */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-sm font-medium">{enrollment.progress || 0}%</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}

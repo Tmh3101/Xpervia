@@ -65,9 +65,6 @@ export function Header() {
                     Khóa học của tôi
                   </Button>
                 )}
-                {/* <Button variant="ghost" className={isScrolled || pathname !== "/" ? "text-gray-800" : "text-white"}>
-                  Become Instructor
-                </Button> */}
                 <Button
                   variant="ghost"
                   size="icon"

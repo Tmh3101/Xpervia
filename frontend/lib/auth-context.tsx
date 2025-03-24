@@ -73,17 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const { token, user } = result
+
     localStorage.setItem("token", token)
     setToken(token)
 
-    // Remove password from user object before setting in state
-    const { password: _, ...userWithoutPassword } = user
     localStorage.setItem("user", user)
-    setUser(userWithoutPassword)
-    handleRoleBasedRedirect(userWithoutPassword.role)
+    setUser(user)
+    handleRoleBasedRedirect(user.role)
 
     await fetchEnrollments()
-    return userWithoutPassword
+    return user
   }
 
   const logout = async () => {

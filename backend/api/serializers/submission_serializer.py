@@ -33,6 +33,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
 class SimpleSubmissionSerializer(serializers.ModelSerializer):
     file = FileSerializer(read_only=True)
+    student = SimpleUserSerializer(read_only=True)
     class Meta:
         model = Submission
-        fields = ['id', 'file', 'created_at']
+        fields = ['id', 'file', 'student', 'created_at']

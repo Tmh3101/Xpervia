@@ -25,14 +25,15 @@ class AssignmentListAPIView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         assingments_serializer = serializer.data.copy()
+
         for assignment in assingments_serializer:
             submissions = Submission.objects.filter(assignment_id=assignment['id'])
             if submissions:
-                assignment['submissions'] = SimpleSubmissionSerializer(data=submissions, many=True).data
+                assignment['submissions'] = SimpleSubmissionSerializer(submissions, many=True).data.copy()
                 for submission in assignment['submissions']:
                     if SubmissionScore.objects.filter(submission_id=submission['id']).exists():
                         submission_score = SubmissionScore.objects.get(submission_id=submission['id'])
-                        submission['submission_score'] = SubmissionScoreSerializer(submission_score).data
+                        submission['submission_score'] = SubmissionScoreSerializer(submission_score).data.copy()
                     else:
                         submission['submission_score'] = None
             else:
@@ -43,8 +44,6 @@ class AssignmentListAPIView(generics.ListAPIView):
             'message': 'All assignments have been listed successfully',
             'assignments': assingments_serializer
         }, status=status.HTTP_200_OK)
-
-
 
 
 # Assignment API to list all assignments of a lesson by a student
@@ -66,7 +65,7 @@ class AssignmentListByStudentAPIView(generics.ListAPIView):
         for assignment in assingments_serializer:
             submission = Submission.objects.filter(assignment_id=assignment['id'], student_id=request.user.id).first()
             if submission:
-                assignment['submission'] = SimpleSubmissionSerializer(submission).data
+                assignment['submission'] = SimpleSubmissionSerializer(submission).data.copy()
                 if SubmissionScore.objects.filter(submission_id=submission.id).exists():
                     submission_score = SubmissionScore.objects.get(submission_id=submission.id)
                     submission_score = SubmissionScoreSerializer(submission_score).data.copy()
@@ -99,8 +98,16 @@ class AssignmentCreateAPIView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             raise ValidationError(f'Assignment not created: {serializer.errors}')
+
+        try:
+            self.perform_create(serializer)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Debugging',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        self.perform_create(serializer)
         header = self.get_success_headers(serializer.data)
         return Response({
             'success': True,

@@ -20,5 +20,6 @@ export interface AssignmentSubmissions extends Assignment {
 export interface CreateAssignmentRequest {
     title: string;
     content: string;
-    due_at: string;
+    start_at: string;
+    due_at?: string;
 }

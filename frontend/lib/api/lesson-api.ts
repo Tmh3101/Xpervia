@@ -21,7 +21,6 @@ export const getLessonDetailApi = async (lessonId: number) : Promise<LessonDetai
         `${baseUrl}courses/lessons/${lessonId}/`,
         { headers }
     )
-    console.log('response.data', response.data)
     return response.data.lesson_detail
 }
 

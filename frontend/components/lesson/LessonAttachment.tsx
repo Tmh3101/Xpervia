@@ -19,6 +19,10 @@ export function LessonAttachment({ attachment }: LessonAttachmentsProps) {
     }
   }
 
+  if (!attachment) {
+    return
+  }
+
   return (
     <div className="mt-4 bg-white rounded-xl px-6 py-4 border">
       <h3 className="text-lg text-destructive font-semibold mb-3">Đính kèm</h3>

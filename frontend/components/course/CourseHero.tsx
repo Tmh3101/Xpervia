@@ -9,7 +9,6 @@ import { useAuth } from "@/lib/auth-context"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PaymentModal } from "./PaymentModal"
 import { useRouter } from "next/navigation"
-import { enrollCourseApi } from "@/lib/api/enrollment-api"
 
 interface CourseHeroProps {
   id: number
@@ -36,12 +35,17 @@ export function CourseHero({
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const router = useRouter()
+  const isFree = originalPrice === 0 || currentPrice === 0
 
   const handleBuyClick = () => {
     if (!user) {
       setShowAuthModal(true)
     } else {
-      setShowPaymentModal(true)
+      if (isFree) {
+        handlePaymentSuccess()
+      } else {
+        setShowPaymentModal(true)
+      }
     }
   }
 
@@ -82,14 +86,24 @@ export function CourseHero({
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-3xl text-destructive font-bold">{currentPrice.toLocaleString("vi-VN")}</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm text-gray-500 line-through">{originalPrice.toLocaleString("vi-VN")}</span>
-                      <span className="text-[10px] font-semibold text-white bg-red-500 px-1 rounded-full">
-                        -{discount * 100}%
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 mb-2 w-full">
+                    {isFree ? (
+                      <span className="text-2xl text-primary font-bold w-full text-center">Miễn phí</span>
+                    ) : (
+                      <>
+                        <span className="text-3xl text-destructive font-bold">
+                          {currentPrice.toLocaleString("vi-VN")}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-sm text-gray-500 line-through">
+                            {originalPrice.toLocaleString("vi-VN")}
+                          </span>
+                          <span className="text-[10px] font-semibold text-white bg-red-500 px-1 rounded-full">
+                            -{discount * 100}%
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <Button
                     className="w-[200px] bg-[#1ABC9C] hover:bg-[#1ABC9C]/90 rounded-full"

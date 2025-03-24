@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Submission } from '../types/submission'
+import { Submission, SubmissionScore } from '../types/submission'
 
 const baseUrl = 'http://localhost:8000/api/'
 
@@ -25,4 +25,19 @@ export const deleteSubmissionApi = async (submissionId: number) : Promise<boolea
         { headers }
     )
     return response.data.success
+}
+
+export const scoreSubmissionApi = async (submissionId: number, submissionScore: SubmissionScore) : Promise<Submission> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.post(
+        `${baseUrl}courses/assignments/submissions/${submissionId}/score/`,
+        {
+            score: submissionScore.score,
+            feedback: submissionScore.feedback
+        },
+        { headers }
+    )
+    return response.data.submission
 }

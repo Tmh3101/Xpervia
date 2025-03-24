@@ -36,7 +36,7 @@ export default function LessonPage() {
           const lessons = data.course_content.chapters
             .flatMap((chapter) => chapter.lessons)
             .concat(data.course_content.lessons_without_chapter)
-          const lesson = lessons.find((l) => l.id === Number.parseInt(params.lessonId[0]))
+          const lesson = lessons.find((l) => l.id === Number.parseInt(params.lessonId))
           setCurrentLesson(lesson)
         }
       })

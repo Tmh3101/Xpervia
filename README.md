@@ -1,62 +1,49 @@
-# Xpervia LMS
+# Xpervia - Hệ Thống Quản Lý Khóa Học Trực Tuyến
 
-Xpervia is a Learning Management System (LMS) project. This repository contains the backend built with Python Django REST Framework. The frontend will be developed later and will be placed at the same level as the backend directory.
+## Giới Thiệu
+Xpervia là nền tảng học tập trực tuyến giúp quản lý khóa học, học viên và giáo viên. Hệ thống hỗ trợ đăng ký khóa học, theo dõi tiến trình học tập, nộp bài tập, chấm điểm và thống kê dữ liệu.
 
-## Project Structure
+## Tính Năng Chính
+- **Quản lý người dùng**: Đăng ký, đăng nhập, phân quyền (Admin, Giáo viên, Học viên).
+- **Quản lý khóa học**: Tạo, chỉnh sửa, xóa khóa học, phân loại khóa học.
+- **Bài học & Bài tập**: Hỗ trợ nội dung học tập, video, file đính kèm, bài tập có hạn nộp.
+- **Chấm điểm & Phản hồi**: Giáo viên có thể chấm điểm, nhận xét bài tập.
+- **Thống kê**: Hiển thị tiến độ học tập, số lượng khóa học, học viên đăng ký.
 
-xpervia/ ├── backend/ │ ├── .gitignore │ ├── api/ │ ├── backend/ │ ├── manage.py │ └── requirements.txt ├── frontend/ │ ├── .gitignore │ └── src/ ├── .gitignore └── README.md
+## Công Nghệ Sử Dụng
+- **Backend**: Django Rest Framework, PostgreSQL, Google Drive API.
+- **Frontend**: Next.js, React, ShadCN/UI.
+- **Authentication**: Token-based Authentication.
 
-## Getting Started
-
-### Prerequisites
-
-- Python 3.8+
-- PostgreSQL
-- Django 5.1.4
-- Django REST Framework 3.15.2
-
-### Installation
-
-1. Clone the repository:
-
-git clone https://github.com/yourusername/xpervia.git
-cd xpervia/backend
-
-2. Create and activate a virtual environment:
-
+## Cài Đặt & Chạy Dự Án
+### Backend
+```sh
+# Cài đặt môi trường ảo
 python -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-3. Install the dependencies:
-
+# Cài đặt dependencies
 pip install -r requirements.txt
 
-4. Set up the PostgreSQL database and update the DATABASES settings in settings.py accordingly.
-
-5. Apply the migrations:
-
+# Chạy migrations
 python manage.py migrate
 
-6. Create a superuser:
-
-python manage.py createsuperuser
-
-7. Run the development server:
-
+# Chạy server
 python manage.py runserver
+```
 
-API Endpoints
-The API endpoints are defined in the urls.py file. Here are some of the available endpoints:
+### Frontend
+```sh
+# Cài đặt dependencies
+npm install
 
-POST /api/register/ - Register a new user
-POST /api/token/login/ - Login and obtain a token
-POST /api/token/logout/ - Logout and invalidate the token
-GET /api/users/ - List all users (Admin only)
-GET /api/users/<uuid:id>/ - Retrieve, update, or delete a user by ID (Admin only)
-PUT /api/users/<uuid:id>/update/ - Update user information (Admin only)
-PUT /api/users/<uuid:id>/update-password/ - Update user password (Requires old password)
-GET /api/courses/ - List all courses
-POST /api/courses/create/ - Create a new course (Teacher only)
-GET /api/courses/<int:id>/ - Retrieve a course by ID
-PUT /api/courses/<int:id>/update/ - Update a course by ID (Teacher and owner only)
-DELETE /api/courses/<int:id>/delete/ - Delete a course by ID (Teacher and owner only)
+# Chạy ứng dụng
+npm run dev
+```
+
+## Đóng Góp
+Mọi đóng góp đều được hoan nghênh! Hãy tạo issue hoặc gửi pull request.
+
+## Giấy Phép
+Dự án được phát hành theo giấy phép MIT.
+

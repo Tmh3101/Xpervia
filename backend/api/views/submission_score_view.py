@@ -30,7 +30,7 @@ class SubmissionScoreCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Submission score has been created successfully',
-            'data': serializer.data
+            'submission': serializer.data
         }, status=status.HTTP_201_CREATED)
 
 

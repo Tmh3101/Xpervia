@@ -2,10 +2,10 @@ import { User } from './user'
 import { File } from './file'
 
 export interface SubmissionScore {
-    id: number;
+    id?: number;
     score: number;
     feedback: string;
-    created_at: string;
+    created_at?: string;
 }
 
 export interface Submission {

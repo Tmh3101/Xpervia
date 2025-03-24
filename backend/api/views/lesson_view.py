@@ -138,14 +138,10 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
             raise NotFound('Lesson not found')
         
         serializer = self.get_serializer(instance)
-        lesson_data = serializer.data.copy()
-        # lesson_data.pop('course_content')
-        # lesson_data.pop('chapter')
-
         return Response({
             'success': True,
             'message': 'Lesson retrieved successfully',
-            'lesson_detail': lesson_data
+            'lesson_detail': serializer.data
         }, status=status.HTTP_200_OK)
 
 

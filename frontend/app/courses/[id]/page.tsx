@@ -59,7 +59,7 @@ export default function CourseDetailPage() {
             bannerImage={courseConent.thumbnail_id}
             onEnrollSuccess={handleEnrollSuccess}
         />
-        <div className="container mx-auto px-4 pt-4 pb-12">
+        <div className="container mx-auto px-4 pt-4 pb-12 min-h-[400px]">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                   <div className="mb-4 flex flex-wrap gap-1">
