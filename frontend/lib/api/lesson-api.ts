@@ -3,6 +3,7 @@ import { LessonCompletion } from '../types/lesson-completion'
 import { CreateLessonRequest, LessonDetail } from '../types/lesson'
 
 const baseUrl = 'http://localhost:8000/api/'
+// const baseUrl = 'http://192.168.1.4:8000/api/'
 
 export const getLessonDetailApi = async (lessonId: number) : Promise<LessonDetail> => {
     const headers = {

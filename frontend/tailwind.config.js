@@ -8,6 +8,11 @@ module.exports = {
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    {
+      pattern: /(bg|hover:bg|text)-(blue|green|yellow|red|purple|pink|orange|cyan|indigo)-(100|500|600)/,
+    },
+  ],
   theme: {
     container: {
       center: true,

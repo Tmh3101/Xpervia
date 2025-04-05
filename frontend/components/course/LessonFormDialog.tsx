@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import type { LessonDetail } from "@/lib/types/lesson"
 import { Trash2 } from "lucide-react"
+import { FileText } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,9 +163,6 @@ export const LessonFormDialog = ({
                   />
                 )}
               />
-              {initialData?.video_id && mode === "edit" && (
-                <p className="text-sm text-muted-foreground">Video hiện tại: {initialData.video_id}</p>
-              )}
             </div>
 
             <div className="space-y-1">
@@ -187,29 +185,34 @@ export const LessonFormDialog = ({
                   />
                 )}
               />
-              {initialData?.subtitle_vi_id && mode === "edit" && (
-                <p className="text-sm text-muted-foreground">Phụ đề hiện tại: {initialData.subtitle_vi_id}</p>
-              )}
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="attachment">Tệp đính kèm {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}</Label>
-              <Controller
-                name="attachment"
-                control={form.control}
-                render={({ field: { onChange } }: any) => (
-                  <Input
-                    id="attachment"
-                    type="file"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        onChange(file)
-                      }
-                    }}
-                  />
+              <div className="flex items-center space-x-2">
+                {initialData?.attachment && (
+                  <div className="relative max-w-[160px] flex items-center space-x-2 bg-primary text-white border rounded-md p-2">
+                    <FileText className="w-4 h-4" />
+                    <p className="text-sm font-medium truncate w-24">{initialData?.attachment.file_name}</p>
+                  </div>
                 )}
-              />
+                <Controller
+                  name="attachment"
+                  control={form.control}
+                  render={({ field: { onChange } }: any) => (
+                    <Input
+                      id="attachment"
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          onChange(file)
+                        }
+                      }}
+                    />
+                  )}
+                />
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -229,7 +232,7 @@ export const LessonFormDialog = ({
                   type="button"
                   variant="destructive"
                   onClick={() => setIsDeleteDialogOpen(true)}
-                  className="mr-auto"
+                  className="mr-auto bg-red-500 hover:bg-red-600"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Xóa

@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 from api.enums import RoleEnum
-from api.models import Enrollment, Lesson, Chapter, Assignment, CourseContent, Course
+from api.models import Enrollment, Lesson, Chapter, Assignment, Course
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):

@@ -2,6 +2,7 @@ import axios from 'axios'
 import { AssignmentDetail, AssignmentSubmissions, CreateAssignmentRequest } from '../types/assignment'
 
 const baseUrl = 'http://localhost:8000/api/'
+// const baseUrl = 'http://192.168.1.4:8000/api/'
 
 export const getLessonAssignmentsApi = async (lessonId: number) : Promise<AssignmentDetail[]> => {
     const headers = {

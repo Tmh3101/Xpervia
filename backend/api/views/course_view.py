@@ -107,6 +107,9 @@ class CourseListAPIView(generics.ListAPIView):
             course_content_data['chapters'] = chapters_data
             course_content_data['lessons_without_chapter'] = lessons_without_chapter
             course['course_content'] = course_content_data
+            # Add num_students to each course
+            enrollments = Enrollment.objects.filter(course=course['id'])
+            course['num_students'] = enrollments.count()
         
         return Response({
             'success': True,
@@ -314,11 +317,13 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
                     categories = json.loads(categories)
                 except json.JSONDecodeError:
                     categories = categories.split(',')
+                except Exception as e:
+                    raise ValidationError(f'Error updating course: {str(e)}')
             course_content.categories.set(categories)
         self.perform_update(course_serializer)
 
         # Delete the old thumbnail
-        if course_content.get('thumbnail_id'):
+        if request.FILES.get('thumbnail'):
             delete_file(old_thumbnail_id)
         
         return Response({

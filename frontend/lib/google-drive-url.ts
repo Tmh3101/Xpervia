@@ -1,5 +1,7 @@
+const apiKey = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY;
+
 export function getGoogleDriveImageUrl(fileId: string) {
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1920`
+    return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
 }
 
 export function getGoogleDriveVideoUrl(fileId: string) {

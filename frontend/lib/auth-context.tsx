@@ -11,6 +11,7 @@ import { Enrollment } from "@/lib/types/enrollment"
 interface AuthContextType {
   token: string | null
   user: User | null
+  setNewUser: (user: User | null) => void
   login: (email: string, password: string) => Promise<{ error?: string }>
   logout: () => void
   enrollments: Enrollment[]
@@ -117,8 +118,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const setNewUser = (user: User | null) => {
+    setUser(user)
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user))
+    } else {
+      localStorage.removeItem("user")
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, enrollments, enrollInCourse, fetchEnrollments }}>
+    <AuthContext.Provider value={{ token, user, setNewUser, login, logout, enrollments, enrollInCourse, fetchEnrollments }}>
       {children}
     </AuthContext.Provider>
   )

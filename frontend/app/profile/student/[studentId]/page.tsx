@@ -69,8 +69,6 @@ export default function StudentProfilePage() {
   const ongoingCourses = enrollments.filter((e) => e.progress < 100).length
   const completedCourses = enrollments.filter((e) => e.progress === 100).length
 
-  console.log("enrollments", enrollments)
-
   return (
     <div className="container mx-auto py-20 pt-[120px] min-h-[500px]">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -153,7 +151,7 @@ export default function StudentProfilePage() {
                                   getGoogleDriveImageUrl(
                                     getCourseById(enrollment.course.id)?.course_content.thumbnail_id || ""
                                   )}
-                                alt={enrollment.course.title}
+                                alt={enrollment.course.course_content.title}
                                 width={64}
                                 height={64}
                                 className="rounded-md object-cover"
@@ -177,7 +175,7 @@ export default function StudentProfilePage() {
                           <CardContent className="p-4">
                             <div className="flex justify-between items-center">
                               <div>
-                                <h3 className="font-medium">{enrollment.course.title}</h3>
+                                <h3 className="font-medium">{enrollment.course.course_content.title}</h3>
                                 <p className="text-sm text-muted-foreground">Hoàn thành: 100%</p>
                               </div>
                               {/* <div className="w-16 h-16 relative">

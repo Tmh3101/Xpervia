@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus, Edit, User } from "lucide-react"
+import { ArrowLeft, Plus, Edit } from "lucide-react"
 import Image from "next/image"
 import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +24,7 @@ import { getEnrollmentsByCourseApi } from "@/lib/api/enrollment-api"
 import type { Enrollment } from "@/lib/types/enrollment"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/course/Progress"
+import userAvatar from "@/public/user-avatar.svg"
 
 export default function CourseDetail() {
   const params = useParams()
@@ -227,29 +228,31 @@ export default function CourseDetail() {
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent> 
                       <div className="space-y-2">
-                        {chapter.lessons.map((lesson: any) => (
+                        {chapter.lessons.sort((a: LessonDetail, b: LessonDetail) => a.order - b.order).map((lesson: LessonDetail, index: number) => (
                           <div
                             key={lesson.id}
-                            className="flex justify-between items-center p-3 rounded-lg bg-primary/10"
+                            className="flex justify-between items-center p-3 rounded-lg bg-primary/10 text-primary"
                           >
                             <div>
-                              <h4 className="font-medium">{lesson.title}</h4>
+                              <h4 className="font-medium">{index + 1}. {lesson.title}</h4>
                               {/* <p className="text-sm text-gray-500">{lesson.duration}</p> */}
                             </div>
                             <div className="flex items-center gap-2">
-                              {assignmentDetails[lesson.id] && (
-                                <Badge color="success" className="text-sm">
-                                  {assignmentDetails[lesson.id].content}
-                                </Badge>
-                              )}
-                              <Button variant="outline" size="sm" onClick={() => handleViewLessonDetail(lesson.id)}>
-                                Xem chi tiết
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="hover:bg-primary hover:text-white"
+                                onClick={() => handleViewLessonDetail(lesson.id)}>
+                                Chi tiết
                               </Button>
-                              <Button variant="outline" size="sm" onClick={() => handleEditLesson(lesson)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Sửa
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="hover:bg-primary hover:text-white"
+                                onClick={() => handleEditLesson(lesson)}>
+                                <Edit className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -266,13 +269,13 @@ export default function CourseDetail() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {course.course_content.lessons_without_chapter.map((lesson: any) => (
+                        {course.course_content.lessons_without_chapter.sort((a: LessonDetail, b: LessonDetail) => a.order - b.order).map((lesson: LessonDetail, index: number) => (
                           <div
                             key={lesson.id}
-                            className="flex justify-between items-center p-3 rounded-lg bg-primary/10"
+                            className="flex justify-between items-center p-3 rounded-lg bg-primary/10 text-primary"
                           >
                             <div>
-                              <h4 className="font-medium">{lesson.title}</h4>
+                              <h4 className="font-medium">{index + 1}. {lesson.title}</h4>
                             </div>
                             <div className="flex items-center gap-2">
                               {assignmentDetails[lesson.id] && (
@@ -280,12 +283,19 @@ export default function CourseDetail() {
                                   {assignmentDetails[lesson.id].content}
                                 </Badge>
                               )}
-                              <Button variant="outline" size="sm" onClick={() => handleViewLessonDetail(lesson.id)}>
-                                Xem chi tiết
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="hover:bg-primary hover:text-white"
+                                onClick={() => handleViewLessonDetail(lesson.id)}>
+                                Chi tiết
                               </Button>
-                              <Button variant="outline" size="sm" onClick={() => handleEditLesson(lesson)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Sửa
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="hover:bg-primary hover:text-white"
+                                onClick={() => handleEditLesson(lesson)}>
+                                <Edit className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -299,8 +309,8 @@ export default function CourseDetail() {
 
             <TabsContent value="students">
               <Card>
-                <CardHeader>
-                  <CardTitle>Danh sách học viên đã đăng ký</CardTitle>
+                <CardHeader className="pb-4">
+                  <CardTitle>Danh sách học viên</CardTitle>
                   <CardDescription>Tổng số: {enrollments.length} học viên</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -308,15 +318,21 @@ export default function CourseDetail() {
                     <div className="text-center py-4">Đang tải danh sách học viên...</div>
                   ) : enrollments.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
-                      Chưa có học viên nào đăng ký khóa học này
+                      Chưa có học viên nào tham gia khóa học này
                     </div>
                   ) : (
-                    <ScrollArea className="">
+                    <ScrollArea className="px-4">
                       <div className="space-y-2">
                         {enrollments.map((enrollment) => (
-                          <div key={enrollment.id} className="flex items-center p-3 rounded-lg bg-gray-50">
+                          <div key={enrollment.id} className="flex items-center p-3 rounded-lg bg-primary/10">
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
-                              <User className="w-5 h-5 text-primary" />
+                              <Image
+                                src={userAvatar}
+                                alt={`${enrollment.student.first_name} ${enrollment.student.last_name}`}  
+                                width={32}
+                                height={32}
+                                className="h-full w-full object-cover"
+                              />
                             </div>
                             <div className="flex-1">
                               <h4 className="font-medium">
@@ -326,7 +342,7 @@ export default function CourseDetail() {
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="text-sm text-gray-500">
-                                Đăng ký ngày: {new Date(enrollment.created_at).toLocaleDateString()}
+                                Tham gia ngày: {new Date(enrollment.created_at).toLocaleDateString()}
                               </div>
                               <Progress progress={enrollment.progress} />
                             </div>

@@ -40,6 +40,9 @@ function RoleBasedProtection({ children }: { children: ReactNode }) {
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+
+  const pathname = usePathname();
+
   return (
     <html lang="en">
       <head>
@@ -52,9 +55,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AuthProvider>
             <RoleBasedProtection>
               <div className="min-h-screen bg-white">
-                <Header />
-                {children}
-                <Footer />
+                {
+                  pathname.startsWith('/admin') ? (
+                    <>{children}</>
+                  ) : (
+                    <>
+                      <Header />
+                      {children}
+                      <Footer />
+                    </>
+                  )
+                }
               </div>
             </RoleBasedProtection>
           </AuthProvider>

@@ -7,6 +7,7 @@ import {
 import { Category } from '@/lib/types/course-content'
 
 const baseUrl = 'http://localhost:8000/api/'
+// const baseUrl = 'http://192.168.1.4:8000/api/'
 
 export const getCoursesApi = async () : Promise<Course[]> => {
     const response = await axios.get(
@@ -78,7 +79,11 @@ export const updateCourseApi = async (id: number, data: CreateCourseRequest) : P
     }
 
     let formData = new FormData()
-    formData.append('thumbnail', data.thumbnail)
+
+    if (data.thumbnail) {
+        formData.append('thumbnail', data.thumbnail)
+    }
+
     formData.append('title', data.title)
     formData.append('description', data.description)
     formData.append('price', data.price.toString())

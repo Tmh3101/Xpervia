@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 const baseUrl = 'http://localhost:8000/api/'
+// const baseUrl = 'http://192.168.1.4:8000/api/'
 
 export const loginApi = async (email: string, password: string) => {
     try {
@@ -22,7 +23,8 @@ export const registerApi = async (
     first_name_value: string,
     last_name_value: string,
     date_of_birth_value: string,
-    password_value: string
+    password_value: string,
+    role_value: string
 ) => {
     try {
         const response = await axios.post(`${baseUrl}register/`, {
@@ -30,7 +32,8 @@ export const registerApi = async (
             password: password_value,
             first_name: first_name_value,
             last_name: last_name_value,
-            date_of_birth: date_of_birth_value
+            date_of_birth: date_of_birth_value,
+            role: role_value
         })
         return response.data.user
     } catch (error) {

@@ -54,6 +54,13 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://192.168.1.4:3000",  # Thay bằng IP và cổng của Next.js
+    "http://localhost:3000",      # Nếu chạy local trên máy chính
+]
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.4']
+
 ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [

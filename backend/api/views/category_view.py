@@ -27,7 +27,6 @@ class CategoryListAPIView(generics.ListAPIView):
 
 # Category API to create a category
 class CategoryCreateAPIView(generics.CreateAPIView):
-    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
@@ -36,7 +35,7 @@ class CategoryCreateAPIView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             raise ValidationError(f'Category not created: {serializer.errors}')
-        
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response({

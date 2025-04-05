@@ -154,7 +154,7 @@ class SubmissionDeleteAPIView(generics.DestroyAPIView):
             raise NotFound('Submission does not exist')
         
         self.perform_destroy(instance)
-        delete_file(instance.file.id)
+        delete_file(instance.file.file_id)
         return Response({
             'success': True,
             'message': 'Submission has been deleted successfully',

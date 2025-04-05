@@ -17,6 +17,7 @@ import { getCategoriesApi } from "@/lib/api/course-api"
 import type { CreateCourseRequest } from "@/lib/types/course"
 import { Label } from "@/components/ui/label"
 import { Trash2 } from "lucide-react"
+import Image from "next/image"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +28,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { formatDate } from "@/lib/utils"
+import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
 
 const courseFormSchema = z.object({
   thumbnail: z.instanceof(File).refine((file) => file instanceof File, {
     message: "Ảnh bìa là bắt buộc",
-  }),
+  }).nullable(),
   title: z.string().min(3, "Tiêu đề phải có ít nhất 3 ký tự"),
   description: z.string().min(20, "Mô tả phải có ít nhất 20 ký tự"),
   price: z.number().min(0, "Giá phải là số dương"),
@@ -64,13 +67,13 @@ type CourseFormProps = {
 
 const getInitalData = (initialData: any) => {
   return {
-    thumbnail: null, // We can't pre-fill the file input
+    thumbnail: null,
     title: initialData.course_content.title || "",
     description: initialData.course_content.description || "",
     price: initialData.price || 0,
-    start_date: initialData.start_date || null,
-    regis_start_date: initialData.regis_start_date || null,
-    regis_end_date: initialData.regis_end_date || null,
+    start_date: formatDate(initialData.start_date) || null,
+    regis_start_date: formatDate(initialData.regis_start_date) || null,
+    regis_end_date: formatDate(initialData.regis_end_date) || null,
     max_students: initialData.max_students || 100,
     is_visible: initialData.is_visible !== undefined ? initialData.is_visible : true,
     categories: initialData.course_content.categories?.map((cat: any) => cat.id) || [],
@@ -154,258 +157,275 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle className="text-center">
               {mode === "create" ? "Tạo khóa học mới" : "Chỉnh sửa khóa học"}
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-1">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             {form.formState.errors && Object.values(form.formState.errors).length > 0 && (
               <div className="text-red-500 text-center italic text-sm">
                 {Object.values(form.formState.errors)[0]?.message}
               </div>
             )}
 
-            <div>
-              <Label htmlFor="title">Tiêu đề khóa học</Label>
-              <Controller
-                name="title"
-                control={form.control}
-                render={({ field }: any) => <Input id="title" placeholder="Nhập tiêu đề khóa học" {...field} />}
-              />
-            </div>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Left Section: Course Content Fields */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <Label htmlFor="title">Tiêu đề khóa học</Label>
+                  <Controller
+                    name="title"
+                    control={form.control}
+                    render={({ field }: any) => <Input id="title" placeholder="Nhập tiêu đề khóa học" {...field} />}
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="description">Mô tả khóa học</Label>
-              <Controller
-                name="description"
-                control={form.control}
-                render={({ field }: any) => (
-                  <Textarea id="description" placeholder="Nhập mô tả khóa học" className="min-h-[100px]" {...field} />
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Giá (VND)</Label>
-                <Controller
-                  name="price"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <Input
-                      id="price"
-                      type="number"
-                      step="1000"
-                      min="0"
-                      placeholder="Nhập giá"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="discount">Giảm giá (%)</Label>
-                <Controller
-                  name="discount"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <Input
-                      id="discount"
-                      type="number"
-                      step="1"
-                      min="0"
-                      max="100"
-                      placeholder="Nhập giảm giá"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  )}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="thumbnail">Ảnh bìa khóa học</Label>
-              <Controller
-                name="thumbnail"
-                control={form.control}
-                render={({ field: { onChange } }: any) => (
-                  <input
-                    id="thumbnail"
-                    type="file"
-                    accept="image/png, image/jpeg, image/jpg"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0]
-                      if (file) {
-                        onChange(file)
-                      }
-                    }}
-                    className={cn(
-                      "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+                <div>
+                  <Label htmlFor="description">Mô tả khóa học</Label>
+                  <Controller
+                    name="description"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <Textarea id="description" placeholder="Nhập mô tả khóa học" className="min-h-[100px]" {...field} />
                     )}
                   />
-                )}
-              />
-            </div>
+                </div>
 
-            <div>
-              <Label htmlFor="categories">Danh mục khóa học</Label>
-              <Controller
-                name="categories"
-                control={form.control}
-                render={({ field }: any) => (
-                  <Select
-                    id="categories"
-                    isMulti
-                    options={categoryOptions}
-                    value={categoryOptions.filter((option) => field.value.includes(option.value))}
-                    onChange={(selectedOptions) => field.onChange(selectedOptions.map((option) => option.value))}
-                    placeholder="Chọn danh mục"
-                    className="basic-multi-select"
-                    classNamePrefix="select"
-                  />
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label htmlFor="start_date">Ngày bắt đầu khóa học</Label>
-                <Controller
-                  name="start_date"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <div className="flex flex-col">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            id="start_date"
-                            variant={"outline"}
-                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? field.value : <span>Chọn ngày</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value ? new Date(field.value) : undefined}
-                            onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="regis_start_date">Ngày mở đăng ký</Label>
-                <Controller
-                  name="regis_start_date"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <div className="flex flex-col">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            id="regis_start_date"
-                            variant={"outline"}
-                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? field.value : <span>Chọn ngày</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value ? new Date(field.value) : undefined}
-                            onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="regis_end_date">Ngày đóng đăng ký</Label>
-                <Controller
-                  name="regis_end_date"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <div className="flex flex-col">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            id="regis_end_date"
-                            variant={"outline"}
-                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? field.value : <span>Chọn ngày</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value ? new Date(field.value) : undefined}
-                            onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
-                            disabled={(date) => date < new Date(form.getValues().regis_start_date)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="max_students">Số lượng học viên tối đa</Label>
-                <Controller
-                  name="max_students"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <Input
-                      id="max_students"
-                      type="number"
-                      min="1"
-                      placeholder="Nhập số lượng học viên tối đa"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                <div>
+                  <Label htmlFor="thumbnail">Ảnh bìa khóa học</Label>
+                  <div className="flex items-center space-x-2">
+                    {initialData?.course_content?.thumbnail_id && (
+                      <div className="relative">
+                        <Image
+                          src={getGoogleDriveImageUrl(initialData?.course_content?.thumbnail_id || "")}
+                          alt={initialData?.course_content?.title}
+                          width={100}
+                          height={100}
+                          className="rounded-md object-cover"
+                        />
+                      </div>
+                    )}
+                    <Controller
+                      name="thumbnail"
+                      control={form.control}
+                      render={({ field: { onChange } }: any) => (
+                        <input
+                          id="thumbnail"
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) {
+                              onChange(file);
+                            }
+                          }}
+                          className={cn(
+                            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                          )}
+                        />
+                      )}
                     />
-                  )}
-                />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="categories">Danh mục khóa học</Label>
+                  <Controller
+                    name="categories"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <Select
+                        id="categories"
+                        isMulti
+                        options={categoryOptions}
+                        value={categoryOptions.filter((option) => field.value.includes(option.value))}
+                        onChange={(selectedOptions) => field.onChange(selectedOptions.map((option) => option.value))}
+                        placeholder="Chọn danh mục"
+                        className="basic-multi-select"
+                        classNamePrefix="select"
+                      />
+                    )}
+                  />
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="is_visible">Hiển thị khóa học</Label>
-                <Controller
-                  name="is_visible"
-                  control={form.control}
-                  render={({ field }: any) => (
-                    <div className="flex flex-row items-center space-x-3 rounded-md border p-3 h-10">
-                      <Checkbox id="is_visible" checked={field.value} onCheckedChange={field.onChange} />
-                      <label
-                        htmlFor="is_visible"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Hiển thị khóa học cho học viên
-                      </label>
-                    </div>
-                  )}
-                />
+              {/* Right Section: Course Fields */}
+              <div className="flex-1 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="price">Giá (VND)</Label>
+                    <Controller
+                      name="price"
+                      control={form.control}
+                      render={({ field }: any) => (
+                        <Input
+                          id="price"
+                          type="number"
+                          step="1000"
+                          min="0"
+                          placeholder="Nhập giá"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="discount">Giảm giá (%)</Label>
+                    <Controller
+                      name="discount"
+                      control={form.control}
+                      render={({ field }: any) => (
+                        <Input
+                          id="discount"
+                          type="number"
+                          step="1"
+                          min="0"
+                          max="100"
+                          placeholder="Nhập giảm giá"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="start_date">Ngày bắt đầu khóa học</Label>
+                  <Controller
+                    name="start_date"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <div className="flex flex-col">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="start_date"
+                              variant={"outline"}
+                              className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            >
+                              {field.value ? field.value : <span>Chọn ngày</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(field.value) : undefined}
+                              onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="regis_start_date">Ngày mở đăng ký</Label>
+                  <Controller
+                    name="regis_start_date"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <div className="flex flex-col">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="regis_start_date"
+                              variant={"outline"}
+                              className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            >
+                              {field.value ? field.value : <span>Chọn ngày</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(field.value) : undefined}
+                              onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="regis_end_date">Ngày đóng đăng ký</Label>
+                  <Controller
+                    name="regis_end_date"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <div className="flex flex-col">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="regis_end_date"
+                              variant={"outline"}
+                              className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            >
+                              {field.value ? field.value : <span>Chọn ngày</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(field.value) : undefined}
+                              onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
+                              disabled={(date) => date < new Date(form.getValues().regis_start_date)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="max_students">Số lượng học viên tối đa</Label>
+                  <Controller
+                    name="max_students"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <Input
+                        id="max_students"
+                        type="number"
+                        min="1"
+                        placeholder="Nhập số lượng học viên tối đa"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="is_visible">Hiển thị khóa học</Label>
+                  <Controller
+                    name="is_visible"
+                    control={form.control}
+                    render={({ field }: any) => (
+                      <div className="flex flex-row items-center space-x-3 rounded-md border p-3 h-10">
+                        <Checkbox id="is_visible" checked={field.value} onCheckedChange={field.onChange} />
+                        <label
+                          htmlFor="is_visible"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Hiển thị khóa học cho học viên
+                        </label>
+                      </div>
+                    )}
+                  />
+                </div>
               </div>
             </div>
 

@@ -18,6 +18,7 @@ import type { AssignmentDetail } from "@/lib/types/assignment"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, CircleAlert } from "lucide-react"
 import { CourseWithDetailLessons } from "@/lib/types/course"
+import { Loading } from "@/components/Loading"
 
 export default function LessonPage() {
   const params = useParams()
@@ -26,7 +27,6 @@ export default function LessonPage() {
   const [assignments, setAssignments] = useState<AssignmentDetail[] | null>(null)
   const [completedLessonIds, setCompletedLessonIds] = useState<number[]>([])
   const [isCompletingLesson, setIsCompletingLesson] = useState(false)
-  const [isLoadingSubmission, setIsLoadingSubmission] = useState(false)
 
   useEffect(() => {
     if (params.courseId) {
@@ -57,10 +57,7 @@ export default function LessonPage() {
 
   if (!courseData) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="ml-2">Đang tải...</span>
-      </div>
+      <Loading />
     )
   } else if (!currentLesson) {
     return (
@@ -104,9 +101,7 @@ export default function LessonPage() {
     }
   }
 
-  const handleSubmissionLoading = (isLoading: boolean) => {
-    setIsLoadingSubmission(isLoading)
-  }
+  console.log("assignments", assignments)
 
   return (
     <main className="pt-4">
@@ -142,27 +137,18 @@ export default function LessonPage() {
               {currentLesson.attachments?.length != 0 && <LessonAttachment attachment={currentLesson.attachment} />}
             </div>
             <div>
-              {isLoadingSubmission && (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <span className="ml-2">Đang xử lý bài nộp...</span>
-                </div>
-              )}
               {assignments?.length != 0 && (
-                <div className="mt-8 p-2">
+                <div className="mt-8 p-2 space-y-2">
                   <h1 className="text-2xl text-destructive font-bold mb-4">Bài tập</h1>
-                  <div className="bg-white rounded-xl px-6 py-4 border space-y-6">
-                    {assignments?.map((assignment) => (
-                      <div key={assignment.id}>
-                        <LessonAssignment title={assignment.title} content={assignment.content} />
-                        <LessonSubmission
-                          assignmentId={assignment.id}
-                          submission={assignment.submission}
-                          onLoadingChange={handleSubmissionLoading}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {assignments?.map((assignment) => (
+                    <div key={assignment.id} className="bg-white rounded-xl px-6 py-4 border space-y-6">
+                      <LessonAssignment title={assignment.title} content={assignment.content} />
+                      <LessonSubmission
+                        assignmentId={assignment.id}
+                        submission={assignment.submission}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

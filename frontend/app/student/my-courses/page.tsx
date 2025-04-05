@@ -3,11 +3,11 @@
 import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { EnrolledCourse } from "@/lib/types/course"
+import { Loading } from "@/components/Loading"
 import { CourseCard } from "@/components/course/CourseCard"
 import { getCoursesApi } from "@/lib/api/course-api"
 
 export default function MyCourses() {
-
   const { enrollments } = useAuth()
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ export default function MyCourses() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loading />
   }
 
   return (
@@ -60,8 +60,8 @@ export default function MyCourses() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-gray-600 mb-4">No courses enrolled yet</h2>
-            <p className="text-gray-500">Browse our courses and start learning today!</p>
+            <h2 className="text-2xl font-semibold text-gray-600 mb-4">Chưa tham gia khóa học nào</h2>
+            <p className="text-gray-500">Hãy tham gia các khóa học và bắt đầu học ngay hôm nay!</p>
           </div>
         )}
       </section>

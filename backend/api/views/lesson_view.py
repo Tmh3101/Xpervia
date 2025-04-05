@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import CourseContent, Chapter, Lesson, Course
+from api.models import Chapter, Lesson, Course, File
 from api.serializers import LessonSerializer, FileSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
@@ -178,7 +178,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
             
         if request.FILES.get('attachment'):
             try:
-                file = upload_file(request.FILES.get(file_type))
+                file = upload_file(request.FILES.get('attachment'))
                 file_serializer = FileSerializer(data=file)
                 if not file_serializer.is_valid():
                     raise FileUploadException(f'Error uploading {file}: {file_serializer.errors}')
@@ -188,14 +188,16 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
                     delete_file(file_id) 
                 raise FileUploadException(f'Error uploading {file}: {str(e)}')
             request.data['attachment_id'] = attachment.id
-            file_id_list.append(file_id)
-            old_file_ids.append(getattr(instance, 'attachment_id'))
+            file_id_list.append(attachment.file_id)
+            old_attachment_id = getattr(instance, 'attachment_id')
+            old_attachment_file_ids = File.objects.get(id=old_attachment_id).file_id
+            old_file_ids.append(old_attachment_file_ids)
  
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
             for file_id in file_id_list:
                 delete_file(file_id)
-            raise ValidationError(f'Error updating lesson: {serializer.errors} ===> {instance}')
+            raise ValidationError(f'Error updating lesson: {serializer.errors}')
         
         self.perform_update(serializer)
 

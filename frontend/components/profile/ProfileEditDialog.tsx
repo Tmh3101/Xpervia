@@ -7,7 +7,6 @@ import { z } from "zod"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CalendarIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
@@ -22,6 +21,7 @@ import { cn } from "@/lib/utils"
 const profileEditFormSchema = z.object({
   first_name: z.string().nonempty("Tên không được để trống"),
   last_name: z.string().nonempty("Họ không được để trống"),
+  email: z.string().email("Email không hợp lệ"),
   date_of_birth: z.string().optional(),
 })
 
@@ -33,13 +33,14 @@ interface ProfileEditDialogProps {
 
 export function ProfileEditDialog({ isOpen, onClose, onUserInforUpdate }: ProfileEditDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { user } = useAuth()
+  const { user, setNewUser } = useAuth()
 
   const form = useForm({
     resolver: zodResolver(profileEditFormSchema),
     defaultValues: {
       first_name: user?.first_name || "",
       last_name: user?.last_name || "",
+      email: user?.email || "",
       date_of_birth: user?.date_of_birth || "",
     },
   })
@@ -50,6 +51,7 @@ export function ProfileEditDialog({ isOpen, onClose, onUserInforUpdate }: Profil
       form.reset({
         first_name: user.first_name,
         last_name: user.last_name,
+        email: user.email,
         date_of_birth: user.date_of_birth,
       })
     }
@@ -60,8 +62,13 @@ export function ProfileEditDialog({ isOpen, onClose, onUserInforUpdate }: Profil
 
     setIsSubmitting(true)
     try {
-      await updateUserApi(user.id, data).then((res) => onUserInforUpdate(res))
-      form.reset()
+      const newUser = await updateUserApi(user.id, data)
+      if (newUser) {
+        onUserInforUpdate(newUser)
+        setNewUser(newUser)
+        onClose()
+        form.reset()
+      }
     } catch (error) {
       console.error("Lỗi khi gửi biểu mẫu:", error)
     } finally {
@@ -100,6 +107,15 @@ export function ProfileEditDialog({ isOpen, onClose, onUserInforUpdate }: Profil
               />
             </div>
 
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field }: any) => <Input id="email" placeholder="Nhập email" {...field} />}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Ngày sinh</Label>
               <Controller
@@ -124,7 +140,7 @@ export function ProfileEditDialog({ isOpen, onClose, onUserInforUpdate }: Profil
                     <Calendar
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date ? date.toISOString() : "")} // Cập nhật giá trị vào form
+                      onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")} // Cập nhật giá trị vào form
                       initialFocus
                     />
                     </PopoverContent>

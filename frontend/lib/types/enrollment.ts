@@ -1,5 +1,6 @@
 import { SimpleCourseContent } from './course-content';
 import { SimpleUser } from './user';
+import { Course } from './course';
 
 interface Payment {
     id: string;
@@ -12,7 +13,7 @@ interface Payment {
 export interface Enrollment {
     id: string;
     student: SimpleUser;
-    course: SimpleCourseContent;
+    course: Course;
     payment: Payment;
     created_at: string;
     progress: number;

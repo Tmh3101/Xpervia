@@ -7,9 +7,9 @@ import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { Course } from "@/lib/types/course"
+import { Loading } from "@/components/Loading"
 import { getCourseDetailApi } from "@/lib/api/course-api"
 import { Chapter } from "@/lib/types/chapter"
-import { CourseCategories } from "@/components/course/CourseCategories"
 
 export default function CourseDetailPage() {
   const params = useParams()
@@ -35,7 +35,7 @@ export default function CourseDetailPage() {
   }, [params.id]);
 
   if (!courseDetailData) {
-    return <div>Loading...</div>
+    return <Loading />
   }
 
   const handleEnrollSuccess = () => {
@@ -57,14 +57,12 @@ export default function CourseDetailPage() {
             discount={courseDetailData.discount}
             teacher={teacher.first_name + " " + teacher.last_name}
             bannerImage={courseConent.thumbnail_id}
+            categories={courseDetailData.course_content.categories.map(c => c.name)}
             onEnrollSuccess={handleEnrollSuccess}
         />
         <div className="container mx-auto px-4 pt-4 pb-12 min-h-[400px]">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                  <div className="mb-4 flex flex-wrap gap-1">
-                    <CourseCategories categories={courseDetailData.course_content.categories.map(c => c.name)} />
-                  </div>
                   <Description title={'Thông tin khóa học'} description={courseConent.description} />
                 </div>
                 <div className="lg:col-span-1">

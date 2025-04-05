@@ -14,6 +14,7 @@ class Enrollment(models.Model):
         db_table = 'enrollments'
         verbose_name = 'Enrollment'
         verbose_name_plural = 'Enrollments'
+        unique_together = ('student', 'course')
 
     def __str__(self):
         return f'{self.course.course_content.title} - {self.student.user.email}'

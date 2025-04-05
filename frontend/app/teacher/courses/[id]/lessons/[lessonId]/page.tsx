@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Edit } from "lucide-react"
+import { Edit, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Plus } from "lucide-react"
 import { Description } from "@/components/Description"
@@ -116,8 +116,8 @@ export default function TeacherLessonDetail() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Button variant="ghost" className="mb-6" onClick={() => router.push(`/teacher/courses/${params.id}/detail`)}>
+    <div className="container mx-auto py-8 mt-[80px]">
+      <Button variant="ghost" onClick={() => router.push(`/teacher/courses/${params.id}/detail`)}>
         <ArrowLeft className="w-4 h-4 mr-2" />
         Trở về khóa học
       </Button>
@@ -158,27 +158,40 @@ export default function TeacherLessonDetail() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>{assignment.title}</CardTitle>
+                        <CardTitle className="mb-2">{assignment.title}</CardTitle>
                         <CardDescription>
                           Bắt đầu vào {new Date(assignment.start_at).toLocaleDateString()}
-                          {assignment.due_at && ` • Hạn nộp: ${new Date(assignment.due_at).toLocaleDateString()}`}
+                          {assignment.due_at && ` - Hạn nộp: ${new Date(assignment.due_at).toLocaleDateString()}`}
                         </CardDescription>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleEditAssignment(assignment)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="absolute top-2 right-14"
+                          onClick={() => handleEditAssignment(assignment)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="absolute top-2 right-2 bg-red-200 text-red-500 hover:bg-red-300 hover:text-red-600"
+                          onClick={() => handleEditAssignment(assignment)}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <p>{assignment.content}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" onClick={() => handleViewSubmissions(assignment)}>
+                    <Button
+                      variant="outline"
+                      className="border border-primary bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+                      onClick={() => handleViewSubmissions(assignment)}>
                       Xem bài nộp ({assignment.submissions ? assignment.submissions.length : 0})
                     </Button>
                   </CardFooter>

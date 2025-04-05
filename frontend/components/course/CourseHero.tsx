@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PaymentModal } from "./PaymentModal"
 import { useRouter } from "next/navigation"
+import { CourseCategories } from "@/components/course/CourseCategories"
 
 interface CourseHeroProps {
   id: number
@@ -18,6 +19,7 @@ interface CourseHeroProps {
   discount: number
   teacher: string
   bannerImage: string
+  categories: string[]
   onEnrollSuccess: () => void
 }
 
@@ -29,6 +31,7 @@ export function CourseHero({
   discount,
   teacher,
   bannerImage,
+  categories,
   onEnrollSuccess,
 }: CourseHeroProps) {
   const { user, enrollInCourse } = useAuth()
@@ -79,6 +82,9 @@ export function CourseHero({
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    <CourseCategories categories={categories} />
+                  </div>
                   <h1 className="text-2xl text-destructive font-bold mb-2">{title}</h1>
                   <div className="flex items-center mb-2 mt-2">
                     <User className="w-4 h-4 mr-2 text-primary" />

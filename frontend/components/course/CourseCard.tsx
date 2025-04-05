@@ -78,7 +78,7 @@ export function CourseCard({
       </CardContent>
       <CardFooter className={`p-4 pt-0 ${mode === "student" ? "items-center justify-between" : "flex flex-col gap-2"}`}>
         {mode === "teacher" ? (
-          <div className="flex gap-2 w-full">
+          <div className="flex gap-2 w-full mt-2">
             <Button
               className="flex-1 bg-primary hover:bg-primary/90 rounded-full text-sm"
               onClick={() => router.push(`/teacher/courses/${id}/detail`)}

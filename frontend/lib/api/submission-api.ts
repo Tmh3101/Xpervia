@@ -2,6 +2,7 @@ import axios from 'axios'
 import { Submission, SubmissionScore } from '../types/submission'
 
 const baseUrl = 'http://localhost:8000/api/'
+// const baseUrl = 'http://192.168.1.4:8000/api/'
 
 export const submitAssignmentApi = async (assignmentId: number, fileData: File) : Promise<Submission> => {
     const headers = {

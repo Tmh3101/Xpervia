@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { Loading } from "@/components/Loading"
 import { getCourseDetailApi } from "@/lib/api/course-api"
 
 export default function CoursePage() {
@@ -26,5 +27,5 @@ export default function CoursePage() {
     fetchCourseDetail()
   }, [params.courseId, router])
 
-  return <div>Loading...</div>
+  return <Loading />
 }

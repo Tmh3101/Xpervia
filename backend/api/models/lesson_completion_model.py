@@ -12,6 +12,7 @@ class LessonCompletion(models.Model):
         db_table = 'lesson_completions'
         verbose_name = 'Lesson Completion'
         verbose_name_plural = 'Lesson Completions'
+        unique_together = ('lesson', 'student')
     
     def __str__(self):
         return f'{self.lesson} - {self.student}'

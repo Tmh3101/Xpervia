@@ -2,6 +2,7 @@ import axios from 'axios'
 import { Enrollment } from '../types/enrollment'
 
 const baseUrl = 'http://localhost:8000/api/'
+// const baseUrl = 'http://192.168.1.4:8000/api/'
 
 export const getEnrollmentsByStudentApi = async (token: string): Promise<Enrollment[]> => {
     if (!token) {

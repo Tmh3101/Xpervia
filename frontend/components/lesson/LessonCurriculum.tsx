@@ -31,7 +31,7 @@ export function LessonCurriculum({
       <Accordion type="multiple" className="w-full space-y-1">
         {chapters.map((chapter, index) => (
           <AccordionItem key={chapter.id} value={chapter.id.toString()}>
-            <AccordionTrigger className="bg-destructive text-white p-3 rounded-lg hover:bg-">
+            <AccordionTrigger className="bg-primary/20 text-primary p-3 rounded-lg hover:bg-primary/30">
               <div className="flex flex-col items-start">
                 <span className="text-sm">Chương {index + 1}: {chapter.title}</span>
               </div>

@@ -124,7 +124,7 @@ export function AssignmentFormDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] gap-0">
           <DialogHeader>
             <DialogTitle>{mode === "create" ? "Thêm bài tập mới" : "Chỉnh sửa bài tập"}</DialogTitle>
             <DialogDescription>
@@ -132,14 +132,14 @@ export function AssignmentFormDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
             {form.formState.errors && Object.values(form.formState.errors).length > 0 && (
               <div className="text-red-500 text-center italic text-sm">
                 {Object.values(form.formState.errors)[0]?.message as string}
               </div>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="title">Tiêu đề bài tập</Label>
               <Controller
                 name="title"
@@ -148,7 +148,7 @@ export function AssignmentFormDialog({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="content">Nội dung bài tập</Label>
               <Controller
                 name="content"
@@ -165,7 +165,7 @@ export function AssignmentFormDialog({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Ngày bắt đầu</Label>
                 <Controller
                   name="start_at"
@@ -198,7 +198,7 @@ export function AssignmentFormDialog({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Hạn nộp</Label>
                 <Controller
                   name="due_at"

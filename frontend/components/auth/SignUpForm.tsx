@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { registerApi } from "@/lib/api/auth-api"
 import { useForm } from "react-hook-form"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import logo from "@/public/logo-ngang.png"
 
 interface SignUpFormProps {
@@ -19,18 +21,18 @@ interface SignUpFormData {
   dateOfBirth: string
   password: string
   confirmPassword: string
+  role: string
 }
 
 export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
   const [serverError, setServerError] = useState<string>("")
+  const [isTeacher, setIsTeacher] = useState(false)
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
   } = useForm<SignUpFormData>()
-
-  const password = watch("password")
 
   const onSubmit = async (data: SignUpFormData) => {
 
@@ -73,12 +75,15 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
       return
     }
 
+    const role = isTeacher ? "teacher" : "student"
+
     const result = await registerApi(
       data.email,
       data.firstName,
       data.lastName,
       data.dateOfBirth,
-      data.password
+      data.password,
+      role
     )
 
     if (result.error) {
@@ -89,13 +94,13 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
   }
 
   return (
-    <div className="p-8 h-full flex flex-col justify-center">
-      <div className="text-center mb-4">
+    <div className="p-8 pt-4 h-full flex flex-col justify-center">
+      <div className="text-center my-2">
         <Image src={logo} alt="Xpervia Logo" width={100} className="mx-auto" />
       </div>
 
       <form className="space-y-2" onSubmit={handleSubmit(onSubmit)}>
-        {serverError && <p className="text-center text-sm text-red-500 italic">{serverError}</p>}
+        <p className="min-h-[20px] text-center text-sm text-red-500 italic">{serverError}</p>
         <div>
           <Input
             type="email"
@@ -149,6 +154,21 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
             className={`rounded-xl py-4`}
             {...register("confirmPassword")}
           />
+        </div>
+
+        <div className="flex items-center space-x-2"> 
+          <Switch
+            id="teacher-account"
+            className="h-6 w-11"
+            checked={isTeacher}
+            onCheckedChange={(checked) => setIsTeacher(checked)}
+          />
+          <Label
+            htmlFor="teacher-account"
+            className={isTeacher ? "text-black font-medium" : "text-gray-400"}
+          >
+            Đăng ký tài khoản giảng viên
+          </Label>
         </div>
 
         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 rounded-xl py-4 text-base">
