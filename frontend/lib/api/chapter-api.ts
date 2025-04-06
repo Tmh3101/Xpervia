@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { Chapter, CreateChapterRequest } from '@/lib/types/chapter'
 
-const baseUrl = 'http://localhost:8000/api/'
-// const baseUrl = 'http://192.168.1.4:8000/api/'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL
+
 export const createChapterApi = async (courseId: number, chapter: CreateChapterRequest) : Promise<Chapter> => {
     const headers = {
         'Authorization': `Token ${localStorage.getItem("token")}`

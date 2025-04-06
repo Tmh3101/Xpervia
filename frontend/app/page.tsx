@@ -1,5 +1,6 @@
 "use client"
 
+import { Loading } from "@/components/Loading"
 import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { HeroSection } from "@/components/HeroSection"
@@ -63,6 +64,12 @@ export default function Home() {
 
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId)
+  }
+
+  if (!courses.length) {
+    return (
+      <Loading />
+    )
   }
 
   return (

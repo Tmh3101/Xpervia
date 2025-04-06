@@ -1,5 +1,6 @@
 "use client"
 
+import { Loading } from "@/components/Loading"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Edit, Trash } from "lucide-react"
@@ -54,12 +55,16 @@ export default function TeacherLessonDetail() {
     }
   }, [params.id, params.lessonId])
 
+  if (!lesson) {
+    return <Loading />
+  }
+
   const handleAddAssignment = async (data: any) => {
     try {
-      if (!data || !selectedAssignment) return
-
+      if (!data) return
       if (isEditingAssignment) {
         // Update assignment
+        if (!selectedAssignment) return
         await updateAssignmentApi(selectedAssignment.id, data)
       } else {
         // Create assignment
@@ -185,7 +190,9 @@ export default function TeacherLessonDetail() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p>{assignment.content}</p>
+                    <p className="text-justify">
+                      {assignment.content}
+                    </p>
                   </CardContent>
                   <CardFooter>
                     <Button

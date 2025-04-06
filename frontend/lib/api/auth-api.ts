@@ -1,7 +1,6 @@
 import axios from 'axios'
 
-const baseUrl = 'http://localhost:8000/api/'
-// const baseUrl = 'http://192.168.1.4:8000/api/'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL
 
 export const loginApi = async (email: string, password: string) => {
     try {

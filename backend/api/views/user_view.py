@@ -227,4 +227,48 @@ class UserLogoutAPIView(generics.DestroyAPIView):
         return Response({
             'success': True,
             'message': 'Logout successful'
-        }, status=status.HTTP_200_OK)    
+        }, status=status.HTTP_200_OK)
+
+# User API to disable user account
+class UserDisableAPIView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            raise NotFound(f'User not found: {str(e)}')
+        
+        instance.is_active = False
+        instance.save()
+        return Response({
+            'success': True,
+            'message': 'User account disabled successfully',
+            'user': UserSerializer(instance).data
+        }, status=status.HTTP_200_OK)
+    
+# User API to enable user account
+class UserEnableAPIView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            raise NotFound(f'User not found: {str(e)}')
+        
+        instance.is_active = True
+        instance.save()
+        return Response({
+            'success': True,
+            'message': 'User account enabled successfully',
+            'user': UserSerializer(instance).data
+        }, status=status.HTTP_200_OK)

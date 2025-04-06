@@ -11,3 +11,7 @@ export interface User extends SimpleUser {
     is_active: boolean;
     date_joined: string;
 }
+
+export interface UserWithPassword extends User {
+    password: string;
+}

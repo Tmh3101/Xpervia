@@ -6,14 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, BookOpen, UserRoundPen, UserCheck } from "lucide-react"
 import Image from "next/image"
 import { getUsersApi } from "@/lib/api/user-api"
-import { getCoursesApi } from "@/lib/api/course-api"
+import { getCoursesByAdminApi } from "@/lib/api/course-api"
 import type { User } from "@/lib/types/user"
 import type { Course } from "@/lib/types/course"
 import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
 import userAvatar from "@/public/user-avatar.svg"
 
 export default function AdminDashboard() {
-
   const [users, setUsers] = useState<User[]>([])
   const [courses, setCourses] = useState<Course[]>([])
 
@@ -21,13 +20,13 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       const users = await getUsersApi()
       setUsers(users)
-      const courses = await getCoursesApi()
+      const courses = await getCoursesByAdminApi()
       setCourses(courses)
     }
     fetchData()
   }, [])
 
-  if (!users || !courses) {
+  if (users.length === 0 || courses.length === 0) {
     return <Loading />
   }
 

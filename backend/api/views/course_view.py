@@ -14,7 +14,7 @@ from api.serializers import (
     SimpleLessonSerializer,
     LessonSerializer
 )
-from api.permissions import IsTeacher, IsCourseOwner
+from api.permissions import IsTeacher, IsCourseOwner, IsAdmin
 from api.services.google_drive_service import upload_file, delete_file    
 
 # Create a course data from request
@@ -97,7 +97,7 @@ class CourseListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset().filter(is_visible=True)
+        queryset = self.get_queryset().filter()
         courses_data = CourseSerializer(queryset, many=True).data.copy()
 
         for course in courses_data:
@@ -356,3 +356,50 @@ class CourseDeleteAPIView(generics.DestroyAPIView):
             'success': True,
             'message': f'Course "{instance}" deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
+    
+
+# Course API to hide a course
+class CourseHideAPIView(generics.UpdateAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
+    lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            raise NotFound('Course not found')
+        
+        instance.is_visible = False
+        instance.save()
+
+        return Response({
+            'success': True,
+            'message': f'Course "{instance}" hidden successfully',
+            'course': CourseSerializer(instance).data
+        }, status=status.HTTP_200_OK)
+    
+# Course API to show a course
+class CourseShowAPIView(generics.UpdateAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
+    lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Http404 as e:
+            raise NotFound('Course not found')
+        
+        instance.is_visible = True
+        instance.save()
+
+        return Response({
+            'success': True,
+            'message': f'Course "{instance}" shown successfully',
+            'course': CourseSerializer(instance).data
+        }, status=status.HTTP_200_OK)

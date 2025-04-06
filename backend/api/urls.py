@@ -23,6 +23,8 @@ urlpatterns = [
     path('register/', user_view.UserRegisterAPIView.as_view(), name='user-register'),
     path('token/login/', user_view.UserLoginAPIView.as_view(), name='token-login'),
     path('token/logout/', user_view.UserLogoutAPIView.as_view(), name='token-logout'),
+    path('users/<uuid:id>/disable/', user_view.UserDisableAPIView.as_view(), name='user-disable'),
+    path('users/<uuid:id>/enable/', user_view.UserEnableAPIView.as_view(), name='user-enable'),
 
     # Course Category URLs
     path('courses/categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
@@ -39,6 +41,8 @@ urlpatterns = [
     path('courses/<int:id>/update/', course_view.CourseUpdateAPIView.as_view(), name='course-update'),
     path('courses/<int:id>/delete/', course_view.CourseDeleteAPIView.as_view(), name='course-delete'),
     path('courses/<int:id>/detail-lessons/', course_view.CourseRetrieveWithDetailLessonsAPIView.as_view(), name='course-detail-lessons'),
+    path('courses/<int:id>/hide/', course_view.CourseHideAPIView.as_view(), name='course-hide'),
+    path('courses/<int:id>/show/', course_view.CourseShowAPIView.as_view(), name='course-show'),
 
     # Enrollment URLs
     path('courses/enrollments/', enrollment_view.EnrollmentListAPIView.as_view(), name='enrollment-list'),

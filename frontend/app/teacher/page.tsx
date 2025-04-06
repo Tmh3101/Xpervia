@@ -1,8 +1,8 @@
 "use client"
 
+import { Loading } from "@/components/Loading"
 import { useEffect, useState } from "react"
 import { CourseCard } from "@/components/course/CourseCard"
-import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import {
@@ -17,7 +17,6 @@ import type { CreateCourseRequest } from "@/lib/types/course"
 import { useRouter } from "next/navigation"
 
 export default function TeacherDashboard() {
-  const { user } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [isCourseFormOpen, setIsCourseFormOpen] = useState(false)
@@ -35,6 +34,10 @@ export default function TeacherDashboard() {
 
     fetchCourses()
   }, [])
+
+  if (!courses) {
+    return <Loading />
+  }
 
   const handleEditCourse = (course: Course) => {
     setEditingCourse(course)

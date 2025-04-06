@@ -1,5 +1,7 @@
 "use client"
 
+import { Loading } from "@/components/Loading"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -18,81 +20,146 @@ import {
   Cell,
 } from "recharts"
 import { formatCurrency } from "@/lib/utils"
-
-// Mock data for charts
-const monthlyData = [
-  { name: "Jan", courses: 2, revenue: 1200 },
-  { name: "Feb", courses: 3, revenue: 1800 },
-  { name: "Mar", courses: 1, revenue: 900 },
-  { name: "Apr", courses: 4, revenue: 2400 },
-  { name: "May", courses: 2, revenue: 1500 },
-  { name: "Jun", courses: 3, revenue: 2100 },
-  { name: "Jul", courses: 5, revenue: 3000 },
-  { name: "Aug", courses: 2, revenue: 1700 },
-  { name: "Sep", courses: 4, revenue: 2800 },
-  { name: "Oct", courses: 3, revenue: 2200 },
-  { name: "Nov", courses: 6, revenue: 4000 },
-  { name: "Dec", courses: 5, revenue: 3500 },
-]
-
-const yearlyData = [
-  { name: "2020", courses: 15, revenue: 12000 },
-  { name: "2021", courses: 25, revenue: 20000 },
-  { name: "2022", courses: 35, revenue: 30000 },
-  { name: "2023", courses: 45, revenue: 45000 },
-  { name: "2024", courses: 30, revenue: 35000 },
-]
-
-const categoryData = [
-  { name: "Programming", value: 40 },
-  { name: "Design", value: 25 },
-  { name: "Business", value: 15 },
-  { name: "Marketing", value: 10 },
-  { name: "Other", value: 10 },
-]
+import { getCoursesApi } from "@/lib/api/course-api"
+import { getEnrollmentsApi } from "@/lib/api/enrollment-api"
+import { BookCopy, HandCoins, CircleDollarSign } from "lucide-react"
+import type { Course } from "@/lib/types/course"
+import type { Enrollment } from "@/lib/types/enrollment"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
 export default function RevenueStatistics() {
-  const totalCourses = 45
-  const totalRevenue = 120000
+  const [courses, setCourses] = useState<Course[]>([])
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const courseData = await getCoursesApi()
+      setCourses(courseData)
+      const enrollmentData = await getEnrollmentsApi()
+      setEnrollments(enrollmentData)
+    }
+    fetchData()
+  }, [])
+
+  if (courses.length === 0 || enrollments.length === 0) {
+    return <Loading />
+  }
+
+  // Calculate total courses, total revenue, and average revenue per course
+  const totalCourses = courses.length
+  const totalRevenue = enrollments.reduce((res, enrollment) => {
+    if (enrollment.payment) {
+      return res + enrollment.payment.amount
+    }
+    return res
+  }, 0)
   const averageRevenuePerCourse = totalRevenue / totalCourses
+  
+  // Calculate category data
+  let categoryData: { name: string; value: number }[] = []
+  courses.forEach((course) => {
+    course.course_content.categories.forEach((category) => {  
+      const existingCategory = categoryData.find((cat) => cat.name === category.name)
+      if (existingCategory) {
+        existingCategory.value += 1
+      } else {
+        categoryData.push({ name: category.name, value: 1 })
+      }
+    })
+  })
+  
+  // Calculate monthly & yearly data
+  let monthlyData = [
+    { name: "T1", courses: 0, revenue: 0 },
+    { name: "T2", courses: 0, revenue: 0 },
+    { name: "T3", courses: 0, revenue: 0 },
+    { name: "T4", courses: 0, revenue: 0 },
+    { name: "T5", courses: 0, revenue: 0 },
+    { name: "T6", courses: 0, revenue: 0 },
+    { name: "T7", courses: 0, revenue: 0 },
+    { name: "T8", courses: 0, revenue: 0 },
+    { name: "T9", courses: 0, revenue: 0 },
+    { name: "T10", courses: 0, revenue: 0 },
+    { name: "T11", courses: 0, revenue: 0 },
+    { name: "T12", courses: 0, revenue: 0 },
+  ]
+
+  let yearlyData = [
+    { name: "2020", courses: 0, revenue: 0 },
+    { name: "2021", courses: 0, revenue: 0 },
+    { name: "2022", courses: 0, revenue: 0 },
+    { name: "2023", courses: 0, revenue: 0 },
+    { name: "2024", courses: 0, revenue: 0 },
+    { name: "2025", courses: 0, revenue: 0 },
+  ]
+  courses.forEach((course) => {
+    const date = new Date(course.created_at)
+    if (date.getFullYear() === new Date().getFullYear()) {
+      monthlyData[date.getMonth()].courses += 1
+    }
+    console.log(date.getFullYear())
+    yearlyData[date.getFullYear() - 2020].courses += 1
+  })
+  enrollments.forEach((enrollment) => {
+    if(enrollment.payment) {
+      const date = new Date(enrollment.payment.created_at)
+      if (date.getFullYear() === new Date().getFullYear()) {
+        monthlyData[date.getMonth()].revenue += enrollment.payment.amount
+      }
+      yearlyData[date.getFullYear() - 2020].revenue += enrollment.payment.amount
+    }
+  })
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Thống kê khóa học & doanh thu</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="p-6">
+      <h1 className="text-3xl uppercase font-bold mb-6">Thống kê khóa học & doanh thu</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <Card>
           <CardContent className="pt-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Tổng khóa học</p>
-              <h3 className="text-3xl font-bold">{totalCourses}</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Tổng khóa học</p>
+                <h3 className="text-2xl font-bold">{totalCourses}</h3>
+              </div>
+              <div className="p-2 bg-primary/10 rounded-full">
+                <BookCopy className="h-6 w-6 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Tổng doanh thu</p>
-              <h3 className="text-3xl font-bold">{formatCurrency(totalRevenue)}</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Tổng doanh thu</p>
+                <h3 className="text-2xl font-bold">{formatCurrency(totalRevenue)}</h3>
+              </div>
+              <div className="p-2 bg-yellow-100 rounded-full">
+                <CircleDollarSign className="h-6 w-6 text-yellow-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Doanh thu trung bình/khóa học</p>
-              <h3 className="text-3xl font-bold">{formatCurrency(averageRevenuePerCourse)}</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Doanh thu trung bình/khóa học</p>
+                <h3 className="text-2xl font-bold">{formatCurrency(averageRevenuePerCourse)}</h3>
+              </div>
+              <div className="p-2 bg-success/10 rounded-full">
+                <HandCoins className="h-6 w-6 text-success" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <Card>
           <CardHeader>
             <CardTitle>Phân bố khóa học theo danh mục</CardTitle>
           </CardHeader>
@@ -136,7 +203,11 @@ export default function RevenueStatistics() {
                   height={300}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false} 
+                    domain={[0, 'dataMax']}
+                  />
                   <YAxis dataKey="name" type="category" />
                   <Tooltip />
                   <Bar dataKey="courses" name="Khóa học" fill="#4f46e5" />
@@ -148,7 +219,7 @@ export default function RevenueStatistics() {
       </div>
 
       <Tabs defaultValue="monthly">
-        <TabsList className="mb-6">
+        <TabsList>
           <TabsTrigger value="monthly">Theo tháng</TabsTrigger>
           <TabsTrigger value="yearly">Theo năm</TabsTrigger>
         </TabsList>

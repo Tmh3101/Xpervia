@@ -74,7 +74,7 @@ export function ChangePasswordDialog({ isOpen, onClose }: ChangePasswordProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Chỉnh sửa hồ sơ</DialogTitle>
+          <DialogTitle>Đổi mật khẩu</DialogTitle>
         </DialogHeader>
           <form onSubmit={form.handleSubmit(handlChangePasswordSubmit)} className="space-y-4">
             {form.formState.errors && Object.values(form.formState.errors).length > 0 && (
@@ -88,7 +88,7 @@ export function ChangePasswordDialog({ isOpen, onClose }: ChangePasswordProps) {
               <Controller
                 name="old_password"
                 control={form.control}
-                render={({ field }: any) => <Input id="old_password" placeholder="Nhập mật khẫu cũ..." {...field} />}
+                render={({ field }: any) => <Input type="password" id="old_password" placeholder="Nhập mật khẫu cũ..." {...field} />}
               />
             </div>
 
@@ -97,7 +97,7 @@ export function ChangePasswordDialog({ isOpen, onClose }: ChangePasswordProps) {
               <Controller
                 name="new_password"
                 control={form.control}
-                render={({ field }: any) => <Input id="last_new_passwordname" placeholder="Nhập mật khẩu mới..." {...field} />}
+                render={({ field }: any) => <Input type="password" id="last_new_passwordname" placeholder="Nhập mật khẩu mới..." {...field} />}
               />
             </div>
 
@@ -106,7 +106,7 @@ export function ChangePasswordDialog({ isOpen, onClose }: ChangePasswordProps) {
               <Controller
                 name="confirm_password"
                 control={form.control}
-                render={({ field }: any) => <Input id="confirm_password" placeholder="Xác nhận mật khẩu..." {...field} />}
+                render={({ field }: any) => <Input type="password" id="confirm_password" placeholder="Xác nhận mật khẩu..." {...field} />}
               />
             </div>
 

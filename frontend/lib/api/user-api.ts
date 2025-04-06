@@ -1,8 +1,7 @@
-import { User } from "@/lib/types/user"
+import { User, UserWithPassword } from "@/lib/types/user"
 import axios from "axios"
 
-const baseUrl = 'http://localhost:8000/api/'
-// const baseUrl = 'http://192.168.1.4:8000/api/'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL
 
 export const getUserInforApi = (): User => {
     const user = localStorage.getItem("user")
@@ -23,15 +22,19 @@ export const getUsersApi = async (): Promise<User[]> => {
     return response.data.users
 }
 
-interface UpdateUser {
-    first_name?: string;
-    last_name?: string;
-    date_of_birth?: string;
+export const createUserApi = async (userData: UserWithPassword): Promise<UserWithPassword> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem('token')}`
+    }
+    const response = await axios.post(
+        `${baseUrl}users/create/`,
+        userData,
+        { headers }
+    )
+    return response.data.user
 }
 
-export const updateUserApi = async (userId: string , userData: UpdateUser): Promise<User> => {
-    console.log('userId', userId)
-    console.log('userData', userData)
+export const updateUserApi = async (userId: string , userData: any): Promise<User> => {
     const headers = {
         'Authorization': `Token ${localStorage.getItem('token')}`
     }
@@ -43,6 +46,17 @@ export const updateUserApi = async (userId: string , userData: UpdateUser): Prom
     return response.data.user
 }
 
+export const deleteUserApi = async (userId: string): Promise<boolean> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem('token')}`
+    }
+    const response = await axios.delete(
+        `${baseUrl}users/${userId}/delete/`,
+        { headers }
+    )
+    return response.data.success
+}
+
 export const changePasswordApi = async (userId: string, data: any): Promise<boolean> => {
     const headers = {
         'Authorization': `Token ${localStorage.getItem('token')}`
@@ -52,6 +66,29 @@ export const changePasswordApi = async (userId: string, data: any): Promise<bool
         data,
         { headers }
     )
-
     return response.data.success
+}
+
+export const disableUserApi = async (userId: string): Promise<User> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem('token')}`
+    }
+    const response = await axios.put(
+        `${baseUrl}users/${userId}/disable/`,
+        {},
+        { headers }
+    )
+    return response.data.user
+}
+
+export const enableUserApi = async (userId: string): Promise<User> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem('token')}`
+    }
+    const response = await axios.put(
+        `${baseUrl}users/${userId}/enable/`,
+        {},
+        { headers }
+    )
+    return response.data.user
 }

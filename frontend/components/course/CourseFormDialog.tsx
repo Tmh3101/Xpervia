@@ -131,12 +131,10 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
   }, [initialData, mode, open, form])
 
   const handleSubmit = async (data: CreateCourseRequest) => {
+    setIsSubmitting(true)
     if (data.discount != null) {
       data.discount = data.discount / 100
     }
-
-    console.log("Submitting form with data:", data)
-    setIsSubmitting(true)
     try {
       onSubmit(data)
       form.reset()

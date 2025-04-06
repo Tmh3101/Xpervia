@@ -1,11 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Users, BookOpen, DollarSign, ChevronDown, ChevronRight, Home } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 
@@ -17,6 +19,7 @@ interface SidebarItem {
 }
 
 export function AdminSidebar() {
+  const { logout } = useAuth()
   const pathname = usePathname()
   const [openSection, setOpenSection] = useState<string | null>("management")
 
@@ -113,6 +116,15 @@ export function AdminSidebar() {
           </div>
         ))}
       </div>
+
+      {/* Logout button */}
+      <Button
+        onClick={logout}
+        className="cursor-pointer bg-white text-red-500 hover:text-red-600 hover:bg-red-50" 
+      >
+        <LogOut className="mr-2 h-4 w-4 rotate-180" />
+        <span>Đăng xuất</span>
+      </ Button>
 
       <div className="p-4 border-t border-gray-200">
         <div className="text-xs text-gray-500 text-center">Admin Dashboard v1.0</div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { Loading } from "@/components/Loading"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
@@ -20,40 +21,24 @@ export default function TeacherProfilePage() {
   const { user: currentUser } = useAuth()
   const [user, setUser] = useState<User | null>(null)
   const [courses, setCourses] = useState<Course[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true)
       try {
         setUser(currentUser)
         await getCourseByTeacherApi().then((data) => setCourses(data))
       } catch (error) {
         console.error("Failed to fetch user data:", error)
-      } finally {
-        setIsLoading(false)
       }
     }
 
     fetchData()
   }, [teacherId])
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-20 flex justify-center items-center min-h-screen">
-        <p>Đang tải...</p>
-      </div>
-    )
-  }
-
   if (!user) {
-    return (
-      <div className="container mx-auto py-20 flex justify-center items-center min-h-screen">
-        <p>Không tìm thấy người dùng</p>
-      </div>
-    )
+    return <Loading />
   }
 
   // Calculate statistics

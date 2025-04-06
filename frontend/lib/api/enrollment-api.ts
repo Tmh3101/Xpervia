@@ -1,8 +1,18 @@
 import axios from 'axios'
 import { Enrollment } from '../types/enrollment'
 
-const baseUrl = 'http://localhost:8000/api/'
-// const baseUrl = 'http://192.168.1.4:8000/api/'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL
+
+export const getEnrollmentsApi = async (): Promise<Enrollment[]> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.get(
+        `${baseUrl}courses/enrollments/`,
+        { headers }
+    )
+    return response.data.enrollments
+}
 
 export const getEnrollmentsByStudentApi = async (token: string): Promise<Enrollment[]> => {
     if (!token) {

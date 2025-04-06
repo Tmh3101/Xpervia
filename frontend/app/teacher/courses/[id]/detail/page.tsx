@@ -1,5 +1,6 @@
 "use client"
 
+import { Loading } from "@/components/Loading"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -31,11 +32,6 @@ export default function CourseDetail() {
   const router = useRouter()
   const [course, setCourse] = useState<CourseWithDetailLessons | null>(null)
   const [assignmentDetails, setAssignmentDetails] = useState<AssignmentDetail[]>([])
-  const [selectedLesson, setSelectedLesson] = useState<{
-    title: string
-    submissions: Submission[]
-  } | null>(null)
-
   const [isChapterFormOpen, setIsChapterFormOpen] = useState(false)
   const [isLessonFormOpen, setIsLessonFormOpen] = useState(false)
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null)
@@ -72,6 +68,10 @@ export default function CourseDetail() {
       fetchEnrollments()
     }
   }, [params.id])
+
+  if (!course) {
+    return <Loading />
+  }
 
   const handleCreateChapter = async (data: CreateChapterRequest) => {
     if (editingChapter) {

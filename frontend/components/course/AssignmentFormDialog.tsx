@@ -98,9 +98,21 @@ export function AssignmentFormDialog({
   }, [initialData, form])
 
   const handleSubmit = async (data: CreateAssignmentRequest) => {
-    console.log("Submitting assignment:", data)
     if (!data) return
     setIsSubmitting(true)
+
+    // Check start_at and due_at values
+    if (data.start_at && data.due_at) {
+      const startDate = new Date(data.start_at)
+      const dueDate = new Date(data.due_at)
+
+      if (startDate > dueDate) {
+        form.setError("due_at", { message: "Hạn nộp phải lớn hơn ngày bắt đầu" })
+        setIsSubmitting(false)
+        return
+      }
+    }
+
     try {
       await onSubmit(data)
     } catch (error) {

@@ -15,7 +15,7 @@ export default function CourseDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const [courseDetailData, setCourseDetailData] = useState<Course>()
+  const [courseDetailData, setCourseDetailData] = useState<Course | null>(null)
   const [firstLessonId, setFirstLessonId] = useState<number | null>(null)
 
   useEffect(() => {

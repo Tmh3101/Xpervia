@@ -6,10 +6,16 @@ import {
 } from '@/lib/types/course'
 import { Category } from '@/lib/types/course-content'
 
-const baseUrl = 'http://localhost:8000/api/'
-// const baseUrl = 'http://192.168.1.4:8000/api/'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL
 
 export const getCoursesApi = async () : Promise<Course[]> => {
+    const response = await axios.get(
+        `${baseUrl}courses/`
+    )
+    return response.data.courses.filter((course: Course) => course.is_visible)
+}
+
+export const getCoursesByAdminApi = async () : Promise<Course[]> => {
     const response = await axios.get(
         `${baseUrl}courses/`
     )
@@ -132,4 +138,28 @@ export const getCategoriesApi = async () : Promise<Category[]> => {
         `${baseUrl}courses/categories/`,
     )
     return response.data.categories
+}
+
+export const hideCourseApi = async (id: number) : Promise<Course> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.put(
+        `${baseUrl}courses/${id}/hide/`,
+        {},
+        { headers }
+    )
+    return response.data.course
+}
+
+export const showCourseApi = async (id: number) : Promise<Course> => {
+    const headers = {
+        'Authorization': `Token ${localStorage.getItem("token")}`
+    }
+    const response = await axios.put(
+        `${baseUrl}courses/${id}/show/`,
+        {},
+        { headers }
+    )
+    return response.data.course
 }

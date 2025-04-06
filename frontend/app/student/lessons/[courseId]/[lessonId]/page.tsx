@@ -59,7 +59,9 @@ export default function LessonPage() {
     return (
       <Loading />
     )
-  } else if (!currentLesson) {
+  }
+  
+  if (!currentLesson) {
     return (
       <div className="flex items-center justify-center h-screen">
         <CircleAlert className="w-8 h-8 text-red-500" />

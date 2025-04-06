@@ -1,8 +1,7 @@
 import axios from 'axios'
 import { AssignmentDetail, AssignmentSubmissions, CreateAssignmentRequest } from '../types/assignment'
 
-const baseUrl = 'http://localhost:8000/api/'
-// const baseUrl = 'http://192.168.1.4:8000/api/'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL
 
 export const getLessonAssignmentsApi = async (lessonId: number) : Promise<AssignmentDetail[]> => {
     const headers = {
@@ -45,7 +44,7 @@ export const deleteAssignmentApi = async (assignmentId: number) : Promise<void> 
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
     await axios.delete(
-        `${baseUrl}courses/assignments/${assignmentId}/delete/`,
+        `${baseUrl}courses/lessons/assignments/${assignmentId}/delete/`,
         { headers }
     )
 }
@@ -58,7 +57,7 @@ export const updateAssignmentApi = async (assignmentId: number, data: CreateAssi
         'Authorization': `Token ${localStorage.getItem("token")}`
     }
     const response = await axios.put(
-        `${baseUrl}courses/assignments/${assignmentId}/update/`,
+        `${baseUrl}courses/lessons/assignments/${assignmentId}/update/`,
         data,
         { headers }
     )
