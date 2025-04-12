@@ -9,7 +9,8 @@ from api.views import (
     submission_view,
     submission_score_view,
     lesson_completion_view,
-    course_view
+    course_view,
+    image_proxy_view,
 )
 
 urlpatterns = [
@@ -93,4 +94,7 @@ urlpatterns = [
     path('courses/assignments/submissions/<int:submission_id>/score/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
     path('courses/assignments/submissions/score/<int:id>/update/', submission_score_view.SubmissionScoreUpdateAPIView.as_view(), name='submission-score-update'),
     path('courses/assignments/submissions/score/<int:id>/delete/', submission_score_view.SubmissionScoreDeleteAPIView.as_view(), name='submission-score-delete'),
+
+    # Image Proxy URLs
+    path('proxy/image/<str:file_id>/', image_proxy_view.ImageProxyView.as_view(), name='proxy-image'),
 ]

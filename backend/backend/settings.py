@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
-    "api"
+    "api",
+    'drf_yasg', # Swagger
 ]
 
 MIDDLEWARE = [
@@ -142,7 +143,17 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Nếu bạn đang chạy local và chưa cấu hình file tĩnh:
+import os   
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+from decouple import config
+# Thay thế các giá trị dưới đây bằng biến môi trường hoặc giá trị thực tế của bạn
+GOOGLE_DRIVE_API_KEY = config('GOOGLE_DRIVE_API_KEY')
