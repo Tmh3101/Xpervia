@@ -14,10 +14,10 @@ export function formatCurrency(value: number): string {
   }).format(value) // Assuming the input is in thousands
 }
 
-// Format date in the format of "yyyy-MM-dd" to "dd/MM/yyyy" - e.g. "2025-03-02T09:35:23.388805Z" to "02/03/2025"
+// Format date "2025-03-02T09:35:23.388805Z" to "2025-03-02"
 export function formatDate(date: string): string {
-  const d = new Date(date)
-  return d.toLocaleDateString("vi-VN")
+  const dateObj = new Date(date)
+  return dateObj.toISOString().split("T")[0]
 }
 
 const categoryColors = ['blue', 'green', 'yellow', 'red', 'purple', 'pink', 'orange', 'cyan', 'indigo']

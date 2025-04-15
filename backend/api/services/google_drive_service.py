@@ -1,9 +1,11 @@
-import os
+import os, io
 from api.models import File
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
 from django.conf import settings
+import requests
+from requests.exceptions import SSLError, RequestException
 
 # ID của thư mục chứa file trên Google Drive
 GOOGLE_DRIVE_FOLDER_ID='1sfLAm55cBLc5NZcreEZjslcuhkCXSiIv'
@@ -33,6 +35,24 @@ def upload_file_to_drive(file_path, file_name):
 def delete_file_from_drive(file_id):
     """Xóa file trên Google Drive"""
     service.files().delete(fileId=file_id).execute()
+
+def download_file_from_drive(file_id: str):
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    try:
+        session = requests.Session()
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+        }
+        response = session.get(url, headers=headers, stream=True, timeout=10)
+
+        response.raise_for_status()
+        return response
+    except SSLError as e:
+        print(f"[SSL ERROR] Google Drive: {e}")
+        raise Exception("SSL error during file download.")
+    except RequestException as e:
+        print(f"[REQUEST ERROR] Google Drive: {e}")
+        raise Exception("Request error during file download.")
 
 # Upload file method for calling
 def upload_file(file):
@@ -68,3 +88,4 @@ def delete_file(file_id):
             file.delete()
     except Exception as e:
         raise Exception(f"Error deleting file: {str(e)}")
+    

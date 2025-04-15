@@ -225,12 +225,19 @@ class LessonDeleteAPIView(generics.DestroyAPIView):
             instance = self.get_object()
         except Http404 as e:
             raise NotFound('Lesson not found')
-
-        # Delete the video, subtitle, and attachment from Google Drive
-        file_ids = ['video_id', 'subtitle_vi_id', 'attachment_id']
-        for file_id in file_ids:
-            if getattr(instance, file_id):
-                delete_file(getattr(instance, file_id))
+        
+        try: 
+            if instance.video_id:
+                delete_file(instance.video_id)
+            if instance.subtitle_vi_id:
+                delete_file(instance.subtitle_vi_id)
+            if instance.attachment:
+                delete_file(instance.attachment.file_id)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error deleting lesson files: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         self.perform_destroy(instance)
         return Response({

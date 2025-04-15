@@ -48,12 +48,13 @@ export default function TeacherDashboard() {
     let newCourse = null
     if (editingCourse) {
       const course = await updateCourseApi(editingCourse.id, createCourseData)
-      newCourse = course
       console.log("Updating course:", course)
+      setCourses(courses.map((c) => (c.id === course.id ? course : c)))
     } else {
       const course = await createCourseApi(createCourseData)
       newCourse = course
       console.log("Creating course:", newCourse)
+      setCourses((prevCourses) => [...prevCourses, course])
     }
     setIsCourseFormOpen(false)
     if (newCourse) {

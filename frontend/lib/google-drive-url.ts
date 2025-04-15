@@ -1,7 +1,7 @@
 const baseUrl = process.env.NEXT_PUBLIC_API_URL
 
 export function getGoogleDriveImageUrl(fileId: string) {
-    return `${baseUrl}proxy/image/${fileId}`;
+    return `${baseUrl}proxy/image/${fileId}/`;
 }
 
 export function getGoogleDriveVideoUrl(fileId: string) {

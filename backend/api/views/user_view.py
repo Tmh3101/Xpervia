@@ -194,11 +194,11 @@ class UserLoginAPIView(ObtainAuthToken):
         user = User.objects.filter(email=email).first()
 
         if not user:
-            raise LoginFailed('Email does not exist')
+            raise LoginFailed('Email này chưa được đăng ký')
         if not user.is_active:
-            raise LoginFailed('Account is not active')
+            raise LoginFailed('Tài khoản đã bị vô hiệu hóa')
         if not user.check_password(password):
-            raise LoginFailed('Password is incorrect')
+            raise LoginFailed('Mật khẩu không chính xác')
         
         token, created = Token.objects.get_or_create(user=user)
         user_serializer = UserSerializer(user)

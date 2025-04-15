@@ -154,6 +154,9 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-from decouple import config
-# Thay thế các giá trị dưới đây bằng biến môi trường hoặc giá trị thực tế của bạn
-GOOGLE_DRIVE_API_KEY = config('GOOGLE_DRIVE_API_KEY')
+# CACHES settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}

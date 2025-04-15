@@ -329,7 +329,7 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
         return Response({
             'success': True,
             'message': 'Course updated successfully',
-            'data': course_serializer.data
+            'course': course_serializer.data
         }, status=status.HTTP_200_OK)
             
         

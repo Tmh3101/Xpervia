@@ -12,7 +12,7 @@ export default function CoursePage() {
   useEffect(() => {
     const fetchCourseDetail = async () => {
       try {
-        const courseId = params.courseId[0]
+        const courseId = params.courseId
         const courseDetail = await getCourseDetailApi(parseInt(courseId))
         const lessons = courseDetail.course_content.chapters
           .flatMap((chapter) => chapter.lessons)

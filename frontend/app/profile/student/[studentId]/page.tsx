@@ -17,6 +17,7 @@ import { getCoursesApi } from '@/lib/api/course-api'
 import { Progress } from "@/components/course/Progress"
 import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
 import { UserProfile } from "@/components/profile/UserProfile"
+import { on } from "node:stream"
 
 export default function StudentProfilePage() {
   const { studentId } = useParams()
@@ -50,9 +51,8 @@ export default function StudentProfilePage() {
   }
 
   // Calculate statistics
-  const totalCourses = enrollments.length
-  const ongoingCourses = enrollments.filter((e) => e.progress < 100).length
-  const completedCourses = enrollments.filter((e) => e.progress === 100).length
+  const ongoingCourses = enrollments.filter((e) => e.progress < 100)
+  const completedCourses = enrollments.filter((e) => e.progress === 100)
 
   return (
     <div className="container mx-auto py-20 pt-[120px] min-h-[500px]">
@@ -79,7 +79,7 @@ export default function StudentProfilePage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Tổng khóa học</p>
-                        <p className="text-2xl font-bold">{totalCourses}</p>
+                        <p className="text-2xl font-bold">{enrollments.length}</p>
                       </div>
                       <BookOpen className="h-8 w-8 text-primary" />
                     </div>
@@ -91,7 +91,7 @@ export default function StudentProfilePage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Đang học</p>
-                        <p className="text-2xl font-bold">{ongoingCourses}</p>
+                        <p className="text-2xl font-bold">{ongoingCourses.length}</p>
                       </div>
                       <Clock className="h-8 w-8 text-yellow-500" />
                     </div>
@@ -103,7 +103,7 @@ export default function StudentProfilePage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Đã hoàn thành</p>
-                        <p className="text-2xl font-bold">{completedCourses}</p>
+                        <p className="text-2xl font-bold">{completedCourses.length}</p>
                       </div>
                       <GraduationCap className="h-8 w-8 text-green-500" />
                     </div>
@@ -118,8 +118,8 @@ export default function StudentProfilePage() {
                 </TabsList>
 
                 <TabsContent value="enrolled" className="space-y-4 mt-4">
-                  {enrollments.length > 0 ? (
-                    enrollments.map((enrollment) => (
+                  {ongoingCourses.length > 0 ? (
+                    ongoingCourses.map((enrollment) => (
                       <Card key={enrollment.id}>
                         <CardContent className="p-4 pb-2">
                           <div className="flex justify-between items-center">
@@ -152,30 +152,33 @@ export default function StudentProfilePage() {
                 </TabsContent>
 
                 <TabsContent value="completed" className="space-y-4 mt-4">
-                  {enrollments.filter((e) => e.progress === 100).length > 0 ? (
-                    enrollments
-                      .filter((e) => e.progress === 100)
-                      .map((enrollment) => (
-                        <Card key={enrollment.id}>
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h3 className="font-medium">{enrollment.course.course_content.title}</h3>
-                                <p className="text-sm text-muted-foreground">Hoàn thành: 100%</p>
+                  {completedCourses.length > 0 ? (
+                    completedCourses.map((enrollment) => (
+                      <Card key={enrollment.id}>
+                        <CardContent className="p-4 pb-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h3 className="font-bold">{enrollment.course.course_content.title}</h3>
+                              <div className="flex items-center space-x-2 mt-2">
+                                <p className="text-sm text-success text-muted-foreground">Đã hoành thành</p>
                               </div>
-                              {/* <div className="w-16 h-16 relative">
-                                <Image
-                                  src={enrollment.course.thumbnail || "/placeholder.svg?height=64&width=64"}
-                                  alt={enrollment.course.title}
-                                  width={64}
-                                  height={64}
-                                  className="rounded-md object-cover"
-                                />
-                              </div> */}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))
+                            <div className="w-16 h-16 relative">
+                              <Image
+                                src={
+                                  getGoogleDriveImageUrl(
+                                    getCourseById(enrollment.course.id)?.course_content.thumbnail_id || ""
+                                  )}
+                                alt={enrollment.course.course_content.title}
+                                width={64}
+                                height={64}
+                                className="rounded-md object-cover"
+                              />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
                   ) : (
                     <p className="text-center py-4 text-muted-foreground">Chưa hoàn thành khóa học nào.</p>
                   )}

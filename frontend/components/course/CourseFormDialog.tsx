@@ -85,6 +85,7 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: number }[]>([])
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeletting, setIsDeletting] = useState(false)
 
   const form = useForm<CreateCourseRequest>({
     resolver: zodResolver(courseFormSchema),
@@ -136,7 +137,7 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
       data.discount = data.discount / 100
     }
     try {
-      onSubmit(data)
+      await onSubmit(data)
       form.reset()
     } catch (error) {
       console.error("Lỗi khi gửi biểu mẫu:", error)
@@ -147,9 +148,11 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
 
   const handleDelete = () => {
     setIsDeleteDialogOpen(false)
+    setIsDeletting(true)
     if (onDelete) {
       onDelete()
     }
+    setIsDeletting(false)
   }
 
   return (
@@ -435,8 +438,17 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                   onClick={() => setIsDeleteDialogOpen(true)}
                   className="mr-auto bg-red-500 hover:bg-red-600"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Xóa
+                  {isDeletting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      Đang xóa...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Xóa
+                    </>
+                  )}
                 </Button>
               )}
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

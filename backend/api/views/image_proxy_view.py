@@ -1,21 +1,54 @@
-import requests
-from django.http import HttpResponse
-from rest_framework.generics import GenericAPIView
+import mimetypes
+from rest_framework import generics, status
+from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from django.conf import settings
+from api.services.google_drive_service import download_file_from_drive
+from django.http import HttpResponse
+from django.core.cache import cache
 
-class ImageProxyView(GenericAPIView):
-    permission_classes = [AllowAny]  # Có thể chỉnh lại nếu muốn bảo mật
 
-    def get(self, request, file_id):
-        GOOGLE_DRIVE_API_KEY = settings.GOOGLE_DRIVE_API_KEY
-        url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={GOOGLE_DRIVE_API_KEY}"
-        
+class ImageProxyView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        file_id = self.kwargs.get('file_id')
+        if not file_id:
+            return Response({
+                'success': False,
+                'message': 'Missing file_id',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = f"drive_image_{file_id}"
         try:
-            response = requests.get(url, stream=True)
-            if response.status_code == 200:
-                content_type = response.headers.get('Content-Type', 'image/jpeg')
-                return HttpResponse(response.content, content_type=content_type)
-            return HttpResponse(f"Failed to fetch image: {response.status_code}", status=response.status_code)
+            cached_image = cache.get(cache_key)
         except Exception as e:
-            return HttpResponse(f"Error: {str(e)}", status=500)
+            return Response({
+                'success': False,
+                'message': 'Error accessing cache',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        if cached_image:
+            print(f"[CACHE HIT] {file_id}")
+            return HttpResponse(cached_image['content'], content_type=cached_image['content_type'])
+
+        try:
+            image_bytes = download_file_from_drive(file_id)
+            content_type, _ = mimetypes.guess_type(f"{file_id}.jpg")
+            content_type = content_type or 'application/octet-stream'
+
+            # Cache ảnh trong 6 tiếng
+            cache.set(cache_key, {
+                'content': image_bytes,
+                'content_type': content_type
+            }, timeout=60 * 60 * 6)
+
+            print(f"[CACHE MISS] Downloaded {file_id} from Google Drive")
+            return HttpResponse(image_bytes, content_type=content_type)
+
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error downloading file from Google Drive',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
