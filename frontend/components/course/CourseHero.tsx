@@ -98,11 +98,11 @@ export function CourseHero({
                     ) : (
                       <>
                         <span className="text-3xl text-destructive font-bold">
-                          {currentPrice.toLocaleString("vi-VN")}
+                          {currentPrice.toLocaleString("vi-VN")} ₫
                         </span>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-sm text-gray-500 line-through">
-                            {originalPrice.toLocaleString("vi-VN")}
+                            {originalPrice.toLocaleString("vi-VN")} ₫
                           </span>
                           <span className="text-[10px] font-semibold text-white bg-red-500 px-1 rounded-full">
                             -{discount * 100}%

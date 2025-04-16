@@ -182,7 +182,7 @@ class AssignmentDeleteAPIView(generics.DestroyAPIView):
         return Response({
             'success': True,
             'message': 'Assignment has been deleted successfully',
-            'assignment': instance
+            'assignment': self.get_serializer(instance).data
         }, status=status.HTTP_204_NO_CONTENT)
 
         

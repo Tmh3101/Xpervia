@@ -43,7 +43,3 @@ npm run dev
 
 ## Đóng Góp
 Mọi đóng góp đều được hoan nghênh! Hãy tạo issue hoặc gửi pull request.
-
-## Giấy Phép
-Dự án được phát hành theo giấy phép MIT.
-

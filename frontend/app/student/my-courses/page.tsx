@@ -44,8 +44,8 @@ export default function MyCourses() {
     <main className="pt-24">
       <section className="container mx-auto py-12">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">My Courses</h1>
-          <p className="text-gray-600">{enrolledCourses.length} courses</p>
+          <h1 className="text-3xl font-bold">Khóa học của tôi</h1>
+          <p className="text-gray-600">{enrolledCourses.length} khóa học</p>
         </div>
         {enrolledCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

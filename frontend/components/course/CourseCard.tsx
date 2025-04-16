@@ -36,6 +36,7 @@ export function CourseCard({
   const router = useRouter()
   const currentPrice = price * (1 - discount)
   const isFree = price === 0 || currentPrice === 0
+  const hasStarted = new Date() >= new Date(start_date)
 
   const handleClick = () => {
     if (mode === "teacher") {
@@ -63,9 +64,9 @@ export function CourseCard({
         </div>
       </CardHeader>
       <CardContent className="px-4 pt-2 pb-0 flex-grow">
-        <h3 className="font-bold text-lg/[1.5rem] text-destructive mb-2 line-clamp-2">{course_content.title}</h3>
+        <h3 className="font-bold text-lg/[1.5rem] text-destructive mb-1 line-clamp-2">{course_content.title}</h3>
         {mode !== "teacher" ? (
-          <div className="flex items-center mb-2">
+          <div className="flex items-center mb-1">
             <User className="w-4 h-4 mr-2 text-primary" />
             <span className="text-sm font-medium text-primary">
               {course_content.teacher.first_name + " " + course_content.teacher.last_name}
@@ -76,7 +77,7 @@ export function CourseCard({
         )}
         <p className="text-sm text-gray-600 line-clamp-2">{course_content.description}</p>
       </CardContent>
-      <CardFooter className={`p-4 pt-0 ${mode === "student" ? "items-center justify-between" : "flex flex-col gap-2"}`}>
+      <CardFooter className={`p-4 pt-2 ${mode === "student" ? "items-center justify-between" : "flex flex-col gap-2"}`}>
         {mode === "teacher" ? (
           <div className="flex gap-2 w-full mt-2">
             <Button
@@ -103,24 +104,37 @@ export function CourseCard({
           </>
         ) : (
           <>
-            <div className="flex flex-col items-start">
-              {isFree ? (
-                <span className="text-xl text-success font-bold">Miễn phí</span>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-gray-500 line-through">{price.toLocaleString("vi-VN")}</span>
-                    <span className="text-[10px] font-semibold text-white bg-red-500 px-1 rounded-full">
-                      -{discount * 100}%
-                    </span>
-                  </div>
-                  <span className="text-2xl text-destructive font-bold">{currentPrice.toLocaleString("vi-VN")}</span>
-                </>
-              )}
-            </div>
-            <Button className="bg-primary hover:bg-secondary rounded-full text-sm mt-auto" onClick={handleClick}>
-              Tham gia
-            </Button>
+            {hasStarted ? (
+              <>
+                <div className="flex flex-col items-start">
+                  {isFree ? (
+                    <span className="text-xl text-primary font-bold">Miễn phí</span>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-gray-500 line-through">{price.toLocaleString("vi-VN")} ₫</span>
+                        <span className="text-[10px] font-semibold text-white bg-red-500 px-1 rounded-full">
+                          -{discount * 100}%
+                        </span>
+                      </div>
+                      <span className="text-2xl text-destructive font-bold">{currentPrice.toLocaleString("vi-VN")} ₫</span>
+                    </>
+                  )}
+                </div>
+                <Button className="bg-primary hover:bg-secondary rounded-full text-sm mt-auto" onClick={handleClick}>
+                  Tham gia
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-row gap-2 items-center">
+                <span className="text-xl text-gray-500 font-bold">
+                  Bắt đầu vào:
+                </span>
+                <span className="text-xl text-primary font-bold">
+                  {new Date(start_date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                </span>
+              </div>
+            )}
           </>
         )}
       </CardFooter>

@@ -179,7 +179,7 @@ export function UserDialog({ open, onClose, onSave, onDelete, initialData, mode 
                 <Input
                   id="password"
                   type="password"
-                  value={""}
+                  value={userData.password || ""} // Ensure the value is bound to userData.password
                   placeholder="Nhập mật khẩu"
                   onChange={(e) => handleChange("password", e.target.value)}
                   className="col-span-3"

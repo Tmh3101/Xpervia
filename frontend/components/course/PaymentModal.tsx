@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { CreditCard, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
+import { on } from "node:events"
 
 interface PaymentModalProps {
   isOpen: boolean
@@ -19,15 +20,12 @@ export function PaymentModal({ isOpen, onClose, onSuccess, courseTitle, price }:
 
   const handlePayment = () => {
     setIsProcessing(true)
-    setTimeout(() => {
-      setIsProcessing(false)
-      setIsComplete(true)
-      setTimeout(() => {
-        onSuccess()
-        onClose()
-        setIsComplete(false)
-      }, 2000)
-    }, 2000)
+    // Simulate a payment process
+    setIsProcessing(false)
+    setIsComplete(true)
+    onSuccess()
+    onClose()
+    // Here you would typically call your payment API and handle the response
   }
 
   return (
