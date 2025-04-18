@@ -1,4 +1,4 @@
-import axios from 'axios'
+import authAxios from './axios-auth'
 import {
     Course,
     CourseWithDetailLessons,
@@ -6,35 +6,29 @@ import {
 } from '@/lib/types/course'
 import { Category } from '@/lib/types/course-content'
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL
-
 export const getCoursesApi = async () : Promise<Course[]> => {
-    const response = await axios.get(
-        `${baseUrl}courses/`
-    )
+    const response = await authAxios.get(`courses/`)
     return response.data.courses.filter((course: Course) => course.is_visible)
 }
 
 export const getCoursesByAdminApi = async () : Promise<Course[]> => {
-    const response = await axios.get(
-        `${baseUrl}courses/`
-    )
+    const response = await authAxios.get(`courses/`)
     return response.data.courses
 }
 
 export const getCourseDetailApi = async (id: number) : Promise<Course> => {
-    const response = await axios.get(
-        `${baseUrl}courses/${id}/`
+    const response = await authAxios.get(
+        `courses/${id}/`
     )
     return response.data.course
 }
 
 export const getCourseByTeacherApi = async () : Promise<Course[]> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
     }
-    const response = await axios.get(
-        `${baseUrl}courses/teacher/`,
+    const response = await authAxios.get(
+        `courses/teacher/`,
         { headers }
     )
     return response.data.courses
@@ -42,10 +36,10 @@ export const getCourseByTeacherApi = async () : Promise<Course[]> => {
 
 export const getCourseWithDetailLessonsApi = async (id: number) : Promise<CourseWithDetailLessons> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
     }
-    const response = await axios.get(
-        `${baseUrl}courses/${id}/detail-lessons/`,
+    const response = await authAxios.get(
+        `courses/${id}/detail-lessons/`,
         { headers }
     )
     return response.data.course
@@ -53,7 +47,7 @@ export const getCourseWithDetailLessonsApi = async (id: number) : Promise<Course
 
 export const createCourseApi = async (data: CreateCourseRequest) : Promise<Course> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`,
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
         'Content-Type': 'multipart/form-data'
     }
 
@@ -70,8 +64,8 @@ export const createCourseApi = async (data: CreateCourseRequest) : Promise<Cours
     formData.append('categories', JSON.stringify(data.categories))
     formData.append('discount', data.discount?.toString() || '')
  
-    const response = await axios.post(
-        `${baseUrl}courses/create/`,
+    const response = await authAxios.post(
+        `courses/create/`,
         formData,
         { headers }
     )
@@ -80,7 +74,7 @@ export const createCourseApi = async (data: CreateCourseRequest) : Promise<Cours
 
 export const updateCourseApi = async (id: number, data: CreateCourseRequest) : Promise<Course> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`,
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
         'Content-Type': 'multipart/form-data'
     }
 
@@ -114,8 +108,8 @@ export const updateCourseApi = async (id: number, data: CreateCourseRequest) : P
         formData.append('discount', data.discount.toString())
     }
 
-    const response = await axios.put(
-        `${baseUrl}courses/${id}/update/`,
+    const response = await authAxios.put(
+        `courses/${id}/update/`,
         formData,
         { headers }
     )
@@ -124,28 +118,28 @@ export const updateCourseApi = async (id: number, data: CreateCourseRequest) : P
 
 export const deleteCourseApi = async (id: number) : Promise<boolean> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
     }
-    const response = await axios.delete(
-        `${baseUrl}courses/${id}/delete/`,
+    const response = await authAxios.delete(
+        `courses/${id}/delete/`,
         { headers }
     )
     return response.data.success
 }
 
 export const getCategoriesApi = async () : Promise<Category[]> => {
-    const response = await axios.get(
-        `${baseUrl}courses/categories/`,
+    const response = await authAxios.get(
+        `courses/categories/`,
     )
     return response.data.categories
 }
 
 export const hideCourseApi = async (id: number) : Promise<Course> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
     }
-    const response = await axios.put(
-        `${baseUrl}courses/${id}/hide/`,
+    const response = await authAxios.put(
+        `courses/${id}/hide/`,
         {},
         { headers }
     )
@@ -154,10 +148,10 @@ export const hideCourseApi = async (id: number) : Promise<Course> => {
 
 export const showCourseApi = async (id: number) : Promise<Course> => {
     const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
+        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
     }
-    const response = await axios.put(
-        `${baseUrl}courses/${id}/show/`,
+    const response = await authAxios.put(
+        `courses/${id}/show/`,
         {},
         { headers }
     )

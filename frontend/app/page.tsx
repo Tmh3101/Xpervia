@@ -14,7 +14,7 @@ export default function Home() {
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
-  const { enrollments, fetchEnrollments, token } = useAuth()
+  const { enrollments, fetchEnrollments, accessToken } = useAuth()
 
   const checkCourseEnrollment = (courseId: number) => {
     const enrolledCourseIds = enrollments.map((enrollment) => enrollment.course.id)
@@ -34,10 +34,10 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (token) {
+    if (accessToken) {
       fetchEnrollments()
     }
-  }, [token])
+  }, [accessToken])
 
   useEffect(() => {
     let result = courses

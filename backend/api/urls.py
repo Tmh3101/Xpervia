@@ -1,5 +1,10 @@
 from django.urls import path
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+    TokenVerifyView,    
+)
 from api.views import (
+    auth_view,
     user_view,
     category_view,
     chapter_view,
@@ -18,14 +23,19 @@ urlpatterns = [
     path('users/', user_view.UserListAPIView.as_view(), name='user-list'),
     path('users/create/', user_view.UserCreateAPIView.as_view(), name='user-create'),
     path('users/<uuid:id>/', user_view.UserRetrieveAPIView.as_view(), name='user-detail'),
+    path('users/me/', user_view.CurrentUserAPIView.as_view(), name='current-user'),
     path('users/<uuid:id>/update/', user_view.UserUpdateAPIView.as_view(), name='user-update'),
     path('users/<uuid:id>/delete/', user_view.UserDeleteAPIView.as_view(), name='user-delete'),
     path('users/<uuid:id>/update-password/', user_view.UserPasswordUpdateAPIView.as_view(), name='user-password-update'),
     path('register/', user_view.UserRegisterAPIView.as_view(), name='user-register'),
-    path('token/login/', user_view.UserLoginAPIView.as_view(), name='token-login'),
-    path('token/logout/', user_view.UserLogoutAPIView.as_view(), name='token-logout'),
     path('users/<uuid:id>/disable/', user_view.UserDisableAPIView.as_view(), name='user-disable'),
     path('users/<uuid:id>/enable/', user_view.UserEnableAPIView.as_view(), name='user-enable'),
+
+    # Auth URLs
+    path('token/login/', auth_view.CustomTokenObtainPairView.as_view(), name='token-login'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),
+    path('token/logout/', auth_view.LogoutView.as_view(), name='token-logout'),
 
     # Course Category URLs
     path('courses/categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),

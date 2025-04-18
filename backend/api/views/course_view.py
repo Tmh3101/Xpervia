@@ -1,8 +1,8 @@
 import json
+import logging
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
@@ -16,6 +16,9 @@ from api.serializers import (
 )
 from api.permissions import IsTeacher, IsCourseOwner, IsAdmin
 from api.services.google_drive_service import upload_file, delete_file    
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+logger = logging.getLogger(__name__)
 
 # Create a course data from request
 def get_course_content(request):
@@ -93,10 +96,11 @@ def get_course_content_lessons(course_content):
 class CourseListAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
+        logger.info("Listing all courses")
         queryset = self.get_queryset().filter()
         courses_data = CourseSerializer(queryset, many=True).data.copy()
 
@@ -111,6 +115,7 @@ class CourseListAPIView(generics.ListAPIView):
             enrollments = Enrollment.objects.filter(course=course['id'])
             course['num_students'] = enrollments.count()
         
+        logger.info("Successfully listed all courses")
         return Response({
             'success': True,
             'message': 'All courses have been listed successfully',
@@ -121,10 +126,11 @@ class CourseListAPIView(generics.ListAPIView):
 class CourseListByTeacherAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def list(self, request, *args, **kwargs):
+        logger.info(f"Listing courses for teacher ID: {request.user.id}")
         queryset = self.get_queryset().filter(course_content__teacher=request.user)
         courses_serializer = CourseSerializer(queryset, many=True)
         courses_data = courses_serializer.data.copy()
@@ -134,6 +140,7 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
             enrollments = Enrollment.objects.filter(course=course['id'])
             course['num_students'] = enrollments.count()
 
+        logger.info("Successfully listed courses for teacher")
         return Response({
             'success': True,
             'message': 'All courses have been listed successfully',
@@ -145,10 +152,11 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
 class CourseCreateAPIView(generics.CreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def create(self, request, *args, **kwargs):
+        logger.info(f"Creating course for teacher ID: {request.user.id}")
         # Check & create the course
         course_content = get_course_content(request)
         course_content_serializer = CourseContentSerializer(data=course_content)
@@ -183,6 +191,7 @@ class CourseCreateAPIView(generics.CreateAPIView):
             raise ValidationError(f'Error creating course: {str(e)}')
         
         headers = self.get_success_headers(course_serializer.data)
+        logger.info("Course created successfully")
         return Response({
             'success': True,
             'message': 'Course created successfully',
@@ -194,11 +203,12 @@ class CourseCreateAPIView(generics.CreateAPIView):
 class CourseRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
+        logger.info(f"Retrieving course with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -213,6 +223,7 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
         course_data = self.get_serializer(instance).data.copy()
         course_data['course_content'] = course_content_data
 
+        logger.info("Course retrieved successfully")
         return Response({
             'success': True,
             'message': 'Course retrieved successfully',
@@ -224,11 +235,12 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
 class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
+        logger.info(f"Retrieving course with detailed lessons for ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -264,6 +276,7 @@ class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
         course_content['lessons_without_chapter'] = lessons_without_chapter_serializer.data
         course_data['course_content'] = course_content
 
+        logger.info("Course with detailed lessons retrieved successfully")
         return Response({
             'success': True,
             'message': 'Course retrieved successfully',
@@ -276,11 +289,13 @@ class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
 class CourseUpdateAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
+        logger.info(f"Updating course with ID: {kwargs.get('id')}")
+        logger.info(f"Request data: {request.data}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -326,6 +341,7 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
         if request.FILES.get('thumbnail'):
             delete_file(old_thumbnail_id)
         
+        logger.info("Course updated successfully")
         return Response({
             'success': True,
             'message': 'Course updated successfully',
@@ -337,11 +353,12 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
 class CourseDeleteAPIView(generics.DestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
+        logger.info(f"Deleting course with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -352,6 +369,7 @@ class CourseDeleteAPIView(generics.DestroyAPIView):
         self.perform_destroy(instance)
         delete_course_content(course_content_id)
 
+        logger.info("Course deleted successfully")
         return Response({
             'success': True,
             'message': f'Course "{instance}" deleted successfully'
@@ -362,11 +380,12 @@ class CourseDeleteAPIView(generics.DestroyAPIView):
 class CourseHideAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
+        logger.info(f"Hiding course with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -375,6 +394,7 @@ class CourseHideAPIView(generics.UpdateAPIView):
         instance.is_visible = False
         instance.save()
 
+        logger.info("Course hidden successfully")
         return Response({
             'success': True,
             'message': f'Course "{instance}" hidden successfully',
@@ -385,11 +405,12 @@ class CourseHideAPIView(generics.UpdateAPIView):
 class CourseShowAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
+        logger.info(f"Showing course with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -398,6 +419,7 @@ class CourseShowAPIView(generics.UpdateAPIView):
         instance.is_visible = True
         instance.save()
 
+        logger.info("Course shown successfully")
         return Response({
             'success': True,
             'message': f'Course "{instance}" shown successfully',

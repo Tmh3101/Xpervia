@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
-    "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "api",
     'drf_yasg', # Swagger
 ]
@@ -118,12 +118,26 @@ AUTH_USER_MODEL = 'api.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
     'EXCEPTION_HANDLER': 'api.exceptions.exception_handler.custom_exception_handler'
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,  # hoặc 1 chuỗi bí mật khác
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # Internationalization
@@ -159,4 +173,44 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "simple": {
+            "format": "[{levelname}] {name} - {message}",
+            "style": "{",
+        },
+    },
+
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",  # Mức mặc định
+    },
+
+    "loggers": {
+        # Logger cho các app cụ thể
+        "django": {
+            "handlers": ["console"],
+            "level": "WARNING",  # Giảm bớt spam log mặc định của Django
+            "propagate": False,
+        },
+        "api": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Nếu bạn log bằng getLogger(__name__)
+        # thì cũng có thể cấu hình cho __name__ như "api.views" hoặc "project.module"
+    },
 }

@@ -1,14 +1,17 @@
+import logging
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import Existed
 from api.models import Enrollment, Course, LessonCompletion, CourseContent
 from api.serializers import (
-    EnrollmentSerializer, PaymentSerializer, SimpleEnrollmentSerializer, CourseContentSerializer
+    EnrollmentSerializer, PaymentSerializer
 )
 from api.permissions import IsAdmin, IsCourseOwner, IsStudent
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+logger = logging.getLogger(__name__)
 
 def get_course_progress(course_content, student):
     total_lessons = course_content.lessons.count()
@@ -22,12 +25,14 @@ def get_course_progress(course_content, student):
 class EnrollmentListAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def list(self, request, *args, **kwargs):
+        logger.info("Listing all enrollments")
         queryset = self.get_queryset()
         serializer = EnrollmentSerializer(queryset, many=True)
+        logger.info("Successfully listed all enrollments")
         return Response({
             'success': True,
             'message': 'All enrollments have been listed successfully',
@@ -39,10 +44,11 @@ class EnrollmentListAPIView(generics.ListAPIView):
 class EnrollmentListByCourseAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     
     def list(self, request, *args, **kwargs):
+        logger.info(f"Listing enrollments for course ID: {self.kwargs.get('course_id')}")
         course_id = self.kwargs.get('course_id')
         course = Course.objects.filter(id=course_id).first()
         if not course:
@@ -56,6 +62,7 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
             student_id = student['id']
             enrollment['progress'] = get_course_progress(course.course_content, student_id)
 
+        logger.info("Successfully listed enrollments for course")
         return Response({
             'success': True,
             'message': 'All enrollments in the course have been listed successfully',
@@ -66,10 +73,11 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
 class EnrollmentListByStudentAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
+        logger.info(f"Listing enrollments for student ID: {request.user.id}")
         queryset = self.get_queryset().filter(student=request.user)
         enrollments = EnrollmentSerializer(queryset, many=True).data.copy()
 
@@ -79,6 +87,7 @@ class EnrollmentListByStudentAPIView(generics.ListAPIView):
             course_content = CourseContent.objects.filter(id=course_conent_id).first()
             enrollment['progress'] = get_course_progress(course_content, request.user)
 
+        logger.info("Successfully listed enrollments for student")
         return Response({
             'success': True,
             'message': 'All enrolled courses have been listed successfully',
@@ -90,11 +99,11 @@ class EnrollmentListByStudentAPIView(generics.ListAPIView):
 class EnrollmentCreateAPIView(generics.CreateAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsStudent]
 
     def create(self, request, *args, **kwargs):
-
+        logger.info(f"Creating enrollment for course ID: {self.kwargs.get('course_id')} by student ID: {request.user.id}")
         course_id = self.kwargs.get('course_id')
         course = Course.objects.filter(id=course_id).first()
         if not course:
@@ -120,6 +129,7 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
         
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        logger.info("Enrollment created successfully")
         return Response({
             'success': True,
             'message': 'Enrollment created successfully',
@@ -131,17 +141,19 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
 class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
+        logger.info(f"Retrieving enrollment with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Enrollment.DoesNotExist:
             raise NotFound('Enrollment not found')
         
         serializer = self.get_serializer(instance)
+        logger.info("Enrollment retrieved successfully")
         return Response({
             'success': True,
             'message': 'Enrollment retrieved successfully',
@@ -158,17 +170,19 @@ class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
 class EnrollmentDeleteAPIView(generics.DestroyAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
+        logger.info(f"Deleting enrollment with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Enrollment.DoesNotExist:
             raise NotFound('Enrollment not found')
         
         self.perform_destroy(instance)
+        logger.info("Enrollment deleted successfully")
         return Response({
             'success': True,
             'message': 'Enrollment deleted successfully',

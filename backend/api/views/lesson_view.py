@@ -1,20 +1,22 @@
+import logging
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from api.exceptions.custom_exceptions import FileUploadException
 from api.models import Chapter, Lesson, Course, File
 from api.serializers import LessonSerializer, FileSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
+logger = logging.getLogger(__name__)
 
 # Lessons API to list all lessons for a course
 class LessonListByCourseAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -25,8 +27,10 @@ class LessonListByCourseAPIView(generics.ListAPIView):
         return Lesson.objects.filter(course_content_id=course.course_content.id)
 
     def list(self, request, *args, **kwargs):
+        logger.info(f"Listing lessons for course ID: {self.kwargs.get('course_id')}")
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        logger.info("Successfully listed lessons for course")
         return Response({
             'success': True,
             'message': 'Lessons for the course have been listed successfully',
@@ -37,7 +41,7 @@ class LessonListByCourseAPIView(generics.ListAPIView):
 # Lessons API to list all lessons by chapter
 class LessonListByChapterAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -47,8 +51,10 @@ class LessonListByChapterAPIView(generics.ListAPIView):
         return Lesson.objects.filter(chapter_id=chapter_id)
 
     def list(self, request, *args, **kwargs):
+        logger.info(f"Listing lessons for chapter ID: {self.kwargs.get('chapter_id')}")
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        logger.info("Successfully listed lessons for chapter")
         return Response({
             'success': True,
             'message': 'Lessons for the course and chapter have been listed successfully',
@@ -60,10 +66,11 @@ class LessonListByChapterAPIView(generics.ListAPIView):
 class LessonCreateAPIView(generics.CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
+        logger.info(f"Creating lesson for course ID: {self.kwargs.get('course_id')}")
         # Check if the course_id
         course = Course.objects.filter(id=self.kwargs.get('course_id')).first()
         if not course:
@@ -116,6 +123,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
         
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        logger.info("Lesson created successfully")
         return Response({
             'success': True,
             'message': 'Lesson created successfully',
@@ -127,17 +135,19 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
+        logger.info(f"Retrieving lesson with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
             raise NotFound('Lesson not found')
         
         serializer = self.get_serializer(instance)
+        logger.info("Lesson retrieved successfully")
         return Response({
             'success': True,
             'message': 'Lesson retrieved successfully',
@@ -149,11 +159,12 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
+        logger.info(f"Updating lesson with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -205,6 +216,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
         for old_file_id in old_file_ids:
             delete_file(old_file_id)
 
+        logger.info("Lesson updated successfully")
         return Response({
             'success': True,
             'message': 'Lesson updated successfully',
@@ -216,11 +228,12 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 class LessonDeleteAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
     
     def destroy(self, request, *args, **kwargs):
+        logger.info(f"Deleting lesson with ID: {kwargs.get('id')}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -240,6 +253,7 @@ class LessonDeleteAPIView(generics.DestroyAPIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         self.perform_destroy(instance)
+        logger.info("Lesson deleted successfully")
         return Response({
             'success': True,
             'message': f'Lesson {instance} deleted successfully'

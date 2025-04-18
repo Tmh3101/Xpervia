@@ -19,8 +19,8 @@ export interface LessonDetail extends Lesson {
 export interface CreateLessonRequest {
     title: string;
     content: string;
-    video: File;
-    subtitle_vi?: File;
-    attachment?: File;
+    video: File | Blob;
+    subtitle_vi?: File | Blob;
+    attachment?: File | Blob;
     is_visible: boolean;
 }

@@ -7,3 +7,4 @@ google-auth-httplib2==0.1.0
 google-api-python-client==2.24.0
 django-cors-headers==4.7.0
 drf-yasg==1.21.10
+djangorestframework-simplejwt==5.4.0

@@ -1,16 +1,8 @@
-import axios from 'axios'
+import authAxios from './axios-auth'
 import { Enrollment } from '../types/enrollment'
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL
-
 export const getEnrollmentsApi = async (): Promise<Enrollment[]> => {
-    const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
-    }
-    const response = await axios.get(
-        `${baseUrl}courses/enrollments/`,
-        { headers }
-    )
+    const response = await authAxios.get(`courses/enrollments/`)
     return response.data.enrollments
 }
 
@@ -19,36 +11,16 @@ export const getEnrollmentsByStudentApi = async (token: string): Promise<Enrollm
       throw new Error("Token không tồn tại. Vui lòng đăng nhập lại.")
     }
   
-    const headers = {
-      'Authorization': `Token ${token}`
-    }
-  
-    const response = await axios.get(
-      `${baseUrl}courses/enrollments/student/`,
-      { headers }
-    )
+    const response = await authAxios.get(`courses/enrollments/student/`)
     return response.data.enrollments
 }
 
-export const getEnrollmentsByCourseApi = async (courseId: number) : Promise<Enrollment[]> => {
-    const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
-    }
-    const response = await axios.get(
-        `${baseUrl}courses/${courseId}/enrollments/`,
-        { headers }
-    )
+export const getEnrollmentsByCourseApi = async (courseId: number): Promise<Enrollment[]> => {
+    const response = await authAxios.get(`courses/${courseId}/enrollments/`)
     return response.data.enrollments
 }
 
-export const enrollCourseApi = async (courseId: number) : Promise<boolean> => {
-    const headers = {
-        'Authorization': `Token ${localStorage.getItem("token")}`
-    }
-    const response = await axios.post(
-        `${baseUrl}courses/${courseId}/enrollments/create/`,
-        {},
-        { headers }
-    )
+export const enrollCourseApi = async (courseId: number): Promise<boolean> => {
+    const response = await authAxios.post(`courses/${courseId}/enrollments/create/`, {})
     return response.data.success
 }
