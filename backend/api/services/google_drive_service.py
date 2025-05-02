@@ -1,7 +1,7 @@
-import os, io
+import os
 from api.models import File
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaFileUpload
 from google.oauth2.service_account import Credentials
 from django.conf import settings
 import requests
@@ -11,7 +11,7 @@ from requests.exceptions import SSLError, RequestException
 GOOGLE_DRIVE_FOLDER_ID='1sfLAm55cBLc5NZcreEZjslcuhkCXSiIv'
 
 # Đường dẫn đến file JSON chứa thông tin Service Account
-SERVICE_ACCOUNT_FILE = os.path.join(settings.BASE_DIR, "api\\services\\service_account.json")
+SERVICE_ACCOUNT_FILE = os.path.join(settings.BASE_DIR, "api", "services", "service_account.json")
 
 # Tạo credentials từ Service Account
 creds = Credentials.from_service_account_file(

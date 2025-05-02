@@ -10,7 +10,7 @@ import { getCoursesApi } from "@/lib/api/course-api"
 import type { Course } from "@/lib/types/course"
 
 export default function Home() {
-  const [courses, setCourses] = useState<Course[]>([])
+  const [courses, setCourses] = useState<Course[] | null>(null)
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
@@ -40,6 +40,8 @@ export default function Home() {
   }, [accessToken])
 
   useEffect(() => {
+    if (courses === null) return
+
     let result = courses
 
     // Filter by search query
@@ -66,7 +68,7 @@ export default function Home() {
     setSelectedCategory(categoryId)
   }
 
-  if (!courses.length) {
+  if (courses === null) {
     return (
       <Loading />
     )
