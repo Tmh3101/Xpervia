@@ -16,7 +16,7 @@ from api.serializers import (
 )
 from api.permissions import IsTeacher, IsCourseOwner, IsAdmin
 from api.services.google_drive_service import upload_file, delete_file    
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from supabase_service.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ def get_course_content_lessons(course_content):
 class CourseListAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
@@ -126,7 +126,7 @@ class CourseListAPIView(generics.ListAPIView):
 class CourseListByTeacherAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def list(self, request, *args, **kwargs):
@@ -152,7 +152,7 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
 class CourseCreateAPIView(generics.CreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def create(self, request, *args, **kwargs):
@@ -203,7 +203,7 @@ class CourseCreateAPIView(generics.CreateAPIView):
 class CourseRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
@@ -235,7 +235,7 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
 class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
@@ -289,7 +289,7 @@ class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
 class CourseUpdateAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -353,7 +353,7 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
 class CourseDeleteAPIView(generics.DestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -380,7 +380,7 @@ class CourseDeleteAPIView(generics.DestroyAPIView):
 class CourseHideAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     lookup_field = 'id'
 
@@ -405,7 +405,7 @@ class CourseHideAPIView(generics.UpdateAPIView):
 class CourseShowAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     lookup_field = 'id'
 

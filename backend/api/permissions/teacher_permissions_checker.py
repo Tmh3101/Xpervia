@@ -6,7 +6,7 @@ from api.models import (
 
 class IsTeacher(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role == RoleEnum.TEACHER.name
+        return request.user.user_metadata.role == RoleEnum.TEACHER.name
     
 # Owner permission for course, chapter, lesson
 class IsCourseOwner(BasePermission):

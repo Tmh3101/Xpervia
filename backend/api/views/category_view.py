@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from api.models import Category
 from api.serializers import CategorySerializer
 from api.permissions import IsAdmin
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from supabase_service.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class CategoryListAPIView(generics.ListAPIView):
 # Category API to create a category
 class CategoryCreateAPIView(generics.CreateAPIView):
     serializer_class = CategorySerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def create(self, request, *args, **kwargs):
@@ -56,7 +56,7 @@ class CategoryCreateAPIView(generics.CreateAPIView):
 class CategoryRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
@@ -80,7 +80,7 @@ class CategoryRetrieveAPIView(generics.RetrieveAPIView):
 class CategoryUpdateAPIView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
@@ -108,7 +108,7 @@ class CategoryUpdateAPIView(generics.UpdateAPIView):
 class CategoryDeleteAPIView(generics.DestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 

@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,11 +21,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+# Load environment variables from .env file
+# Supabase variables
+SUPABASE_PROJECT_ID=config('SUPABASE_PROJECT_ID')
+SUPABASE_PROJECT_URL=config('SUPABASE_PROJECT_URL')
+SUPABASE_ANON_KEY=config('SUPABASE_ANON_KEY')
+SUPABASE_SERVICE_ROLE_KEY=config('SUPABASE_SERVICE_ROLE_KEY')
+SUPABASE_JWT_SECRET=config('SUPABASE_JWT_SECRET')
+
+# Subpabase database variables - PostgreSQL
+SUPABASE_DB_HOST=config('SUPABASE_DB_HOST')
+SUPABASE_DB_PORT=config('SUPABASE_DB_PORT', cast=int)
+SUPABASE_DB_NAME=config('SUPABASE_DB_NAME')
+SUPABASE_DB_USER=config('SUPABASE_DB_USER')
+SUPABASE_DB_PASSWORD=config('SUPABASE_DB_PASSWORD')
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-8_#@untf3h($e$k_ycsbbmkng9t^77x+xqpa^6sdh^swcgguhm"
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = []
 
@@ -37,7 +54,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
-    "rest_framework_simplejwt.token_blacklist",
     "api",
     'drf_yasg', # Swagger
 ]
@@ -88,13 +104,17 @@ WSGI_APPLICATION = "backend.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': '5432',
-        'HOST': 'db',
-        'PORT': '5432',
+        'NAME': SUPABASE_DB_NAME,
+        'USER': SUPABASE_DB_USER,
+        'PASSWORD': SUPABASE_DB_PASSWORD,
+        'HOST': SUPABASE_DB_HOST,
+        'PORT': SUPABASE_DB_PORT,
+        'OPTIONS': {
+            'sslmode': 'require',  # Require SSL connection for Supabase
+        },
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -114,30 +134,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'api.User'
+# AUTH_USER_MODEL = 'api.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'supabase_service.authentication.SupabaseJWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
     'EXCEPTION_HANDLER': 'api.exceptions.exception_handler.custom_exception_handler'
-}
-
-from datetime import timedelta
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,  # hoặc 1 chuỗi bí mật khác
-    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # Internationalization
@@ -157,8 +163,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-# Nếu bạn đang chạy local và chưa cấu hình file tĩnh:
-import os   
+# Nếu bạn đang chạy local và chưa cấu hình file tĩnh:   
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
@@ -195,14 +200,14 @@ LOGGING = {
 
     "root": {
         "handlers": ["console"],
-        "level": "INFO",  # Mức mặc định
+        "level": "INFO",
     },
 
     "loggers": {
         # Logger cho các app cụ thể
         "django": {
             "handlers": ["console"],
-            "level": "WARNING",  # Giảm bớt spam log mặc định của Django
+            "level": "WARNING", 
             "propagate": False,
         },
         "api": {
@@ -210,7 +215,5 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        # Nếu bạn log bằng getLogger(__name__)
-        # thì cũng có thể cấu hình cho __name__ như "api.views" hoặc "project.module"
     },
 }

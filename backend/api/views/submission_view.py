@@ -1,3 +1,4 @@
+import logging
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -8,15 +9,14 @@ from api.models import Assignment, Submission
 from api.serializers import SubmissionSerializer, FileSerializer
 from api.permissions import IsSubmissionOwner, IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
-import logging
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from supabase_service.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
 # Submissions API to list all submissions by assignment
 class SubmissionListByAssignmentAPIView(generics.ListAPIView):
     serializer_class = SubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def get_queryset(self):
@@ -41,7 +41,7 @@ class SubmissionListByAssignmentAPIView(generics.ListAPIView):
 class SubmissionCreateAPIView(generics.CreateAPIView):
     queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled]
 
     def create(self, request, *args, **kwargs):
@@ -87,7 +87,7 @@ class SubmissionCreateAPIView(generics.CreateAPIView):
 class SubmissionRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsSubmissionOwner | IsCourseOwner]
     lookup_field = 'id'
 
@@ -111,7 +111,7 @@ class SubmissionRetrieveAPIView(generics.RetrieveAPIView):
 class SubmissionUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsSubmissionOwner]
     lookup_field = 'id'
 
@@ -153,7 +153,7 @@ class SubmissionUpdateAPIView(generics.RetrieveUpdateAPIView):
 class SubmissionDeleteAPIView(generics.DestroyAPIView):
     queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsSubmissionOwner | IsCourseOwner]
     lookup_field = 'id'
 

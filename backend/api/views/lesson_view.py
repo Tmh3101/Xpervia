@@ -9,14 +9,14 @@ from api.models import Chapter, Lesson, Course, File
 from api.serializers import LessonSerializer, FileSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
 from api.services.google_drive_service import upload_file, delete_file
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from supabase_service.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
 # Lessons API to list all lessons for a course
 class LessonListByCourseAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -41,7 +41,7 @@ class LessonListByCourseAPIView(generics.ListAPIView):
 # Lessons API to list all lessons by chapter
 class LessonListByChapterAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -66,7 +66,7 @@ class LessonListByChapterAPIView(generics.ListAPIView):
 class LessonCreateAPIView(generics.CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
@@ -135,7 +135,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
     lookup_field = 'id'
 
@@ -159,7 +159,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -228,7 +228,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 class LessonDeleteAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
     

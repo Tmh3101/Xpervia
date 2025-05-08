@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from supabase_service import auth_view
 from django.urls import path, include, re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -34,6 +35,14 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+
+    # Authentication URLs
+    path('auth/register/', auth_view.register_view, name='register'),
+    path('auth/login/', auth_view.login_view, name='login'),
+    path('auth/logout/', auth_view.logout_view, name='logout'),
+    path('auth/refresh/', auth_view.refresh_session_view, name='refresh-session'),
+    path('auth/current-user/', auth_view.get_current_user, name='current-user'),
+    
     path("api/", include("api.urls")),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

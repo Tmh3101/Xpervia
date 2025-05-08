@@ -1,12 +1,11 @@
 from django.db import models
 from .assignment_model import Assignment
-from .user_model import User
 from .file_model import File
 
 
 class Submission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submissions')
+    student_id = models.UUIDField()
     file = models.OneToOneField(File, on_delete=models.CASCADE, related_name='submission')
     created_at = models.DateTimeField(auto_now_add=True)
 

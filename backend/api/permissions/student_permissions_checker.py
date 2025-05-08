@@ -4,7 +4,7 @@ from api.models import Enrollment, Lesson, Chapter, Assignment, Course
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role == RoleEnum.STUDENT.name
+        return request.user.user_metadata.role == RoleEnum.STUDENT.name
     
 
 class WasCourseEnrolled(BasePermission):
