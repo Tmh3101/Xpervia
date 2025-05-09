@@ -36,6 +36,10 @@ SUPABASE_DB_NAME=config('SUPABASE_DB_NAME')
 SUPABASE_DB_USER=config('SUPABASE_DB_USER')
 SUPABASE_DB_PASSWORD=config('SUPABASE_DB_PASSWORD')
 
+# Supabase storage variables
+SUPABASE_STORAGE_PUBLIC_BUCKET=config('SUPABASE_STORAGE_PUBLIC_BUCKET')
+SUPABASE_STORAGE_PRIVATE_BUCKET=config('SUPABASE_STORAGE_PRIVATE_BUCKET')
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
 
@@ -172,13 +176,6 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# CACHES settings
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
-}
 
 LOGGING = {
     "version": 1,

@@ -34,7 +34,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
     def get_student(self, obj):
         if obj.student_id:
-            return get_user_info_by_id(str(obj.student_id))
+            return get_user_info_by_id(str(obj.student_id)).to_dict()
         return None
 
 

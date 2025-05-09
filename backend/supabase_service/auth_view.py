@@ -95,6 +95,7 @@ def logout_view(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def refresh_session_view(request):
     refresh_token = request.data.get("refresh_token")
     try:

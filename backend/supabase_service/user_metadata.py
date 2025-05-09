@@ -8,7 +8,7 @@ class UserMetadataSchema:
         "first_name": "",
         "last_name": "",
         "date_of_birth": None,
-        "avatar_url": "",
+        "avatar_path": "",
         "email_verified": False,
         "phone_verified": False,
     }

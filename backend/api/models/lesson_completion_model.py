@@ -14,4 +14,4 @@ class LessonCompletion(models.Model):
         unique_together = ('lesson', 'student_id')
     
     def __str__(self):
-        return f'{self.lesson} - {self.student}'
+        return f'{self.lesson} - {self.student_id}'

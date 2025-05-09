@@ -9,29 +9,26 @@ from api.views import (
     submission_view,
     submission_score_view,
     lesson_completion_view,
-    course_view,
-    image_proxy_view,
+    course_view
 )
 
 urlpatterns = [
+    #=== Admin URLs ===#
     # Users Management URLs (Admin only)
     path('admin/users/', user_view.UserAdminView.as_view(), name='admin-user-list-create'),
     path('admin/users/<str:user_id>/', user_view.UserAdminView.as_view(), name='admin-user-update-delete'),
 
+    # Category Management URLs (Admin only)
+    path('admin/categories/', category_view.CategoryAdminAPIView.as_view(), name='admin-category-list-create'),
+    path('admin/categories/<int:id>/', category_view.CategoryAdminAPIView.as_view(), name='admin-category-update-delete'),
+
+    #=== Public URLs ===#
     # User URLs
     path('users/<str:user_id>/', user_view.UserDetailView.as_view(), name='user-detail'),
 
-
-    # path('users/<uuid:id>/update-password/', user_view.UserPasswordUpdateAPIView.as_view(), name='user-password-update'),
-    # path('users/<uuid:id>/disable/', user_view.UserDisableAPIView.as_view(), name='user-disable'),
-    # path('users/<uuid:id>/enable/', user_view.UserEnableAPIView.as_view(), name='user-enable'),
-
-    # Course Category URLs
-    path('courses/categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
-    path('courses/categories/create/', category_view.CategoryCreateAPIView.as_view(), name='category-create'),
-    path('courses/categories/<int:id>/', category_view.CategoryRetrieveAPIView.as_view(), name='category-detail'),
-    path('courses/categories/<int:id>/update/', category_view.CategoryUpdateAPIView.as_view(), name='category-update'),
-    path('courses/categories/<int:id>/delete/', category_view.CategoryDeleteAPIView.as_view(), name='category-delete'),
+    # Category URLs
+    path('categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
+    path('categories/<int:id>/', category_view.CategoryDetailAPIView.as_view(), name='category-detail'),
 
     # Course URLs
     path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),
@@ -46,10 +43,9 @@ urlpatterns = [
 
     # Enrollment URLs
     path('courses/enrollments/', enrollment_view.EnrollmentListAPIView.as_view(), name='enrollment-list'),
-    path('courses/<int:course_id>/enrollments/', enrollment_view.EnrollmentListByCourseAPIView.as_view(), name='enrollment-list'),
-    path('courses/<int:course_id>/enrollments/create/', enrollment_view.EnrollmentCreateAPIView.as_view(), name='course-enroll'),
+    path('courses/<int:course_id>/enrollments/', enrollment_view.EnrollmentListByCourseAPIView.as_view(), name='enrollment-list-by-course'),
+    path('courses/<int:course_id>/enroll/', enrollment_view.EnrollmentCreateAPIView.as_view(), name='course-enroll'),
     path('courses/enrollments/<int:id>/', enrollment_view.EnrollmentRetrieveAPIView.as_view(), name='enrollment-detail'),
-    # path('courses/enrollments/<int:id>/update/', enrollment_view.EnrollmentUpdateAPIView.as_view(), name='enrollment-update'),
     path('courses/enrollments/<int:id>/delete/', enrollment_view.EnrollmentDeleteAPIView.as_view(), name='enrollment-delete'),
     path('courses/enrollments/student/', enrollment_view.EnrollmentListByStudentAPIView.as_view(), name='enrollment-student-list'),
 
@@ -93,7 +89,4 @@ urlpatterns = [
     path('courses/assignments/submissions/<int:submission_id>/score/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
     path('courses/assignments/submissions/score/<int:id>/update/', submission_score_view.SubmissionScoreUpdateAPIView.as_view(), name='submission-score-update'),
     path('courses/assignments/submissions/score/<int:id>/delete/', submission_score_view.SubmissionScoreDeleteAPIView.as_view(), name='submission-score-delete'),
-
-    # Image Proxy URLs
-    path('proxy/image/<str:file_id>/', image_proxy_view.ImageProxyView.as_view(), name='proxy-image'),
 ]

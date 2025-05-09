@@ -15,5 +15,5 @@ class Submission(models.Model):
         verbose_name_plural = 'Submissions'
     
     def __str__(self):
-        return f'{self.assignment} - {self.student}'
+        return f'{self.assignment} - {self.student_id}'
     

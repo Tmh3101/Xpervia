@@ -18,7 +18,7 @@ class CourseContentSerializer(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         if obj.teacher_id:
-            return get_user_info_by_id(str(obj.teacher_id))
+            return get_user_info_by_id(str(obj.teacher_id)).to_dict()
         return None
     
 
@@ -36,5 +36,5 @@ class SimpleCourseContentSerializer(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         if obj.teacher_id:
-            return get_user_info_by_id(str(obj.teacher_id))
+            return get_user_info_by_id(str(obj.teacher_id)).to_dict()
         return None

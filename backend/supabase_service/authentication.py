@@ -4,9 +4,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.conf import settings
 from .auth import get_user_info_by_id
 
-SUPABASE_JWT_SECRET = getattr(settings, 'SUPABASE_JWT_SECRET', None)
-if SUPABASE_JWT_SECRET is None:
-    raise Exception("SUPABASE_JWT_SECRET not set in settings.py")
+SUPABASE_JWT_SECRET = getattr(settings, 'SUPABASE_JWT_SECRET')
 
 class SupabaseJWTAuthentication(BaseAuthentication):
     def authenticate(self, request):

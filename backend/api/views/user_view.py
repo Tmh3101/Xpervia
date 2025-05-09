@@ -8,7 +8,6 @@ from supabase_service.auth import (
     get_user_info_by_id,
     get_all_users,
     update_user_info_by_id,
-    update_user_metadata,
     delete_user,
     create_user,
 )

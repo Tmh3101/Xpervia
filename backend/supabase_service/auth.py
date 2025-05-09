@@ -109,7 +109,10 @@ def get_user_info_by_id(user_id: str) -> SupabaseUser:
     """
     Lấy thông tin người dùng từ Supabase Auth bằng ID.
     """
-    response = supabase.auth.admin.get_user_by_id(user_id)
+    try:
+        response = supabase.auth.admin.get_user_by_id(user_id)
+    except Exception as e:
+        print(f"Error getting user info by ID: {e}")
     if response and response.user:
         return get_supabase_user_info(response.user)
     return None

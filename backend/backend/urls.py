@@ -21,6 +21,7 @@ from django.urls import path, include, re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from supabase_service.file_url_view import FileAccessURLAPIView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -34,6 +35,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Django Admin URLs
     path("admin/", admin.site.urls),
 
     # Authentication URLs
@@ -43,7 +45,13 @@ urlpatterns = [
     path('auth/refresh/', auth_view.refresh_session_view, name='refresh-session'),
     path('auth/current-user/', auth_view.get_current_user, name='current-user'),
     
-    path("api/", include("api.urls")),
+    # Coures URLs
+    path("api/", include("api.urls")), 
+
+    # Signed URL for Supabase
+    path('files/access-url/', FileAccessURLAPIView.as_view(), name='file-access-url'),
+
+    # Swagger and Redoc URLs
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

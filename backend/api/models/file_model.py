@@ -3,7 +3,7 @@ from django.db import models
 
 class File(models.Model):
     file_name = models.CharField(max_length=255)
-    file_id = models.CharField(max_length=50, unique=True)
+    file_path = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

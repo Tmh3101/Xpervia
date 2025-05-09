@@ -11,6 +11,7 @@ from supabase_service.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
+
 # Chapters API to list all chapters of a course
 class ChapterListAPIView(generics.ListAPIView):
     queryset = Chapter.objects.all()
