@@ -1,17 +1,12 @@
-from api.models import Enrollment, Course, Payment, User
+from api.models import Enrollment, Course, Payment
 from .payment_serializer import PaymentSerializer
-from .user_serializer import SimpleUserSerializer
 from .course_serializer import CourseSerializer, SimpleCourseSerializer
 from rest_framework import serializers
+from api.models import User
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    student = SimpleUserSerializer(read_only=True)
-    student_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        source='student',
-        write_only=True
-    )
+    student = serializers.SerializerMethodField()
 
     course = CourseSerializer(read_only=True)
     course_id = serializers.PrimaryKeyRelatedField(
@@ -27,15 +22,20 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-
     
     class Meta:
         model = Enrollment
         fields = '__all__'
         extra_kwargs = {
+            'student_id': {'write_only': True},
             'created_at': {'read_only': True},
             'payment': {'required': False}
         }
+
+    def get_student(self, obj):
+        if obj.student_id:
+            return User.objects.get(id=obj.student_id).to_dict()
+        return None
 
 
 class SimpleEnrollmentSerializer(serializers.ModelSerializer):

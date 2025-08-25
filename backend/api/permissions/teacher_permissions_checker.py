@@ -6,61 +6,65 @@ from api.models import (
 
 class IsTeacher(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role == RoleEnum.TEACHER.name
+        return request.user.user_metadata.role == RoleEnum.TEACHER.name
     
 # Owner permission for course, chapter, lesson
 class IsCourseOwner(BasePermission):
     def has_permission(self, request, view):
-
-        if view.kwargs.get('course_id'):
+        course_id = view.kwargs.get('course_id')
+        if course_id:
             try:
-                course = Course.objects.get(id=view.kwargs.get('course_id'))
+                course = Course.objects.get(id=course_id)
             except Course.DoesNotExist:
                 return True
-            return course.course_content.teacher == request.user
+            return str(course.course_content.teacher_id) == request.user.id
         
-        if view.kwargs.get('chapter_id'):
+        chapter_id = view.kwargs.get('chapter_id')
+        if chapter_id:
             try:
-                chapter = Chapter.objects.get(id=view.kwargs.get('chapter_id'))
+                chapter = Chapter.objects.get(id=chapter_id)
             except Chapter.DoesNotExist:
                 return True
-            return chapter.course_content.teacher == request.user
+            return str(chapter.course_content.teacher_id) == request.user.id
         
-        if view.kwargs.get('lesson_id'):
+        lesson_id = view.kwargs.get('lesson_id')
+        if lesson_id:
             try:
-                lesson = Lesson.objects.get(id=view.kwargs.get('lesson_id'))
+                lesson = Lesson.objects.get(id=lesson_id)
             except Lesson.DoesNotExist:
                 return True
-            return lesson.course_content.teacher == request.user
+            return str(lesson.course_content.teacher_id) == request.user.id
         
-        if view.kwargs.get('assignment_id'):
+        assignment_id = view.kwargs.get('assignment_id')
+        if assignment_id:
             try:
-                assignment = Assignment.objects.get(id=view.kwargs.get('assignment_id'))
+                assignment = Assignment.objects.get(id=assignment_id)
             except Assignment.DoesNotExist:
                 return True
-            return assignment.lesson.course_content.teacher == request.user
+            return str(assignment.lesson.course_content.teacher_id) == request.user.id
         
-        if view.kwargs.get('submission_id'):
+        submission_id = view.kwargs.get('submission_id')
+        if submission_id:
             try:
-                submission = Submission.objects.get(id=view.kwargs.get('submission_id'))
+                submission = Submission.objects.get(id=submission_id)
             except Submission.DoesNotExist:
                 return True
-            return submission.assignment.lesson.course_content.teacher == request.user
+            return str(submission.assignment.lesson.course_content.teacher_id) == request.user.id
         
         return True
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Course):
-            return obj.course_content.teacher == request.user
+            return str(obj.course_content.teacher_id) == request.user.id
         elif isinstance(obj, Chapter) or isinstance(obj, Lesson):
-            return obj.course_content.teacher == request.user
+            return str(obj.course_content.teacher_id) == request.user.id
         elif isinstance(obj, Assignment):
             course_content = obj.lesson.course_content
-            return course_content.teacher == request.user
+            return str(course_content.teacher_id) == request.user.id
         elif isinstance(obj, Submission):
             course_content = obj.assignment.lesson.course_content
-            return course_content.teacher == request.user
+            return str(course_content.teacher_id) == request.user.id
         elif isinstance(obj, SubmissionScore):
             course_content = obj.submission.assignment.lesson.course_content
-            return course_content.teacher == request.user
+            return str(course_content.teacher_id) == request.user.id
         return True

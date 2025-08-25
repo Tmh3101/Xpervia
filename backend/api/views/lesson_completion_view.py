@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 from api.exceptions.custom_exceptions import Existed
 from api.models import LessonCompletion, Course
 from api.serializers import LessonCompletionSerializer
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class LessonCompletionListAPIView(generics.ListAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin | IsCourseOwner]
 
     def list(self, request, *args, **kwargs):
@@ -36,7 +36,7 @@ class LessonCompletionListAPIView(generics.ListAPIView):
 class LessonCompletionListByStudentAPIView(generics.ListAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsStudent]
 
     def list(self, request, *args, **kwargs):
@@ -62,7 +62,7 @@ class LessonCompletionListByStudentAPIView(generics.ListAPIView):
 class LessonCompletionCreateAPIView(generics.CreateAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled]
 
     def create(self, request, *args, **kwargs):
@@ -90,7 +90,7 @@ class LessonCompletionCreateAPIView(generics.CreateAPIView):
 class LessonCompletionDeleteAPIView(generics.DestroyAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled]
 
     def destroy(self, request, *args, **kwargs):

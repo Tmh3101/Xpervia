@@ -1,4 +1,6 @@
 import logging
+import uuid
+from django.conf import settings
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -8,15 +10,15 @@ from api.exceptions.custom_exceptions import FileUploadException
 from api.models import Chapter, Lesson, Course, File
 from api.serializers import LessonSerializer, FileSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
-from api.services.google_drive_service import upload_file, delete_file
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
+from api.services.supabase.storage import upload_file, delete_file
 
 logger = logging.getLogger(__name__)
 
 # Lessons API to list all lessons for a course
 class LessonListByCourseAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -41,7 +43,7 @@ class LessonListByCourseAPIView(generics.ListAPIView):
 # Lessons API to list all lessons by chapter
 class LessonListByChapterAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -66,7 +68,7 @@ class LessonListByChapterAPIView(generics.ListAPIView):
 class LessonCreateAPIView(generics.CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
@@ -88,37 +90,76 @@ class LessonCreateAPIView(generics.CreateAPIView):
                 raise NotFound('Chapter does not belong to the specified course')
 
         # Upload the video, subtitle, and attachment to Google Drive
-        file_id_list = []
+        uuid = str(uuid.uuid4())
+        file_path_list = []
         for file_type in ['video', 'subtitle_vi']:
             if request.FILES.get(file_type):
                 try:
-                    file = upload_file(request.FILES.get(file_type))
+                    # file = upload_file(request.FILES.get(file_type))
+                    file = request.FILES.get(file_type)
+                    file_path = f'lessons/{uuid}/{uuid}.{file.name.split(".")[-1]}'
+                    logger.info(f'Uploading {file_type} file to Supabase: {file_path}')
+                    upload_file(
+                        bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                        path=file_path,
+                        file_data=file,
+                        content_type=file.content_type
+                    )
                 except Exception as e:
-                    for file_id in file_id_list:
-                        delete_file(file_id)
+                    logger.error(f'Error uploading {file_type} file: {str(e)}')
+                    for file_path in file_path_list:
+                        delete_file(
+                            bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                            path=file_path
+                        )
                     raise FileUploadException(f'Error uploading {file}: {str(e)}')
-                file_id = file.get('file_id')
-                request.data[f'{file_type}_id'] = file_id
-                file_id_list.append(file_id)
+                request.data[f'{file_type}_path'] = file_path
+                file_path_list.append(file_path)
 
-        if request.FILES.get('attachment'):
+        attachment = request.data.get('attachment')
+        if attachment:
             try:
-                file = upload_file(request.FILES.get('attachment'))
-                file_serializer = FileSerializer(data=file)
+                file_name = attachment.name
+                file_path = f'lessons/{uuid}/{uuid}.{file_name.split(".")[-1]}'
+                logger.info(f'Uploading attachment file to Supabase: {file_path}')
+                upload_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=file_path,
+                    file_data=attachment,
+                    content_type=attachment.content_type
+                )
+                file_serializer = FileSerializer(data={
+                    'file_name': file_name,
+                    'file_path': file_path,
+                })
                 if not file_serializer.is_valid():
-                    raise FileUploadException(f'Error uploading {file}: {file_serializer.errors}')
+                    logger.error(f'Error uploading attachment file: {file_serializer.errors}')
+                    for file_path in file_path_list:
+                        delete_file(
+                            bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                            path=file_path
+                        )
+                    raise FileUploadException(f'Error uploading attachment file: {file_serializer.errors}')
                 attachment = file_serializer.save()
             except Exception as e:
-                for file_id in file_id_list:
-                    delete_file(file_id)
+                logger.error(f'Error uploading attachment file: {str(e)}')
+                for file_path in file_path_list:
+                    delete_file(
+                        bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                        path=file_path
+                    )
                 raise FileUploadException(f'Error uploading {file}: {str(e)}')
             request.data['attachment_id'] = attachment.id
-            file_id_list.append(attachment.id)
+            file_path_list.append(file_path)
     
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            for file_id in file_id_list:
-                delete_file(file_id)
+            logger.error(f'Error creating lesson: {serializer.errors}')
+            for file_path in file_path_list:
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=file_path
+                )
             raise ValidationError(f'Error creating lesson: {serializer.errors}')
         
         self.perform_create(serializer)
@@ -135,7 +176,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
     lookup_field = 'id'
 
@@ -159,7 +200,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -170,51 +211,91 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
         except Http404 as e:
             raise NotFound('Lesson not found')
 
-        # Upload the video, subtitle, and attachment to Google Drive
-        file_id_list = []
-        old_file_ids = []
+        # Upload the video, subtitle, and attachment to Supabase
+        file_path_list = []
+        old_file_paths = []
         
         for file_type in ['video', 'subtitle_vi']:
             if request.FILES.get(file_type):
                 try:
-                    file = upload_file(request.FILES.get(file_type))
+                    file = request.FILES.get(file_type)
+                    file_path = f'lessons/{instance.id}/{instance.id}.{file.name.split(".")[-1]}'
+                    logger.info(f'Uploading {file_type} file to Supabase: {file_path}')
+                    upload_file(
+                        bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                        path=file_path,
+                        file_data=file,
+                        content_type=file.content_type
+                    )
                 except Exception as e:
-                    for file_id in file_id_list:
-                        delete_file(file_id)
+                    logger.error(f'Error uploading {file_type} file: {str(e)}')
+                    for file_path in file_path_list:
+                        delete_file(
+                            bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                            path=file_path
+                        )
                     raise FileUploadException(f'Error uploading {file}: {str(e)}')
-                file_id = file.get('file_id')
-                request.data[f'{file_type}_id'] = file_id
-                file_id_list.append(file_id)
-                old_file_ids.append(getattr(instance, f'{file_type}_id'))
-            
-        if request.FILES.get('attachment'):
+                request.data[f'{file_type}_path'] = file_path
+                file_path_list.append(file_path)
+                old_file_paths.append(getattr(instance, f'{file_type}_path'))
+
+        attachment = request.data.get('attachment')    
+        if attachment:
             try:
-                file = upload_file(request.FILES.get('attachment'))
-                file_serializer = FileSerializer(data=file)
+                file_name = attachment.name
+                file_path = f'lessons/{instance.id}/{instance.id}.{file_name.split(".")[-1]}'
+                logger.info(f'Uploading attachment file to Supabase: {file_path}')
+                upload_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=file_path,
+                    file_data=attachment,
+                    content_type=attachment.content_type
+                )
+                file_serializer = FileSerializer(data={
+                    'file_name': file_name,
+                    'file_path': file_path,
+                })
                 if not file_serializer.is_valid():
+                    logger.error(f'Error uploading attachment file: {file_serializer.errors}')
+                    for file_path in file_path_list:
+                        delete_file(
+                            bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                            path=file_path
+                        )
                     raise FileUploadException(f'Error uploading {file}: {file_serializer.errors}')
                 attachment = file_serializer.save()
             except Exception as e:
-                for file_id in file_id_list:  
-                    delete_file(file_id) 
+                logger.error(f'Error uploading attachment file: {str(e)}')
+                for file_path in file_path_list:
+                    delete_file(
+                        bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                        path=file_path
+                    )
                 raise FileUploadException(f'Error uploading {file}: {str(e)}')
             request.data['attachment_id'] = attachment.id
-            file_id_list.append(attachment.file_id)
-            old_attachment_id = getattr(instance, 'attachment_id')
-            old_attachment_file_ids = File.objects.get(id=old_attachment_id).file_id
-            old_file_ids.append(old_attachment_file_ids)
+            file_path_list.append(attachment.file_path)
+            old_attachment_path = getattr(instance, 'attachment_path')
+            old_attachment_file_paths = File.objects.filter(file_path=old_attachment_path).first().file_path
+            old_file_paths.append(old_attachment_file_paths)
  
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
-            for file_id in file_id_list:
-                delete_file(file_id)
+            logger.error(f'Error updating lesson: {serializer.errors}')
+            for file_path in file_path_list:
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=file_path
+                )
             raise ValidationError(f'Error updating lesson: {serializer.errors}')
         
         self.perform_update(serializer)
 
-        # Delete the old video, subtitle, and attachment from Google Drive
-        for old_file_id in old_file_ids:
-            delete_file(old_file_id)
+        # Delete the old video, subtitle, and attachment from Supabase
+        for file_path in old_file_paths:
+            delete_file(
+                bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                path=file_path
+            )
 
         logger.info("Lesson updated successfully")
         return Response({
@@ -228,7 +309,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 class LessonDeleteAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
     
@@ -240,13 +321,23 @@ class LessonDeleteAPIView(generics.DestroyAPIView):
             raise NotFound('Lesson not found')
         
         try: 
-            if instance.video_id:
-                delete_file(instance.video_id)
-            if instance.subtitle_vi_id:
-                delete_file(instance.subtitle_vi_id)
+            if instance.video_path:
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=instance.video_path
+                )
+            if instance.subtitle_vi_path:
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=instance.subtitle_vi_path
+                )
             if instance.attachment:
-                delete_file(instance.attachment.file_id)
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+                    path=instance.attachment.file_path
+                )
         except Exception as e:
+            logger.error(f'Error deleting lesson files: {str(e)}')
             return Response({
                 'success': False,
                 'message': f'Error deleting lesson files: {str(e)}'

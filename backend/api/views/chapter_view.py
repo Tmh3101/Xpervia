@@ -7,15 +7,16 @@ from rest_framework.exceptions import NotFound, ValidationError
 from api.models import Chapter, Course, Lesson
 from api.serializers import ChapterSerializer, SimpleLessonSerializer
 from api.permissions import IsCourseOwner
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
+
 
 # Chapters API to list all chapters of a course
 class ChapterListAPIView(generics.ListAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -41,7 +42,7 @@ class ChapterListAPIView(generics.ListAPIView):
 class ChapterCreateAPIView(generics.CreateAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
@@ -70,7 +71,7 @@ class ChapterCreateAPIView(generics.CreateAPIView):
 class ChapterRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
@@ -99,7 +100,7 @@ class ChapterRetrieveAPIView(generics.RetrieveAPIView):
 class ChapterUpdateAPIView(generics.UpdateAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -128,7 +129,7 @@ class ChapterUpdateAPIView(generics.UpdateAPIView):
 class ChapterDeleteAPIView(generics.DestroyAPIView):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
     

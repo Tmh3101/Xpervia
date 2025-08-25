@@ -9,6 +9,5 @@ from .lesson_serializer import LessonSerializer, SimpleLessonSerializer
 from .payment_serializer import PaymentSerializer
 from .submission_score_serializer import SubmissionScoreSerializer
 from .submission_serializer import SubmissionSerializer, SimpleSubmissionSerializer
-from .user_serializer import UserSerializer, SimpleUserSerializer, UserUpdateSerializer, UserUpdatePasswordSerializer, UserRegisterSerializer
 from .file_serializer import FileSerializer
-from .auth_serializer import CustomTokenObtainPairSerializer
+from .user_serializer import UserSerializer

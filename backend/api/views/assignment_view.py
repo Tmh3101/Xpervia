@@ -7,14 +7,14 @@ from rest_framework.exceptions import NotFound, ValidationError
 from api.models import Assignment, Lesson, Submission, SubmissionScore
 from api.serializers import AssignmentSerializer, SimpleSubmissionSerializer, SubmissionScoreSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
 # Assignment API to list all assignments of a lesson
 class AssignmentListAPIView(generics.ListAPIView):
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -53,7 +53,7 @@ class AssignmentListAPIView(generics.ListAPIView):
 # Assignment API to list all assignments of a lesson by a student
 class AssignmentListByStudentAPIView(generics.ListAPIView):
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -92,7 +92,7 @@ class AssignmentListByStudentAPIView(generics.ListAPIView):
 # Assignment API to create a assignment
 class AssignmentCreateAPIView(generics.CreateAPIView):
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
@@ -128,7 +128,7 @@ class AssignmentCreateAPIView(generics.CreateAPIView):
 class AssignmentRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
     lookup_field = 'id'
 
@@ -152,7 +152,7 @@ class AssignmentRetrieveAPIView(generics.RetrieveAPIView):
 class AssignmentUpdateAPIView(generics.UpdateAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -180,7 +180,7 @@ class AssignmentUpdateAPIView(generics.UpdateAPIView):
 class AssignmentDeleteAPIView(generics.DestroyAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 

@@ -1,29 +1,44 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { X } from "lucide-react"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { LoginForm } from "./LoginForm"
-import { SignUpForm } from "./SignUpForm"
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { LoginForm } from "./LoginForm";
+import { SignUpForm } from "./SignUpForm";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface AuthModalProps {
-  isOpen: boolean
-  onClose: () => void
-  defaultView?: "login" | "signup"
+  isOpen: boolean;
+  onClose: () => void;
+  defaultView?: "login" | "signup";
 }
 
-export function AuthModal({ isOpen, onClose, defaultView = "login" }: AuthModalProps) {
-  const [view, setView] = useState<"login" | "signup">(defaultView)
+export function AuthModal({
+  isOpen,
+  onClose,
+  defaultView = "login",
+}: AuthModalProps) {
+  const [view, setView] = useState<"login" | "signup">(defaultView);
+
+  const router = useRouter();
 
   useEffect(() => {
-    setView(defaultView)
-  }, [defaultView])
+    setView(defaultView);
+  }, [defaultView]);
+
+  const handleResetPassword = () => {
+    router.push("/auth/request-reset-password");
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
+      <DialogContent
+        className="sm:max-w-[800px] p-0 overflow-hidden"
+        aria-describedby={undefined}
+      >
         <DialogTitle className="hidden"></DialogTitle>
         <Button
           variant="ghost"
@@ -36,7 +51,9 @@ export function AuthModal({ isOpen, onClose, defaultView = "login" }: AuthModalP
 
         <div className="flex h-[500px] transition-transform duration-500 ease-in-out">
           <div
-            className={`w-1/2 z-20 transition-transform duration-500 ${view === "signup" ? "translate-x-full" : ""}`}
+            className={`w-1/2 z-20 transition-transform duration-500 ${
+              view === "signup" ? "translate-x-full" : ""
+            }`}
           >
             <Image
               src="https://westcoastuniversity.edu/wp-content/uploads/2023/03/Study-Buddy-Efficiency-Expert-blog.jpg"
@@ -64,11 +81,14 @@ export function AuthModal({ isOpen, onClose, defaultView = "login" }: AuthModalP
                 : "-translate-x-full opacity-0 pointer-events-none"
             }`}
           >
-            <LoginForm onSignUpClick={() => setView("signup")} onClose={onClose} />
+            <LoginForm
+              onSignUpClick={() => setView("signup")}
+              onHandleResetPassword={handleResetPassword}
+              onClose={onClose}
+            />
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

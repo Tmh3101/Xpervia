@@ -4,7 +4,7 @@ from api.models import Enrollment, Lesson, Chapter, Assignment, Course
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role == RoleEnum.STUDENT.name
+        return request.user.user_metadata.role == RoleEnum.STUDENT.name
     
 
 class WasCourseEnrolled(BasePermission):
@@ -43,7 +43,7 @@ class WasCourseEnrolled(BasePermission):
             return True
         
         return Enrollment.objects.filter(
-            student=request.user,
+            student_id=request.user.id,
             course__course_content=course_content
         ).exists()
 
@@ -56,12 +56,12 @@ class WasCourseEnrolled(BasePermission):
             return True
 
         return Enrollment.objects.filter(
-            student=request.user,
+            student_id=request.user.id,
             course__course_content=course_content
         ).exists()
     
 
 class IsSubmissionOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.student == request.user
+        return str(obj.student_id) == request.user.id
         

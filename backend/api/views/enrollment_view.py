@@ -9,7 +9,7 @@ from api.serializers import (
     EnrollmentSerializer, PaymentSerializer
 )
 from api.permissions import IsAdmin, IsCourseOwner, IsStudent
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def get_course_progress(course_content, student):
 class EnrollmentListAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def list(self, request, *args, **kwargs):
@@ -44,7 +44,7 @@ class EnrollmentListAPIView(generics.ListAPIView):
 class EnrollmentListByCourseAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     
     def list(self, request, *args, **kwargs):
@@ -73,7 +73,7 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
 class EnrollmentListByStudentAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
@@ -99,7 +99,7 @@ class EnrollmentListByStudentAPIView(generics.ListAPIView):
 class EnrollmentCreateAPIView(generics.CreateAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsStudent]
 
     def create(self, request, *args, **kwargs):
@@ -111,7 +111,8 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
         request.data['course_id'] = course.id
 
         student = request.user
-        if course.enrollments.filter(student=student).exists():
+        if course.enrollments.filter(student_id=student.id).exists():
+            logger.warning(f"Enrollment already exists for student ID: {student.id} in course ID: {course.id}")
             raise Existed('You have already enrolled in this course')
         request.data['student_id'] = student.id
 
@@ -119,12 +120,14 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
             # Create payment
             payment_serializer = PaymentSerializer(data={'amount': course.get_discounted_price()})
             if not payment_serializer.is_valid():
+                logger.error(f"Payment creation failed: {payment_serializer.errors}")
                 raise ValidationError(f'Payment not created: {payment_serializer.errors}')
             payment = payment_serializer.save()
             request.data['payment_id'] = payment.id
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
+            logger.error(f"Enrollment creation failed: {serializer.errors}")
             raise ValidationError(f'Enrollment not created: {serializer.errors}')
         
         self.perform_create(serializer)
@@ -141,7 +144,7 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
 class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
@@ -170,7 +173,7 @@ class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
 class EnrollmentDeleteAPIView(generics.DestroyAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
