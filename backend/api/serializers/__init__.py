@@ -8,6 +8,6 @@ from .lesson_completion_serializer import LessonCompletionSerializer
 from .lesson_serializer import LessonSerializer, SimpleLessonSerializer
 from .payment_serializer import PaymentSerializer
 from .submission_score_serializer import SubmissionScoreSerializer
-from .submission_serializer import SubmissionSerializer, SimpleSubmissionSerializer
+from .submission_serializer import SubmissionSerializer
 from .file_serializer import FileSerializer
 from .user_serializer import UserSerializer

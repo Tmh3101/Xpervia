@@ -19,11 +19,9 @@ export const loginApi = async (payload: LoginPayload) => {
 };
 
 // Làm mới access token bằng refresh token
-export const refreshTokenApi = async (
-  refreshToken: string
-): Promise<{ access: string }> => {
-  const response = await authAxios.post(`auth/refresh/`, {
-    refresh: refreshToken,
+export const refreshTokenApi = async (refreshToken: string) => {
+  const response = await authAxios.post(`auth/refresh-session/`, {
+    refresh_token: refreshToken,
   });
   return response.data;
 };
@@ -38,13 +36,6 @@ export const verifyTokenApi = async (token: string): Promise<boolean> => {
   } catch {
     return false;
   }
-};
-
-// Đăng xuất (blacklist refresh token)
-export const logoutApi = async (refreshToken: string): Promise<void> => {
-  await authAxios.post(`auth/logout/`, {
-    refresh: refreshToken,
-  });
 };
 
 export const registerApi = async (
@@ -67,7 +58,9 @@ export const registerApi = async (
     return response.data.user;
   } catch (error) {
     console.error("Error during registration:", error);
-    return { error: "An error occurred" };
+    if (error.response && error.response.data) {
+      return { error: error.response.data.error || "An error occurred" };
+    }
   }
 };
 

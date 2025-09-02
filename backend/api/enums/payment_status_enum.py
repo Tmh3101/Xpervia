@@ -2,6 +2,7 @@ from enum import Enum
 
 class PaymentStatusEnum(Enum):
     COMPLETED = ('complete', 'Payment completed successfully')
+    PENDING = ('pending', 'Payment is pending')
     FAILED = ('failed', 'The payment failed')
 
     def __init__(self, name, description):

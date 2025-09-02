@@ -1,26 +1,25 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { User } from "lucide-react"
-import Image from "next/image"
-import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
-import { useState } from "react"
-import { useAuth } from "@/lib/auth-context"
-import { AuthModal } from "@/components/auth/AuthModal"
-import { PaymentModal } from "./PaymentModal"
-import { useRouter } from "next/navigation"
-import { CourseCategories } from "@/components/course/CourseCategories"
+import { Button } from "@/components/ui/button";
+import { User } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { PaymentModal } from "./PaymentModal";
+import { useRouter } from "next/navigation";
+import { CourseCategories } from "@/components/course/CourseCategories";
 
 interface CourseHeroProps {
-  id: number
-  title: string
-  currentPrice: number
-  originalPrice: number
-  discount: number
-  teacher: string
-  bannerImage: string
-  categories: string[]
-  onEnrollSuccess: () => void
+  id: number;
+  title: string;
+  currentPrice: number;
+  originalPrice: number;
+  discount: number;
+  teacher: string;
+  bannerImageUrl: string;
+  categories: string[];
+  onEnrollSuccess: () => void;
 }
 
 export function CourseHero({
@@ -30,47 +29,47 @@ export function CourseHero({
   originalPrice,
   discount,
   teacher,
-  bannerImage,
+  bannerImageUrl,
   categories,
   onEnrollSuccess,
 }: CourseHeroProps) {
-  const { user, enrollInCourse } = useAuth()
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const router = useRouter()
-  const isFree = originalPrice === 0 || currentPrice === 0
+  const { user, enrollInCourse } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const router = useRouter();
+  const isFree = originalPrice === 0 || currentPrice === 0;
 
   const handleBuyClick = () => {
     if (!user) {
-      setShowAuthModal(true)
+      setShowAuthModal(true);
     } else {
       if (isFree) {
-        handlePaymentSuccess()
+        handlePaymentSuccess();
       } else {
-        setShowPaymentModal(true)
+        setShowPaymentModal(true);
       }
     }
-  }
+  };
 
   const handlePaymentSuccess = () => {
     try {
-      const success = enrollInCourse(id)
-      console.log("Enroll success", success)
+      const success = enrollInCourse(id);
+      console.log("Enroll success", success);
       if (success) {
-        onEnrollSuccess()
+        onEnrollSuccess();
       } else {
-        console.error("Failed to enroll in course")
+        console.error("Failed to enroll in course");
       }
     } catch (error) {
-      console.error("Error during enrollment", error)
+      console.error("Error during enrollment", error);
     }
-  }
+  };
 
   return (
     <>
       <div className="relative">
         <Image
-          src={getGoogleDriveImageUrl(bannerImage) || "/placeholder.svg"}
+          src={bannerImageUrl || "/placeholder.svg"}
           alt={title}
           width={1920}
           height={500}
@@ -85,7 +84,9 @@ export function CourseHero({
                   <div className="mb-2 flex flex-wrap gap-1">
                     <CourseCategories categories={categories} />
                   </div>
-                  <h1 className="text-2xl text-destructive font-bold mb-2">{title}</h1>
+                  <h1 className="text-2xl text-destructive font-bold mb-2">
+                    {title}
+                  </h1>
                   <div className="flex items-center mb-2 mt-2">
                     <User className="w-4 h-4 mr-2 text-primary" />
                     <div className="text-primary font-medium">{teacher}</div>
@@ -94,7 +95,9 @@ export function CourseHero({
                 <div className="flex flex-col items-end">
                   <div className="flex items-center gap-2 mb-2 w-full">
                     {isFree ? (
-                      <span className="text-2xl text-primary font-bold w-full text-center">Miễn phí</span>
+                      <span className="text-2xl text-primary font-bold w-full text-center">
+                        Miễn phí
+                      </span>
                     ) : (
                       <>
                         <span className="text-3xl text-destructive font-bold">
@@ -124,7 +127,11 @@ export function CourseHero({
         </div>
       </div>
 
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} defaultView="login" />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultView="login"
+      />
 
       <PaymentModal
         isOpen={showPaymentModal}
@@ -134,6 +141,5 @@ export function CourseHero({
         price={currentPrice}
       />
     </>
-  )
+  );
 }
-

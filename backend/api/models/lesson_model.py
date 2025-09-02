@@ -5,6 +5,7 @@ from .file_model import File
 
 
 class Lesson(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
     title = models.CharField(max_length=255)
     content = models.TextField(blank=True, null=True)
     video_path = models.CharField(max_length=100)

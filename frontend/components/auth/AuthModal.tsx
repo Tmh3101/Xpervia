@@ -71,7 +71,10 @@ export function AuthModal({
                 : "translate-x-full opacity-0 pointer-events-none"
             }`}
           >
-            <SignUpForm onLoginClick={() => setView("login")} />
+            <SignUpForm
+              onLoginClick={() => setView("login")}
+              onClose={onClose}
+            />
           </div>
 
           <div

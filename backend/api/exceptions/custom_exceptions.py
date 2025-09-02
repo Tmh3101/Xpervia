@@ -9,8 +9,3 @@ class Existed(APIException):
     status_code = 400
     default_detail = 'Existed'
     default_code = 'existed'
-
-class LoginFailed(APIException):
-    status_code = 400
-    default_detail = 'Login failed'
-    default_code = 'login_failed'

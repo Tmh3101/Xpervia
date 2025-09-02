@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Bell, User, LogOut } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
-import { AuthModal } from "./auth/AuthModal"
-import { useAuth } from "@/lib/auth-context"
-import { usePathname } from "next/navigation"
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Bell, User, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { AuthModal } from "./auth/AuthModal";
+import { useAuth } from "@/lib/auth-context";
+import { usePathname } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,49 +16,52 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import logo from "@/public/logo-ngang.png"
-import userAvatar from "@/public/user-avatar.svg"
+} from "@/components/ui/dropdown-menu";
+import logo from "@/public/logo-ngang.png";
+import userAvatar from "@/public/user-avatar.svg";
 
 export function Header() {
-  const { user, logout } = useAuth()
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [authView, setAuthView] = useState<"login" | "signup">("login")
-  const pathname = usePathname()
-  const router = useRouter()
+  const { user, logout } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authView, setAuthView] = useState<"login" | "signup">("login");
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0)
-    }
+      setIsScrolled(window.scrollY > 0);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleAuthClick = (view: "login" | "signup") => {
-    setAuthView(view)
-    setShowAuthModal(true)
-  }
+    setAuthView(view);
+    setShowAuthModal(true);
+  };
 
-  const isActive = (path: string) => pathname === path || pathname?.startsWith(path + "/")
+  const isActive = (path: string) =>
+    pathname === path || pathname?.startsWith(path + "/");
 
   const handleProfileClick = () => {
     if (user) {
       if (user.role === "student") {
-        router.push(`/profile/student/${user.id}`)
+        router.push(`/profile/student/${user.id}`);
       } else if (user.role === "teacher") {
-        router.push(`/profile/teacher/${user.id}`)
+        router.push(`/profile/teacher/${user.id}`);
       }
     }
-  }
+  };
 
   return (
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled || pathname !== "/" ? "bg-white shadow-md" : "bg-transparent"
+          isScrolled || pathname !== "/"
+            ? "bg-white shadow-md"
+            : "bg-transparent"
         }`}
       >
         <div className="container mx-auto flex items-center justify-between py-4">
@@ -91,7 +94,11 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={isScrolled || pathname !== "/" ? "text-gray-800" : "text-white"}
+                  className={
+                    isScrolled || pathname !== "/"
+                      ? "text-gray-800"
+                      : "text-white"
+                  }
                 >
                   <Bell className="h-5 w-5" />
                 </Button>
@@ -100,7 +107,7 @@ export function Header() {
                   <DropdownMenuTrigger asChild>
                     <div className="h-8 w-8 rounded-full bg-primary overflow-hidden cursor-pointer">
                       <Image
-                        src={userAvatar}
+                        src={user.avatar_url || userAvatar}
                         alt={`${user.first_name} ${user.last_name}`}
                         width={32}
                         height={32}
@@ -108,15 +115,23 @@ export function Header() {
                       />
                     </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 p-4 mt-6 rounded-xl">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-64 p-4 mt-6 rounded-xl"
+                  >
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{`${user.first_name} ${user.last_name}`}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={handleProfileClick}
+                      className="cursor-pointer"
+                    >
                       <User className="mr-2 h-4 w-4" />
                       <span>Hồ sơ</span>
                     </DropdownMenuItem>
@@ -135,7 +150,9 @@ export function Header() {
                 <Button
                   variant="ghost"
                   className={`rounded-full hover:text-primary hover:underline ${
-                    isScrolled || pathname !== "/" ? "text-primary" : "text-white"
+                    isScrolled || pathname !== "/"
+                      ? "text-primary"
+                      : "text-white"
                   }`}
                   onClick={() => handleAuthClick("login")}
                 >
@@ -153,8 +170,11 @@ export function Header() {
         </div>
       </header>
 
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} defaultView={authView} />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultView={authView}
+      />
     </>
-  )
+  );
 }
-

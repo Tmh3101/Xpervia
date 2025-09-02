@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Assignment, Submission
+from api.models import Assignment, Submission, File
 from api.serializers import SubmissionSerializer, FileSerializer
 from api.permissions import IsSubmissionOwner, IsCourseOwner, WasCourseEnrolled
 from api.middlewares.authentication import SupabaseJWTAuthentication
@@ -46,8 +46,8 @@ class SubmissionCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, WasCourseEnrolled]
 
     def create(self, request, *args, **kwargs):
-        logger.info(f"Creating submission for assignment ID: {self.kwargs.get('assignment_id')}")
         assignment_id = self.kwargs.get('assignment_id')
+        logger.info(f"Creating submission for assignment ID: {assignment_id}")
         assignment = Assignment.objects.filter(id=assignment_id).first()
         if not assignment:
             raise NotFound("Assignment does not exist")
@@ -95,6 +95,7 @@ class SubmissionCreateAPIView(generics.CreateAPIView):
                 bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
                 path=file_path,
             )
+            File.objects.filter(id=request.data.get('file_id')).delete()
             raise ValidationError(serializer.errors)
         
         try:
@@ -105,6 +106,7 @@ class SubmissionCreateAPIView(generics.CreateAPIView):
                 bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
                 path=file_path,
             )
+            File.objects.filter(id=request.data.get('file_id')).delete()
             raise ValidationError(str(e))
         
         logger.info("Submission created successfully")
@@ -232,6 +234,7 @@ class SubmissionDeleteAPIView(generics.DestroyAPIView):
             bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
             path=instance.file.file_path,
         )
+        instance.file.delete()
         logger.info("Submission deleted successfully")
         return Response({
             'success': True,

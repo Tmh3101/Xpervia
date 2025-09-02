@@ -1,49 +1,52 @@
-"use client"
+"use client";
 
-import { Loading } from "@/components/Loading"
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UserProfile } from "@/components/profile/UserProfile"
-import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog"
-import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog"
-import { getCourseByTeacherApi } from "@/lib/api/course-api"
-import type { User } from "@/lib/types/user"
-import type { Course } from "@/lib/types/course"
-import { useAuth } from "@/lib/auth-context"
-import { BookOpen, Users } from "lucide-react"
-import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
+import { Loading } from "@/components/Loading";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserProfile } from "@/components/profile/UserProfile";
+import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
+import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog";
+import { getCourseByTeacherApi } from "@/lib/api/course-api";
+import type { User } from "@/lib/types/user";
+import type { Course } from "@/lib/types/course";
+import { useAuth } from "@/lib/auth-context";
+import { BookOpen, Users } from "lucide-react";
 
 export default function TeacherProfilePage() {
-  const { teacherId } = useParams()
-  const { user: currentUser } = useAuth()
-  const [user, setUser] = useState<User | null>(null)
-  const [courses, setCourses] = useState<Course[]>([])
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
+  const { teacherId } = useParams();
+  const { user: currentUser } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] =
+    useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setUser(currentUser)
-        await getCourseByTeacherApi().then((data) => setCourses(data))
+        setUser(currentUser);
+        await getCourseByTeacherApi().then((data) => setCourses(data));
       } catch (error) {
-        console.error("Failed to fetch user data:", error)
+        console.error("Failed to fetch user data:", error);
       }
-    }
+    };
 
-    fetchData()
-  }, [teacherId])
+    fetchData();
+  }, [teacherId]);
 
   if (!user) {
-    return <Loading />
+    return <Loading />;
   }
 
   // Calculate statistics
-  const totalCourses = courses.length
-  const totalStudents = courses.reduce((acc, course) => acc + (course.num_students || 0), 0)
+  const totalCourses = courses.length;
+  const totalStudents = courses.reduce(
+    (acc, course) => acc + (course.num_students || 0),
+    0
+  );
 
   return (
     <div className="container mx-auto py-20 pt-[120px] min-h-[500px]">
@@ -53,7 +56,9 @@ export default function TeacherProfilePage() {
           <UserProfile
             user={user}
             handleShowEditDialog={() => setShowEditDialog(true)}
-            handleShowChangePasswordDialog={() => setShowChangePasswordDialog(true)}
+            handleShowChangePasswordDialog={() =>
+              setShowChangePasswordDialog(true)
+            }
           />
         </div>
 
@@ -69,7 +74,9 @@ export default function TeacherProfilePage() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Tổng khóa học</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Tổng khóa học
+                        </p>
                         <p className="text-2xl font-bold">{totalCourses}</p>
                       </div>
                       <BookOpen className="h-8 w-8 text-primary" />
@@ -81,7 +88,9 @@ export default function TeacherProfilePage() {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Tổng học viên</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Tổng học viên
+                        </p>
                         <p className="text-2xl font-bold">{totalStudents}</p>
                       </div>
                       <Users className="h-8 w-8 text-blue-500" />
@@ -103,14 +112,19 @@ export default function TeacherProfilePage() {
                         <CardContent className="p-4">
                           <div className="flex justify-between items-center">
                             <div>
-                              <h3 className="font-medium">{course.course_content.title}</h3>
+                              <h3 className="font-medium">
+                                {course.course_content.title}
+                              </h3>
                               <p className="text-sm text-muted-foreground">
                                 {course.num_students || 0} học viên đã đăng ký
                               </p>
                             </div>
                             <div className="w-16 h-16 relative">
                               <Image
-                                src={getGoogleDriveImageUrl(course.course_content.thumbnail_id) || "/placeholder.svg?height=64&width=64"}
+                                src={
+                                  course.course_content.thumbnail_url ||
+                                  "/placeholder.svg?height=64&width=64"
+                                }
                                 alt={course.course_content.title}
                                 width={64}
                                 height={64}
@@ -122,7 +136,9 @@ export default function TeacherProfilePage() {
                       </Card>
                     ))
                   ) : (
-                    <p className="text-center py-4 text-muted-foreground">Chưa có khóa học nào.</p>
+                    <p className="text-center py-4 text-muted-foreground">
+                      Chưa có khóa học nào.
+                    </p>
                   )}
                 </TabsContent>
 
@@ -135,14 +151,19 @@ export default function TeacherProfilePage() {
                           <CardContent className="p-4">
                             <div className="flex justify-between items-center">
                               <div>
-                                <h3 className="font-medium">{course.course_content.title}</h3>
+                                <h3 className="font-medium">
+                                  {course.course_content.title}
+                                </h3>
                                 <p className="text-sm text-muted-foreground">
                                   {course.num_students || 0} học viên đã đăng ký
                                 </p>
                               </div>
                               <div className="w-16 h-16 relative">
                                 <Image
-                                  src={getGoogleDriveImageUrl(course.course_content.thumbnail_id) || "/placeholder.svg?height=64&width=64"}
+                                  src={
+                                    course.course_content.thumbnail_url ||
+                                    "/placeholder.svg?height=64&width=64"
+                                  }
                                   alt={course.course_content.title}
                                   width={64}
                                   height={64}
@@ -154,7 +175,9 @@ export default function TeacherProfilePage() {
                         </Card>
                       ))
                   ) : (
-                    <p className="text-center py-4 text-muted-foreground">Không có khóa học đang hoạt động.</p>
+                    <p className="text-center py-4 text-muted-foreground">
+                      Không có khóa học đang hoạt động.
+                    </p>
                   )}
                 </TabsContent>
               </Tabs>
@@ -178,6 +201,5 @@ export default function TeacherProfilePage() {
         />
       )}
     </div>
-  )
+  );
 }
-

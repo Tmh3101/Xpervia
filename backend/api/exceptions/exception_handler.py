@@ -9,8 +9,7 @@ from rest_framework.exceptions import (
 )
 from .custom_exceptions import (
     FileUploadException,
-    Existed,
-    LoginFailed
+    Existed
 )
 
 def custom_exception_handler(exc, context):
@@ -65,13 +64,6 @@ def custom_exception_handler(exc, context):
         return Response({
             'success': False,
             'message': 'Existed',
-            'error': exc.args
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    if isinstance(exc, LoginFailed):
-        return Response({
-            'success': False,
-            'message': 'Login failed',
             'error': exc.args
         }, status=status.HTTP_400_BAD_REQUEST)
     

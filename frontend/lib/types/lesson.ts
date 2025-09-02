@@ -1,26 +1,25 @@
-import { File } from './file';
-import { Submission } from './submission';
+import { File } from "./file";
 
 export interface Lesson {
-    id: number;
-    title: string;
-    order: number;
-    is_visible: boolean;
-    created_at: string;
+  id: string;
+  title: string;
+  order: number;
+  is_visible: boolean;
+  created_at: string;
 }
 
 export interface LessonDetail extends Lesson {
-    content: string;
-    video_id: string;
-    subtitle_vi_id: string;
-    attachment: File;
+  content: string;
+  video_url: string;
+  subtitle_vi_url: string;
+  attachment: File;
 }
 
 export interface CreateLessonRequest {
-    title: string;
-    content: string;
-    video: File | Blob;
-    subtitle_vi?: File | Blob;
-    attachment?: File | Blob;
-    is_visible: boolean;
+  title: string;
+  content: string;
+  video: File | Blob;
+  subtitle_vi?: File | Blob;
+  attachment?: File | Blob;
+  is_visible: boolean;
 }

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from api.models import LessonCompletion, Lesson
-from .lesson_serializer import SimpleLessonSerializer
+from .lesson_serializer import SimpleLessonSerializer 
 from api.models import User
+from .user_serializer import UserSerializer
 
 
 class LessonCompletionSerializer(serializers.ModelSerializer):
@@ -12,17 +13,13 @@ class LessonCompletionSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    student = serializers.SerializerMethodField()
-    
+    student = UserSerializer(read_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='student',
+        write_only=True
+    )
+
     class Meta:
         model = LessonCompletion
         fields = '__all__'
-        extra_kwargs = {
-            'student_id': {'write_only': True},
-            'created_at': {'read_only': True}
-        }
-
-    def get_student(self, obj):
-        if obj.student_id:
-            return User.objects.get(id=obj.student_id).to_dict()
-        return None

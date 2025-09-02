@@ -1,6 +1,6 @@
 from .client import supabase
 
-def upload_file(bucket: str, path: str, file_data, content_type: str = "application/octet-stream"):
+def upload_file(bucket: str, path: str, file_data, content_type: str = "application/octet-stream") -> dict:
     try:
         file_bytes = file_data.read()
         storage = supabase.storage.from_(bucket)
@@ -14,12 +14,16 @@ def upload_file(bucket: str, path: str, file_data, content_type: str = "applicat
             }
         )
     except Exception as e:
-        raise Exception(f"Error uploading file: {e}")
+        raise e
     return response
 
 def get_file_url(bucket: str, path: str, is_public: bool = False):
     storage = supabase.storage.from_(bucket)
-    return storage.get_public_url(path) if is_public else storage.create_signed_url(path, 60 * 60).get("signedURL")  # 1 giờ
+
+    if is_public:
+        return storage.get_public_url(path)
+
+    return storage.create_signed_url(path, 60 * 60 * 4).get("signedURL")  # 4 giờ
 
 def delete_file(bucket: str, path: str):
     return supabase.storage.from_(bucket).remove([path])

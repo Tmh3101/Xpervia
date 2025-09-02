@@ -2,33 +2,23 @@ from .client import supabase
 from api.models import User
 from api.enums import RoleEnum
 
-def create_user_metadata(data):
-    return {
-        "email": data.get("email"),
-        "first_name": data.get("first_name"),
-        "last_name": data.get("last_name"),
-        "role": RoleEnum.STUDENT.name,
-    }
-
-def register(email: str, password: str, first_name: str, last_name: str, date_of_birth: str) -> User:
+def register(email: str, password: str, first_name: str, last_name: str, date_of_birth: str, role=RoleEnum.STUDENT.name) -> User:
     """
-    Đăng ký người dùng mới trong Supabase Auth.
+    Đăng ký người dùng mới trong Supabase Auth và lưu và database.
     """
     if User.objects.filter(email=email).exists():
-        raise Exception("Email is already registered")
-
-    user_metadata = create_user_metadata({
-        "email": email,
-        "first_name": first_name,
-        "last_name": last_name,
-        "date_of_birth": date_of_birth
-    })
+        raise Exception("Email đã được đăng ký")
 
     data = {
         "email": email,
         "password": password,
         "options": {
-            "data": user_metadata
+            "data": {
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "role": role,
+            }
         }
     }
 
@@ -43,10 +33,10 @@ def register(email: str, password: str, first_name: str, last_name: str, date_of
         email=email,
         first_name=first_name,
         last_name=last_name,
-        date_of_birth=date_of_birth
+        date_of_birth=date_of_birth,
+        role=role
     )
     user.save()
-
     return user
 
 
@@ -54,7 +44,6 @@ def login(email: str, password: str) -> dict:
     """
     Đăng nhập người dùng vào Supabase Auth.
     """
-
     if not User.objects.filter(email=email).exists():
         raise Exception("Email chưa được đăng ký")
 
@@ -71,26 +60,11 @@ def login(email: str, password: str) -> dict:
         raise e
 
     user = User.objects.get(id=response.user.id)
-    access_token = response.session.access_token
-    refresh_token = response.session.refresh_token
-
     return {
         "user": user,
-        "access_token": access_token,
-        "refresh_token": refresh_token
-    }
-
-
-def logout(token) -> bool:
-    """
-    Đăng xuất người dùng khỏi Supabase Auth.
-    """
-    try:
-        response = supabase.auth.sign_out(token)
-        return response.status_code == 200
-    except Exception as e:
-        raise Exception(f"Error during Supabase logout: {e}")
-    
+        "access_token": response.session.access_token,
+        "refresh_token": response.session.refresh_token
+    }    
 
 def refresh_session(refresh_token: str) -> dict:
     """
@@ -102,29 +76,21 @@ def refresh_session(refresh_token: str) -> dict:
         raise e
     
     user = User.objects.get(id=response.user.id)
-    access_token = response.session.access_token
-    refresh_token = response.session.refresh_token
-
     return {
         "user": user,
-        "access_token": access_token,
-        "refresh_token": refresh_token
-    }
+        "access_token": response.session.access_token,
+        "refresh_token": response.session.refresh_token
+    } 
 
 
 def request_reset_password_view(email: str, redirect_url: str) -> None:
     """
-    Khôi phục mật khẩu người dùng trong Supabase Auth.
+    Yêu cầu đặt lại mật khẩu thông qua email với Supabase Auth.
     """
     try:
-        supabase.auth.reset_password_for_email(
-            email,
-            {
-                "redirect_to": redirect_url,
-            }
-        )
+        supabase.auth.reset_password_for_email(email, { "redirect_to": redirect_url })
     except Exception as e:
-        raise Exception(f"Error during Supabase password reset: {e}")
+        raise Exception(f"Error during Supabase request password reset: {e}")
     
 
 def reset_password(email: str, new_password: str) -> None:

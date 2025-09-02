@@ -3,13 +3,13 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { loginApi, logoutApi, getMe } from "@/lib/api/auth-api";
+import { loginApi } from "@/lib/api/auth-api";
 import {
   getEnrollmentsByStudentApi,
   enrollCourseApi,
 } from "@/lib/api/enrollment-api";
-import { User } from "@/lib/types/user";
-import { Enrollment } from "@/lib/types/enrollment";
+import type { User } from "@/lib/types/user";
+import type { Enrollment } from "@/lib/types/enrollment";
 
 interface AuthContextType {
   accessToken: string | null;
@@ -82,25 +82,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: res.error };
     }
 
-    const { access, refresh, user } = res;
-    setAccessToken(access);
-    setRefreshToken(refresh);
+    const { access_token, refresh_token, user } = res;
+
+    setAccessToken(access_token);
+    setRefreshToken(refresh_token);
     setUser(user);
 
-    localStorage.setItem("accessToken", access);
-    localStorage.setItem("refreshToken", refresh);
+    localStorage.setItem("accessToken", access_token);
+    localStorage.setItem("refreshToken", refresh_token);
     localStorage.setItem("user", JSON.stringify(user));
 
     handleRoleBasedRedirect(user.role);
-    await fetchEnrollments();
+
+    if (user.role === "student") {
+      await fetchEnrollments();
+    }
+
     return { error: undefined };
   };
 
   const logout = async () => {
-    if (refreshToken) {
-      await logoutApi(refreshToken); // backend cần endpoint để blacklist refresh token
-    }
-
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchEnrollments = async () => {
     if (accessToken) {
       try {
-        const enrollments = await getEnrollmentsByStudentApi(accessToken);
+        const enrollments = await getEnrollmentsByStudentApi();
         setEnrollments(enrollments);
       } catch (error) {
         console.error("Lỗi khi gọi API enrollments:", error);

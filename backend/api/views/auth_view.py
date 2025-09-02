@@ -1,6 +1,7 @@
 import logging
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework import status
 from api.services.supabase import auth
@@ -18,11 +19,12 @@ def register_view(request):
     first_name = request.data.get("first_name")
     last_name = request.data.get("last_name")
     date_of_birth = request.data.get("date_of_birth")
+    role = request.data.get("role")
 
     logger.info(f"Registering user with email: {email}")
 
     try:
-        user = auth.register(email, password, first_name, last_name, date_of_birth)
+        user = auth.register(email, password, first_name, last_name, date_of_birth, role)
     except Exception as e:
         logger.error(f"Error during Supabase registration: {e}")
         return Response({
@@ -55,7 +57,7 @@ def login_view(request):
             "success": False,
             "message": "Login failed",
             "error": str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+        })
 
     logger.info(f"User logged in successfully: {result['user'].email}")
     return Response({
@@ -68,42 +70,14 @@ def login_view(request):
 
 
 @api_view(['POST'])
-def logout_view(request):
-    token = request.headers.get('Authorization', '').replace("Bearer ", "")
-    if not token:
-        logger.error("Logout failed: No access token provided")
-        return Response({
-            "success": False,
-            "message": "No access token provided"
-        }, status=400)
-
-    result = auth.logout(token)
-    if not result:
-        logger.error("Logout failed: No result returned")
-        return Response({
-            "success": False,
-            "message": "Logout failed",
-        }, status=400)
-    
-    logger.info(f"User logged out successfully: {request.user.email}")
-    return Response({
-        "success": True,
-        "message": "Logged out successfully"
-    }, status=200)
-
-
-@api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh_session_view(request):
     refresh_token = request.data.get("refresh_token")
     try:
         result = auth.refresh_session(refresh_token)
     except Exception as e:
-        return Response({
-            "success": False,
-            "message": "Failed to refresh session",
-            "error": str(e)
-        }, status=401)
+        logger.error(f"Error during session refresh: {e}")
+        raise AuthenticationFailed(e)
     
     return Response({
         "success": True,
@@ -126,12 +100,8 @@ def request_reset_password_view(request):
 
         auth.request_reset_password_view(email, redirect_url)
     except Exception as e:
-        logger.error(f"Error during Supabase password reset: {e}")
-        return Response({
-            "success": False,
-            "message": "Failed to reset password",
-            "error": str(e)
-        }, status=400)
+        logger.error(e)
+        raise AuthenticationFailed(e)
 
     return Response({
         "success": True,
@@ -154,12 +124,8 @@ def reset_password_view(request):
     try:
         auth.reset_password(email, new_password)
     except Exception as e:
-        logger.error(f"Error during Supabase password reset: {e}")
-        return Response({
-            "success": False,
-            "message": "Failed to reset password",
-            "error": str(e)
-        }, status=400)
+        logger.error(e)
+        raise AuthenticationFailed(e)
 
     return Response({
         "success": True,

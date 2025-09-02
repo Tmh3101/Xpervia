@@ -10,7 +10,6 @@ from api.views import (
     submission_score_view,
     lesson_completion_view,
     course_view,
-    file_url_view,
     auth_view
 )
 
@@ -18,7 +17,6 @@ urlpatterns = [
     #=== Authentication URLs ===#
     path('auth/register/', auth_view.register_view, name='register'),
     path('auth/login/', auth_view.login_view, name='login'),
-    path('auth/logout/', auth_view.logout_view, name='logout'),
     path('auth/refresh-session/', auth_view.refresh_session_view, name='refresh-session'),
     path('auth/request-reset-password/', auth_view.request_reset_password_view, name='request-reset-password'),
     path('auth/reset-password/', auth_view.reset_password_view, name='reset-password'),
@@ -71,20 +69,20 @@ urlpatterns = [
     path('courses/<int:course_id>/lessons/', lesson_view.LessonListByCourseAPIView.as_view(), name='lesson-list'),
     path('courses/chapters/<int:chapter_id>/lessons/', lesson_view.LessonListByChapterAPIView.as_view(), name='lesson-list'),
     path('courses/<int:course_id>/lessons/create/', lesson_view.LessonCreateAPIView.as_view(), name='lesson-create'),
-    path('courses/lessons/<int:id>/', lesson_view.LessonRetrieveAPIView.as_view(), name='lesson-detail'),
-    path('courses/lessons/<int:id>/update/', lesson_view.LessonUpdateAPIView.as_view(), name='lesson-update'),
-    path('courses/lessons/<int:id>/delete/', lesson_view.LessonDeleteAPIView.as_view(), name='lesson-delete'),
+    path('courses/lessons/<uuid:id>/', lesson_view.LessonRetrieveAPIView.as_view(), name='lesson-detail'),
+    path('courses/lessons/<uuid:id>/update/', lesson_view.LessonUpdateAPIView.as_view(), name='lesson-update'),
+    path('courses/lessons/<uuid:id>/delete/', lesson_view.LessonDeleteAPIView.as_view(), name='lesson-delete'),
 
     # Lesson Completion URLs
-    path('courses/lessons/<int:lesson_id>/completions/', lesson_completion_view.LessonCompletionListAPIView.as_view(), name='lesson-complete-list'),
+    path('courses/lessons/<uuid:lesson_id>/completions/', lesson_completion_view.LessonCompletionListAPIView.as_view(), name='lesson-complete-list'),
     path('courses/<int:course_id>/lessons/completions/student/', lesson_completion_view.LessonCompletionListByStudentAPIView.as_view(), name='lesson-complete-list'),
-    path('courses/lessons/<int:lesson_id>/completions/create/', lesson_completion_view.LessonCompletionCreateAPIView.as_view(), name='lesson-complete'),
-    path('courses/lessons/<int:lesson_id>/completions/delete/', lesson_completion_view.LessonCompletionDeleteAPIView.as_view(), name='lesson-complete-delete'),
+    path('courses/lessons/<uuid:lesson_id>/completions/create/', lesson_completion_view.LessonCompletionCreateAPIView.as_view(), name='lesson-complete'),
+    path('courses/lessons/<uuid:lesson_id>/completions/delete/', lesson_completion_view.LessonCompletionDeleteAPIView.as_view(), name='lesson-complete-delete'),
 
     # Assignment URLs
-    path('courses/lessons/<int:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),
-    path('courses/lessons/<int:lesson_id>/assignments/student/', assignment_view.AssignmentListByStudentAPIView.as_view(), name='assignment-list-student'),
-    path('courses/lessons/<int:lesson_id>/assignments/create/', assignment_view.AssignmentCreateAPIView.as_view(), name='assignment-create'),
+    path('courses/lessons/<uuid:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),
+    path('courses/lessons/<uuid:lesson_id>/assignments/student/', assignment_view.AssignmentListByStudentAPIView.as_view(), name='assignment-list-student'),
+    path('courses/lessons/<uuid:lesson_id>/assignments/create/', assignment_view.AssignmentCreateAPIView.as_view(), name='assignment-create'),
     path('courses/lessons/assignments/<int:id>/', assignment_view.AssignmentRetrieveAPIView.as_view(), name='assignment-detail'),
     path('courses/lessons/assignments/<int:id>/update/', assignment_view.AssignmentUpdateAPIView.as_view(), name='assignment-update'),
     path('courses/lessons/assignments/<int:id>/delete/', assignment_view.AssignmentDeleteAPIView.as_view(), name='assignment-delete'),
@@ -97,10 +95,7 @@ urlpatterns = [
     path('courses/assignments/submissions/<int:id>/delete/', submission_view.SubmissionDeleteAPIView.as_view(), name='submission-delete'),
 
     # Submission Score URLs
-    path('courses/assignments/submissions/<int:submission_id>/score/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
+    path('courses/assignments/submissions/<int:submission_id>/score/create/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
     path('courses/assignments/submissions/score/<int:id>/update/', submission_score_view.SubmissionScoreUpdateAPIView.as_view(), name='submission-score-update'),
     path('courses/assignments/submissions/score/<int:id>/delete/', submission_score_view.SubmissionScoreDeleteAPIView.as_view(), name='submission-score-delete'),
-
-    # Signed URL for Supabase
-    path('files/access-url/', file_url_view.FileAccessURLAPIView.as_view(), name='file-access-url'),
 ]

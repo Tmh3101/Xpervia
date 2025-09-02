@@ -1,23 +1,29 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import Select from "react-select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { getCategoriesApi } from "@/lib/api/course-api"
-import type { CreateCourseRequest } from "@/lib/types/course"
-import { Label } from "@/components/ui/label"
-import { Trash2 } from "lucide-react"
-import Image from "next/image"
+import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { Trash2 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,14 +33,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { formatDate } from "@/lib/utils"
-import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
+} from "@/components/ui/alert-dialog";
+import Image from "next/image";
+import Select from "react-select";
+import { getCategoriesApi } from "@/lib/api/category-api";
+import type { CreateCourseRequest } from "@/lib/types/course";
 
 const courseFormSchema = z.object({
-  thumbnail: z.instanceof(File).refine((file) => file instanceof File, {
-    message: "Ảnh bìa là bắt buộc",
-  }).nullable(),
+  thumbnail: z
+    .instanceof(File)
+    .refine((file) => file instanceof File, {
+      message: "Ảnh bìa là bắt buộc",
+    })
+    .nullable(),
   title: z.string().min(3, "Tiêu đề phải có ít nhất 3 ký tự"),
   description: z.string().min(20, "Mô tả phải có ít nhất 20 ký tự"),
   price: z.number().min(0, "Giá phải là số dương"),
@@ -54,16 +65,16 @@ const courseFormSchema = z.object({
   is_visible: z.boolean().default(true),
   categories: z.array(z.number()).min(1, "Phải chọn ít nhất một danh mục"),
   discount: z.number().min(0).max(100, "Giảm giá phải từ 0 đến 100").nullable(),
-})
+});
 
 type CourseFormProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (data: CreateCourseRequest) => void
-  onDelete?: () => void
-  mode: "create" | "edit"
-  initialData?: any
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: CreateCourseRequest) => void;
+  onDelete?: () => void;
+  mode: "create" | "edit";
+  initialData?: any;
+};
 
 const getInitalData = (initialData: any) => {
   return {
@@ -75,17 +86,28 @@ const getInitalData = (initialData: any) => {
     regis_start_date: formatDate(initialData.regis_start_date) || null,
     regis_end_date: formatDate(initialData.regis_end_date) || null,
     max_students: initialData.max_students || 100,
-    is_visible: initialData.is_visible !== undefined ? initialData.is_visible : true,
-    categories: initialData.course_content.categories?.map((cat: any) => cat.id) || [],
+    is_visible:
+      initialData.is_visible !== undefined ? initialData.is_visible : true,
+    categories:
+      initialData.course_content.categories?.map((cat: any) => cat.id) || [],
     discount: initialData.discount ? initialData.discount * 100 : null,
-  }
-}
+  };
+};
 
-export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode, initialData }: CourseFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: number }[]>([])
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isDeletting, setIsDeletting] = useState(false)
+export const CourseFormDialog = ({
+  open,
+  onOpenChange,
+  onSubmit,
+  onDelete,
+  mode,
+  initialData,
+}: CourseFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState<
+    { label: string; value: number }[]
+  >([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletting, setIsDeletting] = useState(false);
 
   const form = useForm<CreateCourseRequest>({
     resolver: zodResolver(courseFormSchema),
@@ -105,55 +127,65 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
             categories: [],
             discount: null,
           },
-  })
+  });
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const categories = await getCategoriesApi()
+        const categories = await getCategoriesApi();
         const options = categories.map((category) => ({
           label: category.name,
           value: category.id,
-        }))
-        setCategoryOptions(options)
+        }));
+        setCategoryOptions(options);
       } catch (error) {
-        console.error("Không thể lấy danh mục", error)
+        console.error("Không thể lấy danh mục", error);
       }
-    }
+    };
 
-    fetchCategories()
-  }, [])
+    fetchCategories();
+  }, []);
 
   // Reset form when initialData changes
   useEffect(() => {
     if (mode === "edit" && initialData && open) {
-      form.reset(getInitalData(initialData))
+      form.reset(getInitalData(initialData));
     }
-  }, [initialData, mode, open, form])
+  }, [initialData, mode, open, form]);
 
   const handleSubmit = async (data: CreateCourseRequest) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     if (data.discount != null) {
-      data.discount = data.discount / 100
+      data.discount = data.discount / 100;
     }
     try {
-      await onSubmit(data)
-      form.reset()
+      // nếu mode là create thì phải bắt buộc có thumbnail
+      // nếu không có thumbnail thì sẽ báo lỗi
+      if (mode === "create" && !data.thumbnail) {
+        form.setError("thumbnail", {
+          type: "manual",
+          message: "Ảnh bìa là bắt buộc",
+        });
+        return;
+      }
+
+      await onSubmit(data);
+      form.reset();
     } catch (error) {
-      console.error("Lỗi khi gửi biểu mẫu:", error)
+      console.error("Lỗi khi gửi biểu mẫu:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleDelete = () => {
-    setIsDeleteDialogOpen(false)
-    setIsDeletting(true)
+    setIsDeleteDialogOpen(false);
+    setIsDeletting(true);
     if (onDelete) {
-      onDelete()
+      onDelete();
     }
-    setIsDeletting(false)
-  }
+    setIsDeletting(false);
+  };
 
   return (
     <>
@@ -165,12 +197,16 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {form.formState.errors && Object.values(form.formState.errors).length > 0 && (
-              <div className="text-red-500 text-center italic text-sm">
-                {Object.values(form.formState.errors)[0]?.message}
-              </div>
-            )}
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            {form.formState.errors &&
+              Object.values(form.formState.errors).length > 0 && (
+                <div className="text-red-500 text-center italic text-sm">
+                  {Object.values(form.formState.errors)[0]?.message}
+                </div>
+              )}
 
             <div className="flex flex-col md:flex-row gap-6">
               {/* Left Section: Course Content Fields */}
@@ -180,7 +216,13 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                   <Controller
                     name="title"
                     control={form.control}
-                    render={({ field }: any) => <Input id="title" placeholder="Nhập tiêu đề khóa học" {...field} />}
+                    render={({ field }: any) => (
+                      <Input
+                        id="title"
+                        placeholder="Nhập tiêu đề khóa học"
+                        {...field}
+                      />
+                    )}
                   />
                 </div>
 
@@ -190,7 +232,12 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                     name="description"
                     control={form.control}
                     render={({ field }: any) => (
-                      <Textarea id="description" placeholder="Nhập mô tả khóa học" className="min-h-[100px]" {...field} />
+                      <Textarea
+                        id="description"
+                        placeholder="Nhập mô tả khóa học"
+                        className="min-h-[100px]"
+                        {...field}
+                      />
                     )}
                   />
                 </div>
@@ -198,10 +245,10 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                 <div>
                   <Label htmlFor="thumbnail">Ảnh bìa khóa học</Label>
                   <div className="flex items-center space-x-2">
-                    {initialData?.course_content?.thumbnail_id && (
+                    {initialData?.course_content?.thumbnail_url && (
                       <div className="relative">
                         <Image
-                          src={getGoogleDriveImageUrl(initialData?.course_content?.thumbnail_id || "")}
+                          src={initialData?.course_content?.thumbnail_url}
                           alt={initialData?.course_content?.title}
                           width={100}
                           height={100}
@@ -242,8 +289,14 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                         id="categories"
                         isMulti
                         options={categoryOptions}
-                        value={categoryOptions.filter((option) => field.value.includes(option.value))}
-                        onChange={(selectedOptions) => field.onChange(selectedOptions.map((option) => option.value))}
+                        value={categoryOptions.filter((option) =>
+                          field.value.includes(option.value)
+                        )}
+                        onChange={(selectedOptions) =>
+                          field.onChange(
+                            selectedOptions.map((option) => option.value)
+                          )
+                        }
                         placeholder="Chọn danh mục"
                         className="basic-multi-select"
                         classNamePrefix="select"
@@ -269,7 +322,9 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                           min="0"
                           placeholder="Nhập giá"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       )}
                     />
@@ -289,7 +344,9 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                           max="100"
                           placeholder="Nhập giảm giá"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       )}
                     />
@@ -308,16 +365,29 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                             <Button
                               id="start_date"
                               variant={"outline"}
-                              className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
                             >
-                              {field.value ? field.value : <span>Chọn ngày</span>}
+                              {field.value ? (
+                                field.value
+                              ) : (
+                                <span>Chọn ngày</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
+                              selected={
+                                field.value ? new Date(field.value) : undefined
+                              }
+                              onSelect={(date) =>
+                                field.onChange(
+                                  date ? date.toISOString().split("T")[0] : ""
+                                )
+                              }
                               disabled={(date) => date < new Date()}
                               initialFocus
                             />
@@ -340,16 +410,29 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                             <Button
                               id="regis_start_date"
                               variant={"outline"}
-                              className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
                             >
-                              {field.value ? field.value : <span>Chọn ngày</span>}
+                              {field.value ? (
+                                field.value
+                              ) : (
+                                <span>Chọn ngày</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
+                              selected={
+                                field.value ? new Date(field.value) : undefined
+                              }
+                              onSelect={(date) =>
+                                field.onChange(
+                                  date ? date.toISOString().split("T")[0] : ""
+                                )
+                              }
                               initialFocus
                             />
                           </PopoverContent>
@@ -371,17 +454,35 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                             <Button
                               id="regis_end_date"
                               variant={"outline"}
-                              className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
                             >
-                              {field.value ? field.value : <span>Chọn ngày</span>}
+                              {field.value ? (
+                                field.value
+                              ) : (
+                                <span>Chọn ngày</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date ? date.toISOString().split("T")[0] : "")}
-                              disabled={(date) => date < new Date(form.getValues().regis_start_date)}
+                              selected={
+                                field.value ? new Date(field.value) : undefined
+                              }
+                              onSelect={(date) =>
+                                field.onChange(
+                                  date ? date.toISOString().split("T")[0] : ""
+                                )
+                              }
+                              disabled={(date) =>
+                                date <
+                                new Date(
+                                  form.getValues().regis_start_date || ""
+                                )
+                              }
                               initialFocus
                             />
                           </PopoverContent>
@@ -416,7 +517,11 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                     control={form.control}
                     render={({ field }: any) => (
                       <div className="flex flex-row items-center space-x-3 rounded-md border p-3 h-10">
-                        <Checkbox id="is_visible" checked={field.value} onCheckedChange={field.onChange} />
+                        <Checkbox
+                          id="is_visible"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                         <label
                           htmlFor="is_visible"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -451,7 +556,11 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
                   )}
                 </Button>
               )}
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Hủy
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -471,23 +580,29 @@ export const CourseFormDialog = ({ open, onOpenChange, onSubmit, onDelete, mode,
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn khóa học này và tất cả dữ liệu liên quan.
+              Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn khóa
+              học này và tất cả dữ liệu liên quan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 text-red-500-foreground hover:bg-red-600">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-500 text-red-500-foreground hover:bg-red-600 text-white"
+            >
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
-
+  );
+};
