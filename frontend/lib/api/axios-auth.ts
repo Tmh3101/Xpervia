@@ -1,4 +1,3 @@
-// lib/api/axios-auth.ts
 import axios from "axios";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;

@@ -1,12 +1,12 @@
 export const routePermissions: Record<string, RegExp[]> = {
   guest: [
-    /^\/$/, // Trang chủ
-    /^\/courses\/[^\/]+$/, // Chi tiết khóa học
-    /^\/auth\/request-reset-password$/, // Yêu cầu đặt lại mật khẩu
-    /^\/auth\/reset-password$/, // Đặt lại mật khẩu
+    /^\/$/,
+    /^\/courses\/[^\/]+$/,
+    /^\/auth\/request-reset-password$/,
+    /^\/auth\/reset-password$/,
   ],
   student: [
-    /^\/$/, // Trang chủ
+    /^\/$/,
     /^\/courses\/[^\/]+$/,
     /^\/student\/my-courses$/,
     /^\/profile\/student\/[^\/]+$/,

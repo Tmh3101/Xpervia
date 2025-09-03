@@ -1,4 +1,4 @@
-import {
+import type {
   CourseContent,
   CourseContentWithDetailLessons,
 } from "./course-content";

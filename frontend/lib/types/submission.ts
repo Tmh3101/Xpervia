@@ -1,5 +1,5 @@
-import { User } from "./user";
-import { File } from "./file";
+import type { User } from "./user";
+import type { File } from "./file";
 
 export interface SubmissionScore {
   id?: number;

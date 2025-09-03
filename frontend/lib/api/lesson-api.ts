@@ -1,6 +1,6 @@
 import authAxios from "./axios-auth";
-import { LessonCompletion } from "../types/lesson-completion";
-import { CreateLessonRequest, LessonDetail } from "../types/lesson";
+import type { LessonCompletion } from "../types/lesson-completion";
+import type { CreateLessonRequest, LessonDetail } from "../types/lesson";
 
 export const getLessonDetailApi = async (
   lessonId: string

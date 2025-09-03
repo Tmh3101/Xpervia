@@ -1,4 +1,4 @@
-import { Submission, SubmissionDetail } from "./submission";
+import type { Submission, SubmissionDetail } from "./submission";
 
 export interface Assignment {
   id: number;

@@ -1,114 +1,135 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getUsersApi, createUserApi, updateUserApi, deleteUserApi, disableUserApi, enableUserApi } from "@/lib/api/user-api"
-import type { UserWithPassword, User } from "@/lib/types/user"
-import { Loading } from "@/components/Loading"
-import { UserTable } from "@/components/admin/UserTable"
-import { UserDialog } from "@/components/admin/UserDialog"
-import { Plus, Search } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loading } from "@/components/Loading";
+import { UserTable } from "@/components/admin/UserTable";
+import { UserDialog } from "@/components/admin/UserDialog";
+import {
+  getUsersApi,
+  createUserApi,
+  updateUserApi,
+  deleteUserApi,
+  disableUserApi,
+  enableUserApi,
+} from "@/lib/api/user-api";
+import type { UserWithPassword, User } from "@/lib/types/user";
 
 export default function UsersManagement() {
-  const [users, setUsers] = useState<User[]>([])
-  const [activeTab, setActiveTab] = useState("students")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editUser, setEditUser] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([]);
+  const [activeTab, setActiveTab] = useState("students");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
 
   useEffect(() => {
     getUsersApi().then((users) => {
-      setUsers(users)
-    })
-  }, [])
+      setUsers(users);
+    });
+  }, []);
 
   if (users.length === 0) {
-    return <Loading />
+    return <Loading />;
   }
 
-  const students = users.filter((user) => user.role === "student")
-  const teachers = users.filter((user) => user.role === "teacher")
-  const admins = users.filter((user) => user.role === "admin")
+  const students = users.filter((user) => user.role === "student");
+  const teachers = users.filter((user) => user.role === "teacher");
+  const admins = users.filter((user) => user.role === "admin");
 
   const handleToggleDisableUser = (userId: string) => {
-    const user = users.find((u) => u.id === userId)
+    const user = users.find((u) => u.id === userId);
     if (user) {
       if (user.is_active) {
         disableUserApi(userId).then(() => {
-          setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: false } : u)))
-        })
+          setUsers((prev) =>
+            prev.map((u) => (u.id === userId ? { ...u, is_active: false } : u))
+          );
+        });
       } else {
         enableUserApi(userId).then(() => {
-          setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: true } : u)))
-        })
+          setUsers((prev) =>
+            prev.map((u) => (u.id === userId ? { ...u, is_active: true } : u))
+          );
+        });
       }
     }
-  }
+  };
 
   const handleEditUser = (userId: string) => {
-    const user = users.find((u) => u.id === userId)
+    const user = users.find((u) => u.id === userId);
     if (user) {
-      setEditUser(user)
-      setIsDialogOpen(true)
+      setEditUser(user);
+      setIsDialogOpen(true);
     }
-  }
+  };
 
   const handleCreateUser = () => {
-    setEditUser(null)
-    setIsDialogOpen(true)
-  }
+    setEditUser(null);
+    setIsDialogOpen(true);
+  };
 
   const handleCloseDialog = () => {
-    setIsDialogOpen(false)
-    setEditUser(null)
-  }
+    setIsDialogOpen(false);
+    setEditUser(null);
+  };
 
-  const handleSaveUser = (userData: Partial<UserWithPassword>) => {    
+  const handleSaveUser = (userData: Partial<UserWithPassword>) => {
     if (editUser) {
       // Update existing user
       updateUserApi(editUser.id, userData).then((updatedUser) => {
         setUsers((prev) =>
-          prev.map((user) => (user.id === updatedUser.id ? { ...user, ...updatedUser } : user)),
-        )
-      })
+          prev.map((user) =>
+            user.id === updatedUser.id ? { ...user, ...updatedUser } : user
+          )
+        );
+      });
     } else {
       // Create new user
       createUserApi(userData as UserWithPassword).then((newUser) => {
-        setUsers((prev) => [...prev, newUser])
-      })
+        setUsers((prev) => [...prev, newUser]);
+      });
     }
     // Close the dialog after saving
-    setIsDialogOpen(false)
-    setEditUser(null)
-  }
+    setIsDialogOpen(false);
+    setEditUser(null);
+  };
 
   const handleDeleteUser = (userId: string) => {
     deleteUserApi(userId).then(() => {
-      setUsers((prev) => prev.filter((user) => user.id !== userId))
-    })
-    setIsDialogOpen(false)
-    setEditUser(null)
-  }
+      setUsers((prev) => prev.filter((user) => user.id !== userId));
+    });
+    setIsDialogOpen(false);
+    setEditUser(null);
+  };
 
   const filterUsersBySearch = (users: User[]) => {
-    if (!searchQuery) return users
-    return users.filter((user) => user.email.toLowerCase().includes(searchQuery.toLowerCase()))
-  }
+    if (!searchQuery) return users;
+    return users.filter((user) =>
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
 
   const filterUsersByStatus = (users: User[]) => {
-    if (statusFilter === "all") return users
-    const isActive = statusFilter === "active"
-    return users.filter((user) => user.is_active == isActive)
-  }
+    if (statusFilter === "all") return users;
+    const isActive = statusFilter === "active";
+    return users.filter((user) => user.is_active == isActive);
+  };
 
   const getFilteredUsers = (users: User[]) => {
-    return filterUsersByStatus(filterUsersBySearch(users))
-  }
+    return filterUsersByStatus(filterUsersBySearch(users));
+  };
 
   return (
     <div className="py-6">
@@ -128,7 +149,12 @@ export default function UsersManagement() {
         </TabsList>
 
         {["students", "teachers", "admins"].map((tab) => {
-          const tabUsers = tab === "students" ? students : tab === "teachers" ? teachers : admins
+          const tabUsers =
+            tab === "students"
+              ? students
+              : tab === "teachers"
+              ? teachers
+              : admins;
           return (
             <TabsContent key={tab} value={tab}>
               <Card>
@@ -137,8 +163,8 @@ export default function UsersManagement() {
                     {tab === "students"
                       ? "Danh sách học viên"
                       : tab === "teachers"
-                        ? "Danh sách giảng viên"
-                        : "Danh sách quản trị viên"}
+                      ? "Danh sách giảng viên"
+                      : "Danh sách quản trị viên"}
                   </CardTitle>
                   <div className="flex flex-col sm:flex-row gap-4 mt-4">
                     <div className="relative flex-1">
@@ -150,7 +176,10 @@ export default function UsersManagement() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <Select
+                      value={statusFilter}
+                      onValueChange={setStatusFilter}
+                    >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Trạng thái" />
                       </SelectTrigger>
@@ -163,11 +192,15 @@ export default function UsersManagement() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <UserTable users={getFilteredUsers(tabUsers)} onToggleDisable={handleToggleDisableUser} onEdit={handleEditUser} />
+                  <UserTable
+                    users={getFilteredUsers(tabUsers)}
+                    onToggleDisable={handleToggleDisableUser}
+                    onEdit={handleEditUser}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
-          )
+          );
         })}
       </Tabs>
 
@@ -180,6 +213,5 @@ export default function UsersManagement() {
         mode={editUser ? "edit" : "create"}
       />
     </div>
-  )
+  );
 }
-

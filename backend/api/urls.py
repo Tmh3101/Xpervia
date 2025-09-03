@@ -22,19 +22,23 @@ urlpatterns = [
     path('auth/reset-password/', auth_view.reset_password_view, name='reset-password'),
     path('auth/current-user/', auth_view.get_current_user, name='current-user'),
 
+    path('users/<uuid:id>/change-password/', user_view.UserChangePasswordAPIView.as_view(), name='change-password'),
+
     #=== Admin URLs ===#
     # Users Management URLs (Admin only)
-    # path('admin/users/', user_view.UserAdminView.as_view(), name='admin-user-list-create'),
-    # path('admin/users/<str:user_id>/', user_view.UserAdminView.as_view(), name='admin-user-update-delete'),
+    path('admin/users/', user_view.UserListAPIView.as_view(), name='admin-user-list'),
+    path('admin/users/<uuid:id>/', user_view.UserRetrieveAPIView.as_view(), name='admin-user-detail'),
+    path('admin/users/create/', user_view.UserCreateAPIView.as_view(), name='admin-user-create'),
+    path('admin/users/<uuid:id>/update/', user_view.UserUpdateAPIView.as_view(), name='admin-user-update'),
+    path('admin/users/<uuid:id>/delete/', user_view.UserDeleteAPIView.as_view(), name='admin-user-delete'),
+    path('admin/users/<uuid:id>/disable/', user_view.UserDisableAPIView.as_view(), name='admin-user-disable'),
+    path('admin/users/<uuid:id>/enable/', user_view.UserEnableAPIView.as_view(), name='admin-user-enable'),
 
     # Category Management URLs (Admin only)
     path('admin/categories/', category_view.CategoryAdminAPIView.as_view(), name='admin-category-list-create'),
     path('admin/categories/<int:id>/', category_view.CategoryAdminAPIView.as_view(), name='admin-category-update-delete'),
 
-    #=== Public URLs ===#
-    # User URLs
-    # path('users/<str:user_id>/', user_view.UserDetailView.as_view(), name='user-detail'),
-
+    #=== Courses Management URLs ===#
     # Category URLs
     path('categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
     path('categories/<int:id>/', category_view.CategoryDetailAPIView.as_view(), name='category-detail'),

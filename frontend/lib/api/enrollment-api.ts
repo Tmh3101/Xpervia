@@ -1,5 +1,5 @@
 import authAxios from "./axios-auth";
-import { Enrollment } from "../types/enrollment";
+import type { Enrollment } from "../types/enrollment";
 
 export const getEnrollmentsApi = async (): Promise<Enrollment[]> => {
   const response = await authAxios.get(`courses/enrollments/`);

@@ -15,14 +15,14 @@ interface AuthContextType {
   accessToken: string | null;
   refreshToken: string | null;
   user: User | null;
-  setNewUser: (user: User | null) => void;
+  enrollments: Enrollment[];
   setAccessToken: (token: string | null) => void;
   setRefreshToken: (token: string | null) => void;
+  setNewUser: (user: User | null) => void;
+  fetchEnrollments: () => void;
   login: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => void;
-  enrollments: Enrollment[];
   enrollInCourse: (courseId: number) => boolean;
-  fetchEnrollments: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,18 +35,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Load user data from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedAccessToken = localStorage.getItem("accessToken");
     const storedRefreshToken = localStorage.getItem("refreshToken");
 
     if (storedUser && storedAccessToken && storedRefreshToken) {
-      setUser(JSON.parse(storedUser));
-      setAccessToken(storedAccessToken);
-      setRefreshToken(storedRefreshToken);
+      if (JSON.parse(storedUser) !== user) {
+        setUser(JSON.parse(storedUser));
+      }
+
+      if (storedAccessToken !== accessToken) {
+        setAccessToken(storedAccessToken);
+      }
+
+      if (storedRefreshToken !== refreshToken) {
+        setRefreshToken(storedRefreshToken);
+      }
     }
   }, []);
 
+  // Update user data to localStorage when it changes
   useEffect(() => {
     if (user && accessToken && refreshToken) {
       localStorage.setItem("user", JSON.stringify(user));
@@ -101,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: undefined };
   };
 
-  const logout = async () => {
+  const logout = () => {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
@@ -143,14 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         refreshToken,
         user,
+        enrollments,
         setNewUser,
         setAccessToken,
         setRefreshToken,
+        fetchEnrollments,
         login,
         logout,
-        enrollments,
         enrollInCourse,
-        fetchEnrollments,
       }}
     >
       {children}

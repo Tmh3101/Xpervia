@@ -1,7 +1,12 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -9,12 +14,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,71 +31,83 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import type { UserWithPassword, User } from "@/lib/types/user"
-import { Trash2 } from "lucide-react"
+} from "@/components/ui/alert-dialog";
+import type { UserWithPassword, User } from "@/lib/types/user";
 
 interface UserDialogProps {
-  open: boolean
-  onClose: () => void
-  onSave: (userData: Partial<UserWithPassword>) => void
-  onDelete: (userId: string) => void
-  initialData: User | null
-  mode: "create" | "edit"
+  open: boolean;
+  onClose: () => void;
+  onSave: (userData: Partial<UserWithPassword>) => void;
+  onDelete: (userId: string) => void;
+  initialData: User | null;
+  mode: "create" | "edit";
 }
 
-export function UserDialog({ open, onClose, onSave, onDelete, initialData, mode }: UserDialogProps) {
+export function UserDialog({
+  open,
+  onClose,
+  onSave,
+  onDelete,
+  initialData,
+  mode,
+}: UserDialogProps) {
   const [userData, setUserData] = useState<Partial<UserWithPassword>>({
     first_name: "",
     last_name: "",
     email: "",
     password: "",
     role: "student",
-  })
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [isPasswordEditable, setIsPasswordEditable] = useState(mode === "create") // Default to editable in "create" mode
+  });
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isPasswordEditable, setIsPasswordEditable] = useState(
+    mode === "create"
+  ); // Default to editable in "create" mode
 
   useEffect(() => {
     if (initialData) {
-      setUserData(initialData)
+      setUserData(initialData);
     }
-  }, [initialData])
+  }, [initialData]);
 
   const handleChange = (field: keyof UserWithPassword, value: string) => {
     setUserData((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSave(userData)
-  }
+    e.preventDefault();
+    onSave(userData);
+  };
 
   const handleDeleteClick = () => {
-    setConfirmDelete(true)
-  }
+    setConfirmDelete(true);
+  };
 
   const handleConfirmDelete = () => {
     if (initialData?.id) {
-      onDelete(initialData.id)
+      onDelete(initialData.id);
     }
-    setConfirmDelete(false)
-  }
+    setConfirmDelete(false);
+  };
 
   const handleCancelDelete = () => {
-    setConfirmDelete(false)
-  }
+    setConfirmDelete(false);
+  };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{mode === "create" ? "Tạo tài khoản mới" : "Chỉnh sửa tài khoản"}</DialogTitle>
+            <DialogTitle>
+              {mode === "create" ? "Tạo tài khoản mới" : "Chỉnh sửa tài khoản"}
+            </DialogTitle>
             <DialogDescription>
-              {mode === "create" ? "Điền thông tin để tạo tài khoản mới." : "Chỉnh sửa thông tin tài khoản người dùng."}
+              {mode === "create"
+                ? "Điền thông tin để tạo tài khoản mới."
+                : "Chỉnh sửa thông tin tài khoản người dùng."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -138,7 +157,10 @@ export function UserDialog({ open, onClose, onSave, onDelete, initialData, mode 
                   <Label htmlFor="role" className="text-right">
                     Vai trò
                   </Label>
-                  <Select value={userData.role} onValueChange={(value) => handleChange("role", value)}>
+                  <Select
+                    value={userData.role}
+                    onValueChange={(value) => handleChange("role", value)}
+                  >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Chọn vai trò" />
                     </SelectTrigger>
@@ -154,8 +176,10 @@ export function UserDialog({ open, onClose, onSave, onDelete, initialData, mode 
               {/* Password Field with Switch */}
               {mode === "edit" && (
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="password-editable" className="text-right">
-                  </Label>
+                  <Label
+                    htmlFor="password-editable"
+                    className="text-right"
+                  ></Label>
                   <div className="col-span-3 flex items-center space-x-2">
                     <Switch
                       id="password-editable"
@@ -164,7 +188,11 @@ export function UserDialog({ open, onClose, onSave, onDelete, initialData, mode 
                     />
                     <Label
                       htmlFor="password-editable"
-                      className={isPasswordEditable ? "text-black font-medium" : "text-gray-400"}
+                      className={
+                        isPasswordEditable
+                          ? "text-black font-medium"
+                          : "text-gray-400"
+                      }
                     >
                       Cập nhật mật khẩu
                     </Label>
@@ -216,18 +244,23 @@ export function UserDialog({ open, onClose, onSave, onDelete, initialData, mode 
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Tài khoản này sẽ bị xóa vĩnh viễn khỏi hệ thống.
+              Hành động này không thể hoàn tác. Tài khoản này sẽ bị xóa vĩnh
+              viễn khỏi hệ thống.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }
-

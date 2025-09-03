@@ -1,5 +1,5 @@
 import authAxios from "./axios-auth";
-import {
+import type {
   Course,
   CourseWithDetailLessons,
   CreateCourseRequest,

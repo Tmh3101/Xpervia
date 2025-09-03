@@ -5,6 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Format number to currency VND, e.g. 1000000 => "1.000.000 VNĐ"
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -31,9 +32,12 @@ const categoryColors = [
   "cyan",
   "indigo",
 ];
-export const getCategoryColor = (index: number) =>
-  categoryColors[index] || "gray";
 
+export const getCategoryColor = (index: number) => {
+  return categoryColors[index] || "gray";
+};
+
+// Download file from a public URL
 export const downloadViaFetch = async (
   publicUrl: string,
   fileName = "download"
@@ -45,7 +49,7 @@ export const downloadViaFetch = async (
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = fileName; // tên file khi lưu
+  a.download = fileName; // File name when downloaded
   document.body.appendChild(a);
   a.click();
   a.remove();

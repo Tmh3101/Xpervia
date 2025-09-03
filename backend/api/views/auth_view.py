@@ -57,7 +57,7 @@ def login_view(request):
             "success": False,
             "message": "Login failed",
             "error": str(e)
-        })
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     logger.info(f"User logged in successfully: {result['user'].email}")
     return Response({

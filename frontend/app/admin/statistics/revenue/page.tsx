@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import { Loading } from "@/components/Loading"
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Loading } from "@/components/Loading";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookCopy, HandCoins, CircleDollarSign } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -18,57 +19,58 @@ import {
   PieChart,
   Pie,
   Cell,
-} from "recharts"
-import { formatCurrency } from "@/lib/utils"
-import { getCoursesApi } from "@/lib/api/course-api"
-import { getEnrollmentsApi } from "@/lib/api/enrollment-api"
-import { BookCopy, HandCoins, CircleDollarSign } from "lucide-react"
-import type { Course } from "@/lib/types/course"
-import type { Enrollment } from "@/lib/types/enrollment"
+} from "recharts";
+import { formatCurrency } from "@/lib/utils";
+import { getCoursesApi } from "@/lib/api/course-api";
+import { getEnrollmentsApi } from "@/lib/api/enrollment-api";
+import type { Course } from "@/lib/types/course";
+import type { Enrollment } from "@/lib/types/enrollment";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 export default function RevenueStatistics() {
-  const [courses, setCourses] = useState<Course[]>([])
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const courseData = await getCoursesApi()
-      setCourses(courseData)
-      const enrollmentData = await getEnrollmentsApi()
-      setEnrollments(enrollmentData)
-    }
-    fetchData()
-  }, [])
+      const courseData = await getCoursesApi();
+      setCourses(courseData);
+      const enrollmentData = await getEnrollmentsApi();
+      setEnrollments(enrollmentData);
+    };
+    fetchData();
+  }, []);
 
   if (courses.length === 0 || enrollments.length === 0) {
-    return <Loading />
+    return <Loading />;
   }
 
   // Calculate total courses, total revenue, and average revenue per course
-  const totalCourses = courses.length
+  const totalCourses = courses.length;
   const totalRevenue = enrollments.reduce((res, enrollment) => {
     if (enrollment.payment) {
-      return res + enrollment.payment.amount
+      return res + enrollment.payment.amount;
     }
-    return res
-  }, 0)
-  const averageRevenuePerCourse = totalRevenue / totalCourses
-  
+    return res;
+  }, 0);
+  const averageRevenuePerCourse = totalRevenue / totalCourses;
+
   // Calculate category data
-  let categoryData: { name: string; value: number }[] = []
+  let categoryData: { name: string; value: number }[] = [];
   courses.forEach((course) => {
-    course.course_content.categories.forEach((category) => {  
-      const existingCategory = categoryData.find((cat) => cat.name === category.name)
+    course.course_content.categories.forEach((category) => {
+      const existingCategory = categoryData.find(
+        (cat) => cat.name === category.name
+      );
       if (existingCategory) {
-        existingCategory.value += 1
+        existingCategory.value += 1;
       } else {
-        categoryData.push({ name: category.name, value: 1 })
+        categoryData.push({ name: category.name, value: 1 });
       }
-    })
-  })
-  
+    });
+  });
+
   // Calculate monthly & yearly data
   let monthlyData = [
     { name: "T1", courses: 0, revenue: 0 },
@@ -83,7 +85,7 @@ export default function RevenueStatistics() {
     { name: "T10", courses: 0, revenue: 0 },
     { name: "T11", courses: 0, revenue: 0 },
     { name: "T12", courses: 0, revenue: 0 },
-  ]
+  ];
 
   let yearlyData = [
     { name: "2020", courses: 0, revenue: 0 },
@@ -92,34 +94,38 @@ export default function RevenueStatistics() {
     { name: "2023", courses: 0, revenue: 0 },
     { name: "2024", courses: 0, revenue: 0 },
     { name: "2025", courses: 0, revenue: 0 },
-  ]
+  ];
   courses.forEach((course) => {
-    const date = new Date(course.created_at)
+    const date = new Date(course.created_at);
     if (date.getFullYear() === new Date().getFullYear()) {
-      monthlyData[date.getMonth()].courses += 1
+      monthlyData[date.getMonth()].courses += 1;
     }
-    console.log(date.getFullYear())
-    yearlyData[date.getFullYear() - 2020].courses += 1
-  })
+    yearlyData[date.getFullYear() - 2020].courses += 1;
+  });
   enrollments.forEach((enrollment) => {
-    if(enrollment.payment) {
-      const date = new Date(enrollment.payment.created_at)
+    if (enrollment.payment) {
+      const date = new Date(enrollment.payment.created_at);
       if (date.getFullYear() === new Date().getFullYear()) {
-        monthlyData[date.getMonth()].revenue += enrollment.payment.amount
+        monthlyData[date.getMonth()].revenue += enrollment.payment.amount;
       }
-      yearlyData[date.getFullYear() - 2020].revenue += enrollment.payment.amount
+      yearlyData[date.getFullYear() - 2020].revenue +=
+        enrollment.payment.amount;
     }
-  })
+  });
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl uppercase font-bold mb-6">Thống kê khóa học & doanh thu</h1>
+      <h1 className="text-3xl uppercase font-bold mb-6">
+        Thống kê khóa học & doanh thu
+      </h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Tổng khóa học</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Tổng khóa học
+                </p>
                 <h3 className="text-2xl font-bold">{totalCourses}</h3>
               </div>
               <div className="p-2 bg-primary/10 rounded-full">
@@ -133,8 +139,12 @@ export default function RevenueStatistics() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Tổng doanh thu</p>
-                <h3 className="text-2xl font-bold">{formatCurrency(totalRevenue)}</h3>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Tổng doanh thu
+                </p>
+                <h3 className="text-2xl font-bold">
+                  {formatCurrency(totalRevenue)}
+                </h3>
               </div>
               <div className="p-2 bg-yellow-100 rounded-full">
                 <CircleDollarSign className="h-6 w-6 text-yellow-600" />
@@ -147,8 +157,12 @@ export default function RevenueStatistics() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Doanh thu trung bình/khóa học</p>
-                <h3 className="text-2xl font-bold">{formatCurrency(averageRevenuePerCourse)}</h3>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Doanh thu trung bình/khóa học
+                </p>
+                <h3 className="text-2xl font-bold">
+                  {formatCurrency(averageRevenuePerCourse)}
+                </h3>
               </div>
               <div className="p-2 bg-success/10 rounded-full">
                 <HandCoins className="h-6 w-6 text-success" />
@@ -172,13 +186,18 @@ export default function RevenueStatistics() {
                     cx="50%"
                     cy="50%"
                     labelLine={true}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                   >
                     {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => `${value}%`} />
@@ -195,18 +214,18 @@ export default function RevenueStatistics() {
           <CardContent className="pl-0">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={monthlyData} 
-                  layout="vertical" 
+                <BarChart
+                  data={monthlyData}
+                  layout="vertical"
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  width={500} 
+                  width={500}
                   height={300}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     type="number"
-                    allowDecimals={false} 
-                    domain={[0, 'dataMax']}
+                    allowDecimals={false}
+                    domain={[0, "dataMax"]}
                   />
                   <YAxis dataKey="name" type="category" />
                   <Tooltip />
@@ -232,11 +251,18 @@ export default function RevenueStatistics() {
             <CardContent>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart
+                    data={monthlyData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                    <Tooltip
+                      formatter={(value) =>
+                        formatCurrency(parseFloat(value + ""))
+                      }
+                    />
                     <Legend />
                     <Bar dataKey="revenue" name="Doanh thu" fill="#10b981" />
                   </BarChart>
@@ -254,13 +280,26 @@ export default function RevenueStatistics() {
             <CardContent>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={yearlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <LineChart
+                    data={yearlyData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                    <Tooltip
+                      formatter={(value) =>
+                        formatCurrency(parseFloat(value + ""))
+                      }
+                    />
                     <Legend />
-                    <Line type="monotone" dataKey="revenue" name="Doanh thu" stroke="#10b981" activeDot={{ r: 8 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      name="Doanh thu"
+                      stroke="#10b981"
+                      activeDot={{ r: 8 }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -269,6 +308,5 @@ export default function RevenueStatistics() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-

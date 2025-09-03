@@ -1,5 +1,5 @@
 import authAxios from "./axios-auth";
-import { Submission, SubmissionScore } from "../types/submission";
+import type { Submission, SubmissionScore } from "../types/submission";
 
 export const submitAssignmentApi = async (
   assignmentId: number,

@@ -1,6 +1,6 @@
-import { SimpleUser } from "./user";
-import { Chapter, ChapterDetail } from "./chapter";
-import { Lesson, LessonDetail } from "./lesson";
+import type { User } from "./user";
+import type { Chapter, ChapterDetail } from "./chapter";
+import type { Lesson, LessonDetail } from "./lesson";
 
 export interface Category {
   id: number;
@@ -11,13 +11,13 @@ export interface Category {
 export interface SimpleCourseContent {
   id: number;
   title: string;
-  teacher: SimpleUser;
+  teacher: User;
   categories: Category[];
 }
 
 export interface CourseContent {
   id: number;
-  teacher: SimpleUser;
+  teacher: User;
   categories: Category[];
   title: string;
   description: string;
