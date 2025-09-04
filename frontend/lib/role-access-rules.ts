@@ -9,6 +9,7 @@ export const routePermissions: Record<string, RegExp[]> = {
     /^\/$/,
     /^\/courses\/[^\/]+$/,
     /^\/student\/my-courses$/,
+    /^\/student\/favorites$/,
     /^\/profile\/student\/[^\/]+$/,
     /^\/student\/lessons\/[^\/]+$/,
     /^\/student\/lessons\/[^\/]+\/[^\/]+$/,

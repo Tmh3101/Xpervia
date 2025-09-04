@@ -30,16 +30,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const lessonFormSchema = z.object({
-  title: z.string().min(3, "Tiêu đề phải có ít nhất 3 ký tự"),
-  content: z.string().min(20, "Nội dung phải có ít nhất 20 ký tự"),
-  video: z.any().optional(),
-  subtitle_vi: z.any().optional(),
-  attachment: z.any().optional(),
-  is_visible: z.boolean().default(true),
-  order: z.number().default(0),
-});
-
 type LessonFormProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,6 +51,19 @@ export const LessonFormDialog = ({
 }: LessonFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const lessonFormSchema = z.object({
+    title: z.string().min(3, "Tiêu đề phải có ít nhất 3 ký tự"),
+    content: z.string().min(20, "Nội dung phải có ít nhất 20 ký tự"),
+    video:
+      mode === "edit"
+        ? z.any().optional()
+        : z.any().refine((file) => file instanceof File, "Video là bắt buộc"),
+    subtitle_vi: z.any().optional(),
+    attachment: z.any().optional(),
+    is_visible: z.boolean().default(true),
+    order: z.number().default(0),
+  });
 
   const form = useForm({
     resolver: zodResolver(lessonFormSchema),

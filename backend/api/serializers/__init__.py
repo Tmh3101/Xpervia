@@ -11,3 +11,4 @@ from .submission_score_serializer import SubmissionScoreSerializer
 from .submission_serializer import SubmissionSerializer
 from .file_serializer import FileSerializer
 from .user_serializer import UserSerializer
+from .favorite_serializer import FavoriteSerializer

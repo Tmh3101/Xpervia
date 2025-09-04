@@ -2,8 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
-import { Search } from "lucide-react";
+import { Search, EllipsisVertical, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getCategoriesApi } from "@/lib/api/category-api";
@@ -19,12 +18,10 @@ export function SearchBar({ onSearch, onCategorySelect }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const { user } = useAuth();
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
-      // if (user && user.role === "teacher") return;
-
       try {
         const categoriesData = await getCategoriesApi();
         setCategories(categoriesData);
@@ -55,6 +52,14 @@ export function SearchBar({ onSearch, onCategorySelect }: SearchBarProps) {
     onCategorySelect(categoryId);
   };
 
+  const maxShow = 7;
+  const visibleCategories = showAllCategories
+    ? categories
+    : categories.slice(0, maxShow);
+
+  const hiddenCategories =
+    categories.length > maxShow ? categories.slice(maxShow) : [];
+
   return (
     <div className="container mx-auto -mt-20 mb-8 relative z-10 w-full">
       <div className="bg-white rounded-2xl shadow-lg p-6 max-w-3xl mx-auto">
@@ -82,7 +87,7 @@ export function SearchBar({ onSearch, onCategorySelect }: SearchBarProps) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mt-4 justify-center">
+      <div className="flex flex-wrap gap-2 mt-4 justify-center px-32">
         <button
           onClick={() => handleCategorySelect(null)}
           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -93,21 +98,41 @@ export function SearchBar({ onSearch, onCategorySelect }: SearchBarProps) {
         >
           Tất cả
         </button>
-        {categories.map((category, index) => (
+        {visibleCategories.map((category, index) => (
           <button
             key={category.id}
             onClick={() => handleCategorySelect(category.id)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               selectedCategory === category.id
-                ? `bg-${getCategoryColor(index)}-500 text-white`
-                : `bg-${getCategoryColor(index)}-100 text-${getCategoryColor(
-                    index
-                  )}-500`
+                ? `bg-${getCategoryColor(index % 9)}-500 text-white`
+                : `bg-${getCategoryColor(
+                    index % 9
+                  )}-100 text-${getCategoryColor(index % 9)}-500`
             }`}
           >
             {category.name}
           </button>
         ))}
+        {hiddenCategories.length > 0 && !showAllCategories && (
+          <button
+            onClick={() => setShowAllCategories(true)}
+            className="px-4 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-600 flex items-center gap-1"
+            aria-label="Hiển thị thêm thể loại"
+          >
+            <EllipsisVertical size={16} />
+            <span className="text-xs">+{hiddenCategories.length}</span>
+          </button>
+        )}
+        {showAllCategories && hiddenCategories.length > 0 && (
+          <button
+            onClick={() => setShowAllCategories(false)}
+            className="px-4 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-600 flex items-center gap-1"
+            aria-label="Thu gọn thể loại"
+          >
+            <ChevronUp size={16} />
+            <span className="text-xs">Thu gọn</span>
+          </button>
+        )}
       </div>
     </div>
   );

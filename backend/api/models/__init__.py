@@ -11,3 +11,4 @@ from .submission_model import Submission
 from .submission_score_model import SubmissionScore
 from .file_model import File
 from .user_model import User
+from .favorite_model import Favorite

@@ -2,7 +2,7 @@ import type { User } from "./user";
 import type { Course } from "./course";
 
 interface Payment {
-  id: string;
+  id: number;
   amount: number;
   payment_method: string;
   created_at: string;
@@ -10,7 +10,7 @@ interface Payment {
 }
 
 export interface Enrollment {
-  id: string;
+  id: number;
   student: User;
   course: Course;
   payment: Payment;

@@ -10,7 +10,8 @@ from api.views import (
     submission_score_view,
     lesson_completion_view,
     course_view,
-    auth_view
+    auth_view,
+    favorite_view
 )
 
 urlpatterns = [
@@ -102,4 +103,12 @@ urlpatterns = [
     path('courses/assignments/submissions/<int:submission_id>/score/create/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
     path('courses/assignments/submissions/score/<int:id>/update/', submission_score_view.SubmissionScoreUpdateAPIView.as_view(), name='submission-score-update'),
     path('courses/assignments/submissions/score/<int:id>/delete/', submission_score_view.SubmissionScoreDeleteAPIView.as_view(), name='submission-score-delete'),
+
+    # Favorite URLs
+    path('favorites/', favorite_view.FavoriteListAPIView.as_view(), name='favorite-list'),
+    path('favorites/course/<int:course_id>/', favorite_view.FavoriteListByCourseAPIView.as_view(), name='favorite-list-by-course'),
+    path('favorites/student/', favorite_view.FavoriteListByStudentAPIView.as_view(), name='favorite-list-by-student'),
+    path('favorites/create/<int:course_id>/', favorite_view.FavoriteCreateAPIView.as_view(), name='favorite-create'),
+    path('favorites/<int:id>/', favorite_view.FavoriteRetrieveAPIView.as_view(), name='favorite-detail'),
+    path('favorites/<int:id>/delete/', favorite_view.FavoriteDeleteAPIView.as_view(), name='favorite-delete'),
 ]

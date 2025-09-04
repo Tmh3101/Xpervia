@@ -77,19 +77,34 @@ export function Header() {
             {user ? (
               <>
                 {user.role === "student" && (
-                  <Button
-                    variant="ghost"
-                    className={`font-medium rounded-xl ${
-                      isScrolled || pathname !== "/"
-                        ? isActive("/student/my-courses")
-                          ? "text-white bg-primary hover:bg-primary/80 hover:text-white"
-                          : "text-gray-800 hover:text-white hover:bg-primary"
-                        : "text-white hover:bg-primary hover:text-white"
-                    }`}
-                    onClick={() => router.push("/student/my-courses")}
-                  >
-                    Khóa học của tôi
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      className={`font-medium rounded-xl flex items-center gap-2 ${
+                        isScrolled || pathname !== "/"
+                          ? isActive("/student/favorites")
+                            ? "text-white bg-primary hover:bg-primary/80 hover:text-white"
+                            : "text-gray-800 hover:text-white hover:bg-primary"
+                          : "text-white hover:bg-primary hover:text-white"
+                      }`}
+                      onClick={() => router.push("/student/favorites")}
+                    >
+                      <span>Khóa học yêu thích</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className={`font-medium rounded-xl ${
+                        isScrolled || pathname !== "/"
+                          ? isActive("/student/my-courses")
+                            ? "text-white bg-primary hover:bg-primary/80 hover:text-white"
+                            : "text-gray-800 hover:text-white hover:bg-primary"
+                          : "text-white hover:bg-primary hover:text-white"
+                      }`}
+                      onClick={() => router.push("/student/my-courses")}
+                    >
+                      Khóa học của tôi
+                    </Button>
+                  </>
                 )}
                 <Button
                   variant="ghost"

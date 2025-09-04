@@ -129,7 +129,7 @@ export default function CourseDetail() {
       } else {
         await createLessonApi(
           course.id,
-          selectedChapter?.id ? selectedChapter.id : null,
+          selectedChapter ? selectedChapter.id : null,
           data
         );
       }

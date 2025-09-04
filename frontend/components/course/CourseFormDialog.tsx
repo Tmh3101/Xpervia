@@ -298,7 +298,7 @@ export const CourseFormDialog = ({
                           )
                         }
                         placeholder="Chọn danh mục"
-                        className="basic-multi-select"
+                        className="basic-multi-select text-sm"
                         classNamePrefix="select"
                       />
                     )}
