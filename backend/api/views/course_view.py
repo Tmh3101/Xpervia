@@ -3,10 +3,12 @@ import logging
 import uuid
 from django.conf import settings
 from django.http import Http404
+from django.db.models import Count
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
+from api.pagination import CoursePagination
 from api.exceptions.custom_exceptions import FileUploadException
 from api.models import Course, Lesson, CourseContent, Enrollment, User
 from api.serializers import (
@@ -42,6 +44,11 @@ def get_course_content(request):
             logger.error(f"Error uploading thumbnail: {str(e)}")
             raise FileUploadException(f'Error uploading thumbnail: {str(e)}')
         course_content['thumbnail_path'] = thumbnail_path
+        course_content['thumbnail_url'] = get_file_url(
+            bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
+            path=thumbnail_path,
+            is_public=True
+        )
     if request.data.get('title'):
         course_content['title'] = request.data.get('title')
     if request.data.get('description'):
@@ -107,34 +114,43 @@ class CourseListAPIView(generics.ListAPIView):
     serializer_class = CourseSerializer
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
+    pagination_class = CoursePagination
+
+    def get_queryset(self):
+        queryset = Course.objects.select_related("course_content").annotate(num_students=Count("enrollments", distinct=True)).order_by("-created_at")
+        title = self.request.query_params.get("title")
+        categories = self.request.query_params.getlist("categories") or self.request.query_params.get("categories")
+        if title:
+            queryset = queryset.filter(course_content__title__icontains=title)
+        if categories:
+            # categories có thể là list hoặc chuỗi id
+            if isinstance(categories, str):
+                categories = [categories]
+            queryset = queryset.filter(course_content__categories__id__in=categories).distinct()
+        return queryset
 
     def list(self, request, *args, **kwargs):
         logger.info("Listing all courses")
-        queryset = self.get_queryset().filter()
-        courses_data = CourseSerializer(queryset, many=True).data.copy()
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
 
-        for course in courses_data:
-            course_content = Course.objects.get(id=course['id']).course_content
-            course_content_data = CourseContentSerializer(course_content).data.copy()
-            course_content_data['thumbnail_url'] = get_file_url(
-                bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
-                path=course_content.thumbnail_path,
-                is_public=True
-            )
-            chapters_data, lessons_without_chapter = get_course_content_lessons(course_content)
-            course_content_data['chapters'] = chapters_data
-            course_content_data['lessons_without_chapter'] = lessons_without_chapter
-            course['course_content'] = course_content_data
-            # Add num_students to each course
-            enrollments = Enrollment.objects.filter(course=course['id'])
-            course['num_students'] = enrollments.count()
-        
+        results = []
+
+        for course in page:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
+
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            c_data["num_students"] = course.num_students  # dùng annotate
+            results.append(c_data)
+
         logger.info("Successfully listed all courses")
-        return Response({
-            'success': True,
-            'message': 'All courses have been listed successfully',
-            'courses': courses_data
-        }, status=status.HTTP_200_OK)
+        return self.get_paginated_response(results)
+
     
 # Course Detail API to list all course of a teacher
 class CourseListByTeacherAPIView(generics.ListAPIView):
@@ -142,32 +158,38 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
     serializer_class = CourseSerializer
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
+    pagination_class = CoursePagination
+
+    def get_queryset(self):
+        teacher = User.objects.get(id=self.request.user.id)
+        return (
+            Course.objects
+            .filter(course_content__teacher=teacher)
+            .select_related("course_content")
+            .annotate(num_students=Count("enrollments", distinct=True))
+            .order_by("-created_at")
+        )
 
     def list(self, request, *args, **kwargs):
         logger.info(f"Listing courses for teacher ID: {request.user.id}")
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
 
-        teacher = User.objects.get(id=request.user.id)
+        results = []
+        for course in page:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
 
-        queryset = self.get_queryset().filter(course_content__teacher=teacher)
-        courses_serializer = CourseSerializer(queryset, many=True)
-        courses_data = courses_serializer.data.copy()
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            c_data["num_students"] = course.num_students  # dùng annotate
+            results.append(c_data)
 
-        # Add num_students to each course
-        for course in courses_data:
-            enrollments = Enrollment.objects.filter(course=course['id'])
-            course['num_students'] = enrollments.count()
-            course['course_content']['thumbnail_url'] = get_file_url(
-                bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
-                path=course['course_content']['thumbnail_path'],
-                is_public=True
-            )
-
-        logger.info("Successfully listed courses for teacher")
-        return Response({
-            'success': True,
-            'message': 'All courses have been listed successfully',
-            'courses': courses_data
-        }, status=status.HTTP_200_OK)
+        logger.info("Successfully listed teacher's courses")
+        return self.get_paginated_response(results)
 
 
 # Course Detail API to create a course detail
@@ -248,11 +270,6 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
         course_content = instance.course_content
         course_content_data = CourseContentSerializer(course_content).data.copy()
         chapters_data, lessons_without_chapter_data = get_course_content_lessons(course_content)
-        course_content_data['thumbnail_url'] = get_file_url(
-            bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
-            path=course_content.thumbnail_path,
-            is_public=True
-        )
         course_content_data['chapters'] = chapters_data
         course_content_data['lessons_without_chapter'] = lessons_without_chapter_data
 
@@ -312,11 +329,6 @@ class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
         course_content['chapters'] = chapters_data
         course_content['lessons_without_chapter'] = lessons_without_chapter_serializer.data
         course_data['course_content'] = course_content
-        course_data['course_content']['thumbnail_url'] = get_file_url(
-            bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
-            path=course_content['thumbnail_path'],
-            is_public=True
-        )
 
         logger.info("Course with detailed lessons retrieved successfully")
         return Response({
@@ -393,18 +405,10 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
             )
         
         logger.info("Course updated successfully")
-
-        course_data = course_serializer.data.copy()
-        course_data['course_content']['thumbnail_url'] = get_file_url(
-            bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
-            path=course_content.thumbnail_path,
-            is_public=True
-        )
-
         return Response({
             'success': True,
             'message': 'Course updated successfully',
-            'course': course_data
+            'course': course_serializer.data
         }, status=status.HTTP_200_OK)
             
         

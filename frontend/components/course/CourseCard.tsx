@@ -17,7 +17,7 @@ import type { Favorite } from "@/lib/types/favorite";
 import { CourseCategories } from "@/components/course/CourseCategories";
 
 interface CourseCardProps extends Course {
-  mode?: "enrolled" | "teacher" | "student";
+  mode: string;
   progress?: number | 0;
   studentsEnrolled?: number;
   onEditClick?: () => void;
@@ -34,7 +34,7 @@ export function CourseCard({
   regis_start_date,
   regis_end_date,
   max_students,
-  mode = "student",
+  mode,
   progress = 0,
   studentsEnrolled = 0,
   onEditClick,

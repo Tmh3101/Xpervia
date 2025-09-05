@@ -3,7 +3,7 @@
 import { Loading } from "@/components/Loading";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CourseCard } from "@/components/course/CourseCard";
+import { CourseList } from "@/components/course/CourseList";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { CourseFormDialog } from "@/components/course/CourseFormDialog";
@@ -13,27 +13,34 @@ import {
   updateCourseApi,
   deleteCourseApi,
 } from "@/lib/api/course-api";
+import { CoursePagination } from "@/components/CoursePagination";
 import type { Course } from "@/lib/types/course";
 import type { CreateCourseRequest } from "@/lib/types/course";
 
 export default function TeacherDashboard() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
   const [isCourseFormOpen, setIsCourseFormOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const courses = await getCourseByTeacherApi();
-        setCourses(courses);
+        setIsLoading(true);
+        const data = await getCourseByTeacherApi(page);
+        setCourses(data.results);
+        setCount(data.count);
       } catch (error) {
         console.error("Failed to fetch courses", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
     fetchCourses();
-  }, []);
+  }, [page]);
 
   if (!courses) {
     return <Loading />;
@@ -78,7 +85,7 @@ export default function TeacherDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Khóa học của tôi</h1>
-          <p className="text-gray-600">{courses.length} khóa học</p>
+          <p className="text-gray-600">{count} khóa học</p>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
           <Button
@@ -96,16 +103,21 @@ export default function TeacherDashboard() {
           <p className="text-gray-600">Bạn chưa có khóa học nào.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              {...course}
-              mode="teacher"
-              onEditClick={() => handleEditCourse(course)}
+        <>
+          <CourseList
+            mode="teacher"
+            courses={courses}
+            handleEditCourse={handleEditCourse}
+            isLoading={isLoading}
+          />
+          {count > 12 && (
+            <CoursePagination
+              currentPage={page}
+              totalPages={Math.ceil(count / 12)}
+              onPageChange={setPage}
             />
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       <CourseFormDialog

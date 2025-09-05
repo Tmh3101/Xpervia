@@ -5,9 +5,29 @@ import type {
   CreateCourseRequest,
 } from "@/lib/types/course";
 
-export const getCoursesApi = async (): Promise<Course[]> => {
-  const response = await authAxios.get(`courses/`);
-  return response.data.courses.filter((course: Course) => course.is_visible);
+export const getCoursesApi = async (
+  page = 1,
+  title?: string,
+  categories?: number | number[]
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const params: any = { page };
+  if (title) params.title = title;
+  if (categories) params.categories = categories;
+  const response = await authAxios.get(`courses/`, {
+    params,
+  });
+  const { count, next, previous, results } = response.data;
+  return {
+    count,
+    next,
+    previous,
+    results: results.filter((course: Course) => course.is_visible),
+  };
 };
 
 export const getCoursesByAdminApi = async (): Promise<Course[]> => {
@@ -20,12 +40,28 @@ export const getCourseDetailApi = async (id: number): Promise<Course> => {
   return response.data.course;
 };
 
-export const getCourseByTeacherApi = async (): Promise<Course[]> => {
+export const getCourseByTeacherApi = async (
+  page = 1
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
   const headers = {
     Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
   };
-  const response = await authAxios.get(`courses/teacher/`, { headers });
-  return response.data.courses;
+  const response = await authAxios.get(`courses/teacher/`, {
+    headers,
+    params: { page },
+  });
+  const { count, next, previous, results } = response.data;
+  return {
+    count,
+    next,
+    previous,
+    results,
+  };
 };
 
 export const getCourseWithDetailLessonsApi = async (
