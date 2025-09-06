@@ -47,6 +47,8 @@ urlpatterns = [
     # Course URLs
     path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),
     path('courses/teacher/', course_view.CourseListByTeacherAPIView.as_view(), name='course-list-teacher'),
+    path('courses/student/enrolled/', course_view.EnrolledCourseListAPIView.as_view(), name='enrolled-course-list'),
+    path('courses/student/favorited/', course_view.FavoritedCourseListAPIView.as_view(), name='favorited-course-list'),
     path('courses/create/', course_view.CourseCreateAPIView.as_view(), name='course-create'),
     path('courses/<int:id>/', course_view.CourseRetrieveAPIView.as_view(), name='course-detail'),
     path('courses/<int:id>/update/', course_view.CourseUpdateAPIView.as_view(), name='course-update'),
@@ -110,5 +112,5 @@ urlpatterns = [
     path('favorites/student/', favorite_view.FavoriteListByStudentAPIView.as_view(), name='favorite-list-by-student'),
     path('favorites/create/<int:course_id>/', favorite_view.FavoriteCreateAPIView.as_view(), name='favorite-create'),
     path('favorites/<int:id>/', favorite_view.FavoriteRetrieveAPIView.as_view(), name='favorite-detail'),
-    path('favorites/<int:id>/delete/', favorite_view.FavoriteDeleteAPIView.as_view(), name='favorite-delete'),
+    path('favorites/<int:course_id>/delete/', favorite_view.FavoriteDeleteAPIView.as_view(), name='favorite-delete'),
 ]

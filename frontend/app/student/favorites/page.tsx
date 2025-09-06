@@ -4,14 +4,28 @@ import { useAuth } from "@/lib/auth-context";
 import { CourseCard } from "@/components/course/CourseCard";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getFavoritedCoursesApi } from "@/lib/api/course-api";
+import type { Course } from "@/lib/types/course";
 
 export default function StudentFavoritesPage() {
-  const { favorites, enrollments, toggleFavorite } = useAuth();
+  const { favoritedCourseIds, enrolledCourseIds, toggleFavorite } = useAuth();
   const router = useRouter();
-  const [localFavorites, setLocalFavorites] = useState(favorites);
+  const [localFavoriteCourseIds, setLocalFavoriteCourseIds] =
+    useState(favoritedCourseIds);
+  const [courses, setCourses] = useState<Course[]>([]);
+
   useEffect(() => {
-    setLocalFavorites(favorites);
-  }, [favorites]);
+    const fetchData = async () => {
+      const favoritedCourses = await getFavoritedCoursesApi();
+      setCourses(favoritedCourses);
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    setLocalFavoriteCourseIds(favoritedCourseIds);
+  }, [favoritedCourseIds]);
 
   // Xử lý toggle: chỉ cập nhật UI khi reload
   const handleToggle = (courseId: number) => {
@@ -20,19 +34,8 @@ export default function StudentFavoritesPage() {
   };
 
   const isEnrolled = (courseId: number) => {
-    return enrollments.some((enrollment) => enrollment.course.id === courseId);
-  };
-
-  const extractCourseData = (course: any) => {
-    if (isEnrolled(course.id)) {
-      return {
-        ...course,
-        progress:
-          enrollments.find((enrollment) => enrollment.course.id === course.id)
-            ?.progress || 0,
-      };
-    }
-    return course;
+    if (!enrolledCourseIds) return false;
+    return enrolledCourseIds.includes(courseId);
   };
 
   return (
@@ -41,7 +44,7 @@ export default function StudentFavoritesPage() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Khóa học yêu thích</h1>
         </div>
-        {localFavorites.length === 0 ? (
+        {courses.length === 0 ? (
           <div className="text-center py-16 pt-48">
             <h2 className="text-2xl font-semibold text-gray-600 mb-4">
               Chưa khóa học yêu thích nào
@@ -58,11 +61,11 @@ export default function StudentFavoritesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {localFavorites.map((fav) => (
+            {courses.map((c) => (
               <CourseCard
-                key={fav.course.id}
-                {...extractCourseData(fav.course)}
-                mode={isEnrolled(fav.course.id) ? "enrolled" : "student"}
+                key={c.id}
+                {...c}
+                mode={isEnrolled(c.id) ? "enrolled" : "student"}
               />
             ))}
           </div>

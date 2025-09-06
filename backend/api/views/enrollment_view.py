@@ -136,7 +136,7 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Enrollment created successfully',
-            'data': serializer.data
+            'enrollment': serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
     
 

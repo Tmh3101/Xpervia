@@ -3,6 +3,8 @@
 import { Loading } from "@/components/Loading";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { BookOpen, Users } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,8 +14,6 @@ import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog"
 import { getCourseByTeacherApi } from "@/lib/api/course-api";
 import type { User } from "@/lib/types/user";
 import type { Course } from "@/lib/types/course";
-import { useAuth } from "@/lib/auth-context";
-import { BookOpen, Users } from "lucide-react";
 
 export default function TeacherProfilePage() {
   const { teacherId } = useParams();
@@ -28,7 +28,7 @@ export default function TeacherProfilePage() {
     const fetchData = async () => {
       try {
         setUser(currentUser);
-        await getCourseByTeacherApi().then((data) => setCourses(data));
+        await getCourseByTeacherApi().then((data) => setCourses(data.results));
       } catch (error) {
         console.error("Failed to fetch user data:", error);
       }

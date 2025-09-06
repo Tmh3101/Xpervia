@@ -15,6 +15,8 @@ export interface Course {
   regis_end_date: string;
   max_students: number;
   num_students: number;
+  num_favorites: number;
+  progress?: number;
 }
 
 export interface CourseWithDetailLessons extends Course {

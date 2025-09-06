@@ -104,14 +104,10 @@ export const resetPasswordApi = async (
   }
 };
 
-export const getMe = async (accessToken: string) => {
+export const getMe = async () => {
   try {
-    const response = await authAxios.get(`auth/current-user/`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    return response.data.user;
+    const response = await authAxios.get(`auth/current-user/`);
+    return response.data;
   } catch (error) {
     console.error("Error fetching user data:", error);
     return { error: "An error occurred" };

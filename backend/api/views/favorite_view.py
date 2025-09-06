@@ -178,16 +178,24 @@ class FavoriteDeleteAPIView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsAdmin | IsStudent]
     lookup_field = 'id'
 
+    def get_object(self):
+        course_id = self.kwargs.get('course_id')
+        student_id = self.request.user.id
+        favorite = Favorite.objects.filter(course_id=course_id, student_id=student_id).first()
+        if not favorite:
+            raise NotFound('Favorite not found')
+        return favorite
+
     def destroy(self, request, *args, **kwargs):
-        logger.info(f"Deleting enrollment with ID: {kwargs.get('id')}")
+        logger.info(f"Deleting favorite with course ID: {kwargs.get('course_id')}")
         try:
             instance = self.get_object()
-        except Enrollment.DoesNotExist:
-            raise NotFound('Enrollment not found')
-        
+        except Favorite.DoesNotExist:
+            raise NotFound('Favorite not found')
+
         self.perform_destroy(instance)
-        logger.info("Enrollment deleted successfully")
+        logger.info("Favorite deleted successfully")
         return Response({
             'success': True,
-            'message': 'Enrollment deleted successfully',
+            'message': 'Favorite deleted successfully',
         }, status=status.HTTP_204_NO_CONTENT)

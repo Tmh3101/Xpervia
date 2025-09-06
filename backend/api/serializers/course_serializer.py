@@ -11,6 +11,9 @@ class CourseSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
+    num_students = serializers.IntegerField(read_only=True)
+    num_favorites = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Course
         fields = '__all__'

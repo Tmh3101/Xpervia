@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
 
     const fetchUser = async () => {
       if (accessToken) {
-        const user = await getMe(accessToken);
+        const { user } = await getMe();
         setEmail(user.email);
 
         console.log("User fetched:", user);

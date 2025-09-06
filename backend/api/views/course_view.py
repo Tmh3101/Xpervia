@@ -3,6 +3,7 @@ import logging
 import uuid
 from django.conf import settings
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.db.models import Count
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
 from api.pagination import CoursePagination
 from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Lesson, CourseContent, Enrollment, User
+from api.models import Course, Lesson, CourseContent, LessonCompletion, User
 from api.serializers import (
     CourseSerializer,
     CourseContentSerializer,
@@ -70,8 +71,7 @@ def get_course_content_lessons(course_content):
     chapters = course_content.chapters.all()
     chapters_data = []
     for chapter in chapters:
-        chapter_serializer = ChapterSerializer(chapter)
-        chapter_data = chapter_serializer.data.copy()
+        chapter_data = ChapterSerializer(chapter).data.copy()
         lessons = Lesson.objects.filter(chapter=chapter)
         lessons_data = SimpleLessonSerializer(lessons, many=True).data.copy()
         for lesson in lessons_data:
@@ -107,6 +107,13 @@ def add_file_url_for(lesson):
                 is_public=True
             )
 
+def get_course_progress(course_content, student_id):
+    total_lessons = course_content.lessons.count()
+    completed_lessons = LessonCompletion.objects.filter(
+        lesson__course_content=course_content, student_id=student_id
+    ).count()
+    return round(completed_lessons / total_lessons * 100, 2) if total_lessons > 0 else 0
+
 
 # Course Detail API to list all course
 class CourseListAPIView(generics.ListAPIView):
@@ -117,18 +124,22 @@ class CourseListAPIView(generics.ListAPIView):
     pagination_class = CoursePagination
 
     def get_queryset(self):
-        queryset = Course.objects.select_related("course_content").annotate(num_students=Count("enrollments", distinct=True)).order_by("-created_at")
+        queryset = Course.objects.select_related("course_content").annotate(
+            num_students=Count("enrollments", distinct=True),
+            num_favorites=Count("favorites", distinct=True)
+        ).order_by("-created_at")
+
         title = self.request.query_params.get("title")
         categories = self.request.query_params.getlist("categories") or self.request.query_params.get("categories")
         is_visible = self.request.query_params.get("is_visible")
+
         if title:
             queryset = queryset.filter(course_content__title__icontains=title)
         if categories:
-            # categories có thể là list hoặc chuỗi id
             if isinstance(categories, str):
                 categories = [categories]
             queryset = queryset.filter(course_content__categories__id__in=categories).distinct()
-        if is_visible is not None:
+        if is_visible is not None and self.request.user.role == 'admin':
             queryset = queryset.filter(course_content__is_visible=is_visible)
         return queryset
 
@@ -138,7 +149,6 @@ class CourseListAPIView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
 
         results = []
-
         for course in page:
             c_data = CourseSerializer(course).data
             cc = course.course_content
@@ -148,7 +158,8 @@ class CourseListAPIView(generics.ListAPIView):
             cc_data["chapters"] = chapters
             cc_data["lessons_without_chapter"] = lessons_without_chapter
             c_data["course_content"] = cc_data
-            c_data["num_students"] = course.num_students  # dùng annotate
+            c_data["progress"] = get_course_progress(cc, request.user.id)
+
             results.append(c_data)
 
         logger.info("Successfully listed all courses")
@@ -169,7 +180,10 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
             Course.objects
             .filter(course_content__teacher=teacher)
             .select_related("course_content")
-            .annotate(num_students=Count("enrollments", distinct=True))
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True)
+            )
             .order_by("-created_at")
         )
 
@@ -188,11 +202,102 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
             cc_data["chapters"] = chapters
             cc_data["lessons_without_chapter"] = lessons_without_chapter
             c_data["course_content"] = cc_data
-            c_data["num_students"] = course.num_students  # dùng annotate
             results.append(c_data)
 
         logger.info("Successfully listed teacher's courses")
         return self.get_paginated_response(results)
+
+
+# Enroled Course list for student without pagination
+class EnrolledCourseListAPIView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    authentication_classes = [SupabaseJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination
+
+    def get_queryset(self):
+        student = User.objects.get(id=self.request.user.id)
+        return (
+            Course.objects
+            .filter(enrollments__student=student)
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True)
+            )
+            .order_by("-created_at")
+        )
+
+    def list(self, request, *args, **kwargs):
+        logger.info(f"Listing enrolled courses for student ID: {request.user.id}")
+        queryset = self.get_queryset()
+
+        results = []
+        for course in queryset:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
+
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            c_data["progress"] = get_course_progress(cc, request.user.id)
+            results.append(c_data)
+
+        logger.info("Successfully listed enrolled courses")
+        return Response({
+            'success': True,
+            'message': 'Enrolled courses retrieved successfully',
+            'courses': results
+        }, status=status.HTTP_200_OK) 
+    
+
+# Favorited Course list of student without pagination
+class FavoritedCourseListAPIView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    authentication_classes = [SupabaseJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination
+
+    def get_queryset(self):
+        student = User.objects.get(id=self.request.user.id)
+        return (
+            Course.objects
+            .filter(favorites__student=student)
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True)
+            )
+            .order_by("-created_at")
+        )
+
+    def list(self, request, *args, **kwargs):
+        logger.info(f"Listing favorite courses for student ID: {request.user.id}")
+        queryset = self.get_queryset()
+
+        results = []
+        for course in queryset:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
+
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            c_data["num_students"] = course.num_students
+            c_data["num_favorites"] = course.num_favorites
+            c_data["progress"] = get_course_progress(cc, request.user.id)
+            results.append(c_data)
+
+        logger.info("Successfully listed favorite courses")
+        return Response({
+            'success': True,
+            'message': 'Favorite courses retrieved successfully',
+            'courses': results
+        }, status=status.HTTP_200_OK)
 
 
 # Course Detail API to create a course detail
@@ -263,6 +368,17 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
+    def get_object(self):
+        qs = (
+            Course.objects
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True),
+            )
+        )
+        return get_object_or_404(qs, **{self.lookup_field: self.kwargs[self.lookup_field]})
+
     def retrieve(self, request, *args, **kwargs):
         logger.info(f"Retrieving course with ID: {kwargs.get('id')}")
         try:
@@ -278,6 +394,8 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
 
         course_data = self.get_serializer(instance).data.copy()
         course_data['course_content'] = course_content_data
+        course_data['num_students'] = instance.num_students
+        course_data['num_favorites'] = instance.num_favorites
 
         logger.info("Course retrieved successfully")
         return Response({

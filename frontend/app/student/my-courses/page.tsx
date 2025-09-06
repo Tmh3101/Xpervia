@@ -5,18 +5,17 @@ import { useEffect, useState } from "react";
 import { Course } from "@/lib/types/course";
 import { Loading } from "@/components/Loading";
 import { CourseList } from "@/components/course/CourseList";
+import { getEnrolledCoursesApi } from "@/lib/api/course-api";
 
 export default function MyCourses() {
-  const { enrollments } = useAuth();
+  const { enrolledCourseIds } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        const enrolledCourses = enrollments.map(
-          (enrollment) => enrollment.course
-        );
+        const enrolledCourses = await getEnrolledCoursesApi();
         setEnrolledCourses(enrolledCourses);
       } catch (error) {
         console.error("Failed to fetch enrolled courses", error);
@@ -25,7 +24,7 @@ export default function MyCourses() {
       }
     };
     fetchEnrolledCourses();
-  }, [enrollments]);
+  }, [enrolledCourseIds]);
 
   if (loading) {
     return <Loading />;

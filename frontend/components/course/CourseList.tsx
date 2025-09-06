@@ -19,26 +19,11 @@ export const CourseList = ({
   handleEditCourse,
   isLoading = false,
 }: CourseListProps) => {
-  const { enrollments, fetchEnrollments, accessToken, user } = useAuth();
+  const { enrolledCourseIds } = useAuth();
 
-  useEffect(() => {
-    if (accessToken && user && user.role === "student") {
-      fetchEnrollments();
-    }
-  }, [accessToken]);
-
-  const checkCourseEnrollment = (courseId: number) => {
-    const enrolledCourseIds = enrollments.map(
-      (enrollment) => enrollment.course.id
-    );
+  const isEnrolled = (courseId: number) => {
+    if (!enrolledCourseIds) return false;
     return enrolledCourseIds.includes(courseId);
-  };
-
-  const getCourseProgress = (courseId: number) => {
-    const enrollment = enrollments.find(
-      (enrollment) => enrollment.course.id === courseId
-    );
-    return enrollment?.progress;
   };
 
   const getCourseCardProps = (course: Course) => {
@@ -54,9 +39,8 @@ export const CourseList = ({
 
     return {
       ...course,
-      mode: checkCourseEnrollment(course.id) ? "enrolled" : "student",
-      isEnrolled: checkCourseEnrollment(course.id),
-      progress: getCourseProgress(course.id) || 0,
+      mode: isEnrolled(course.id) ? "enrolled" : "student",
+      isEnrolled: isEnrolled(course.id),
     };
   };
 

@@ -12,9 +12,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import type { Course } from "@/lib/types/course";
-import type { Favorite } from "@/lib/types/favorite";
 import { CourseCategories } from "@/components/course/CourseCategories";
+import type { Course } from "@/lib/types/course";
 
 interface CourseCardProps extends Course {
   mode: string;
@@ -43,7 +42,7 @@ export function CourseCard({
   const currentPrice = price * (1 - discount);
   const isFree = price === 0 || currentPrice === 0;
   const hasStarted = new Date() >= new Date(regis_start_date);
-  const { favorites, toggleFavorite, user } = useAuth();
+  const { favoritedCourseIds, toggleFavorite, user } = useAuth();
 
   const handleClick = () => {
     if (mode === "teacher") {
@@ -55,9 +54,9 @@ export function CourseCard({
     }
   };
 
-  const isFavorite = (favorites as Favorite[] | undefined)?.some(
-    (f: Favorite) => f.course.id === id
-  );
+  const isFavorite = favoritedCourseIds
+    ? favoritedCourseIds.includes(id)
+    : false;
   return (
     <Card className="overflow-hidden rounded-2xl border-0 shadow-lg flex flex-col">
       <CardHeader className="p-0 relative">

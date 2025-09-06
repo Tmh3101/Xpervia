@@ -52,6 +52,16 @@ export const getCoursesByAdminApi = async (
   };
 };
 
+export const getEnrolledCoursesApi = async (): Promise<Course[]> => {
+  const response = await authAxios.get(`courses/student/enrolled/`);
+  return response.data.courses;
+};
+
+export const getFavoritedCoursesApi = async (): Promise<Course[]> => {
+  const response = await authAxios.get(`courses/student/favorited/`);
+  return response.data.courses;
+};
+
 export const getCourseDetailApi = async (id: number): Promise<Course> => {
   const response = await authAxios.get(`courses/${id}/`);
   return response.data.course;

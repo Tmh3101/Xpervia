@@ -3,31 +3,20 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { loginApi } from "@/lib/api/auth-api";
-import {
-  getEnrollmentsByStudentApi,
-  enrollCourseApi,
-} from "@/lib/api/enrollment-api";
-import {
-  getFavoritesByStudentApi,
-  favoriteCourseApi,
-  unfavoriteCourseApi,
-} from "@/lib/api/favorite-api";
+import { loginApi, getMe } from "@/lib/api/auth-api";
+import { enrollCourseApi } from "@/lib/api/enrollment-api";
+import { favoriteCourseApi, unfavoriteCourseApi } from "@/lib/api/favorite-api";
 import type { User } from "@/lib/types/user";
-import type { Enrollment } from "@/lib/types/enrollment";
-import type { Favorite } from "@/lib/types/favorite";
 
 interface AuthContextType {
   accessToken: string | null;
   refreshToken: string | null;
   user: User | null;
-  enrollments: Enrollment[];
-  favorites: Favorite[];
+  enrolledCourseIds: number[];
+  favoritedCourseIds: number[];
   setAccessToken: (token: string | null) => void;
   setRefreshToken: (token: string | null) => void;
   setNewUser: (user: User | null) => void;
-  fetchEnrollments: () => void;
-  fetchFavorites: () => void;
   login: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => void;
   enrollInCourse: (courseId: number) => boolean;
@@ -40,8 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<number[]>([]);
+  const [favoritedCourseIds, setFavoritedCourseIds] = useState<number[]>([]);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -70,7 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (isReload && JSON.parse(storedUser).role === "student") {
-        fetchFavorites();
+        getMe().then((data) => {
+          setEnrolledCourseIds(data.enrollment_ids);
+          setFavoritedCourseIds(data.favorite_ids);
+        });
       }
     }
   }, []);
@@ -111,17 +103,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: res.error };
     }
 
-    const { access_token, refresh_token, user } = res;
+    setAccessToken(res.access_token);
+    setRefreshToken(res.refresh_token);
+    setUser(res.user);
 
-    setAccessToken(access_token);
-    setRefreshToken(refresh_token);
-    setUser(user);
+    handleRoleBasedRedirect(res.user.role);
 
-    handleRoleBasedRedirect(user.role);
-
-    if (user.role === "student") {
-      await fetchEnrollments();
-      await fetchFavorites();
+    if (res.user.role === "student") {
+      setEnrolledCourseIds(res.enrollment_ids);
+      setFavoritedCourseIds(res.favorite_ids);
     }
 
     return { error: undefined };
@@ -131,67 +121,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
-    setEnrollments([]);
+    setEnrolledCourseIds([]);
+    setFavoritedCourseIds([]);
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     router.push("/");
   };
 
   const enrollInCourse = (courseId: number): boolean => {
     if (!user || user.role !== "student") return false;
-    enrollCourseApi(courseId)
-      .then(() => fetchEnrollments())
-      .catch(() => false);
+    enrollCourseApi(courseId);
+    setEnrolledCourseIds([...enrolledCourseIds, courseId]);
     return true;
-  };
-
-  const fetchEnrollments = async () => {
-    if (accessToken) {
-      try {
-        const enrollments = await getEnrollmentsByStudentApi();
-        setEnrollments(enrollments);
-      } catch (error) {
-        console.error("Lỗi khi gọi API enrollments:", error);
-      }
-    }
-  };
-
-  const fetchFavorites = async () => {
-    if (accessToken) {
-      try {
-        const favorites = await getFavoritesByStudentApi();
-        setFavorites(favorites);
-      } catch (error) {
-        console.error("Lỗi khi gọi API favorites:", error);
-      }
-    }
   };
 
   const toggleFavorite = (courseId: number): boolean => {
     if (!user || user.role !== "student") return false;
 
-    const favoriteToRemove = favorites.some(
-      (favorite) => favorite.course.id === courseId
+    const favoritedCourseIdToRemove = favoritedCourseIds.find(
+      (id) => id === courseId
     );
 
-    if (favoriteToRemove) {
-      const favoriteToRemove = favorites.find(
-        (favorite) => favorite.course.id === courseId
+    if (favoritedCourseIdToRemove) {
+      unfavoriteCourseApi(favoritedCourseIdToRemove);
+      const updatedFavorites = favoritedCourseIds.filter(
+        (id) => id !== favoritedCourseIdToRemove
       );
-      if (favoriteToRemove) {
-        unfavoriteCourseApi(favoriteToRemove.id)
-          .then(() => {
-            const updatedFavorites = favorites.filter(
-              (fav) => fav.id !== favoriteToRemove.id
-            );
-            setFavorites(updatedFavorites);
-          })
-          .catch(() => false);
-      }
+      setFavoritedCourseIds(updatedFavorites);
     } else {
-      favoriteCourseApi(courseId)
-        .then((newFavorite) => {
-          setFavorites([...favorites, newFavorite]);
-        })
-        .catch(() => false);
+      favoriteCourseApi(courseId);
+      setFavoritedCourseIds([...favoritedCourseIds, courseId]);
     }
     return true;
   };
@@ -211,13 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         refreshToken,
         user,
-        enrollments,
-        favorites,
+        enrolledCourseIds,
+        favoritedCourseIds,
         setNewUser,
         setAccessToken,
         setRefreshToken,
-        fetchEnrollments,
-        fetchFavorites,
         login,
         logout,
         enrollInCourse,

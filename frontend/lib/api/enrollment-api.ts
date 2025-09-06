@@ -18,7 +18,9 @@ export const getEnrollmentsByCourseApi = async (
   return response.data.enrollments;
 };
 
-export const enrollCourseApi = async (courseId: number): Promise<boolean> => {
+export const enrollCourseApi = async (
+  courseId: number
+): Promise<Enrollment> => {
   const response = await authAxios.post(`courses/${courseId}/enroll/`, {});
-  return response.data.success;
+  return response.data.enrollment;
 };

@@ -25,7 +25,9 @@ export const favoriteCourseApi = async (
   return response.data.favorite;
 };
 
-export const unfavoriteCourseApi = async (id: number): Promise<boolean> => {
-  const response = await authAxios.delete(`favorites/${id}/delete/`);
+export const unfavoriteCourseApi = async (
+  courseId: number
+): Promise<boolean> => {
+  const response = await authAxios.delete(`favorites/${courseId}/delete/`);
   return response.data.success;
 };

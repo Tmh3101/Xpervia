@@ -65,7 +65,9 @@ def login_view(request):
         "message": "Login successful",
         "access_token": result['access_token'],
         "refresh_token": result['refresh_token'],
-        "user": UserSerializer(result['user']).data
+        "user": UserSerializer(result['user']).data,
+        "enrollment_ids": [enrollment.course_id for enrollment in result['user'].enrollments.all()],
+        "favorite_ids": [favorite.course_id for favorite in result['user'].favorites.all()]
     }, status=status.HTTP_200_OK)
 
 
@@ -137,7 +139,7 @@ def reset_password_view(request):
 @permission_classes([IsAuthenticated])
 def get_current_user(request):
     try:
-        user = request.user
+        user = User.objects.get(id=request.user.id)
         print(f"Current user: {user}")
     except Exception as e:
         logger.error(f"Error retrieving user info: {e}")
@@ -152,5 +154,7 @@ def get_current_user(request):
         "success": True,
         "message": "User info retrieved successfully",
         "user": UserSerializer(user).data,
+        "enrollment_ids": [enrollment.course_id for enrollment in user.enrollments.all()],
+        "favorite_ids": [favorite.course_id for favorite in user.favorites.all()]
     }, status=200)
 
