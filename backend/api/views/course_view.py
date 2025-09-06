@@ -120,6 +120,7 @@ class CourseListAPIView(generics.ListAPIView):
         queryset = Course.objects.select_related("course_content").annotate(num_students=Count("enrollments", distinct=True)).order_by("-created_at")
         title = self.request.query_params.get("title")
         categories = self.request.query_params.getlist("categories") or self.request.query_params.get("categories")
+        is_visible = self.request.query_params.get("is_visible")
         if title:
             queryset = queryset.filter(course_content__title__icontains=title)
         if categories:
@@ -127,6 +128,8 @@ class CourseListAPIView(generics.ListAPIView):
             if isinstance(categories, str):
                 categories = [categories]
             queryset = queryset.filter(course_content__categories__id__in=categories).distinct()
+        if is_visible is not None:
+            queryset = queryset.filter(course_content__is_visible=is_visible)
         return queryset
 
     def list(self, request, *args, **kwargs):

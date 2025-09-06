@@ -31,12 +31,14 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 export default function RevenueStatistics() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [totalCourses, setTotalCourses] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
-      const courseData = await getCoursesApi();
-      setCourses(courseData);
+      const { count, results } = await getCoursesApi();
       const enrollmentData = await getEnrollmentsApi();
+      setCourses(results);
+      setTotalCourses(count);
       setEnrollments(enrollmentData);
     };
     fetchData();
@@ -46,8 +48,6 @@ export default function RevenueStatistics() {
     return <Loading />;
   }
 
-  // Calculate total courses, total revenue, and average revenue per course
-  const totalCourses = courses.length;
   const totalRevenue = enrollments.reduce((res, enrollment) => {
     if (enrollment.payment) {
       return res + enrollment.payment.amount;

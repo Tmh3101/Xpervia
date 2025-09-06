@@ -30,9 +30,26 @@ export const getCoursesApi = async (
   };
 };
 
-export const getCoursesByAdminApi = async (): Promise<Course[]> => {
-  const response = await authAxios.get(`courses/`);
-  return response.data.courses;
+export const getCoursesByAdminApi = async (
+  page: number,
+  title?: string,
+  is_visible?: boolean
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const response = await authAxios.get(`courses/`, {
+    params: { page, title, is_visible },
+  });
+  const { count, next, previous, results } = response.data;
+  return {
+    count,
+    next,
+    previous,
+    results: results.filter((course: Course) => course.is_visible),
+  };
 };
 
 export const getCourseDetailApi = async (id: number): Promise<Course> => {

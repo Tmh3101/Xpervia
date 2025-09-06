@@ -14,13 +14,15 @@ import userAvatar from "@/public/user-avatar.svg";
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [totalCourses, setTotalCourses] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       const users = await getUsersApi();
       setUsers(users);
-      const courses = await getCoursesByAdminApi();
-      setCourses(courses);
+      const response = await getCoursesByAdminApi();
+      setCourses(response.results);
+      setTotalCourses(response.count);
     };
     fetchData();
   }, []);
@@ -32,7 +34,6 @@ export default function AdminDashboard() {
   const totalUsers = users.filter((user) => user.role !== "admin").length;
   const totalStudents = users.filter((user) => user.role === "student").length;
   const totalTeachers = users.filter((user) => user.role === "teacher").length;
-  const totalCourses = courses.length;
 
   const getRecentUsers = (days: number) => {
     const now = new Date();
