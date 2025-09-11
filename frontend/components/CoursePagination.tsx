@@ -65,7 +65,7 @@ export const CoursePagination: React.FC<CoursePaginationProps> = ({
                 e.preventDefault();
                 if (currentPage > 1) onPageChange(currentPage - 1);
               }}
-              className={`text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${
+              className={`text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-full p-3 ${
                 currentPage === 1 ? "pointer-events-none opacity-50" : ""
               }`}
             />
@@ -78,6 +78,11 @@ export const CoursePagination: React.FC<CoursePaginationProps> = ({
                 <PaginationLink
                   href="#"
                   isActive={page === currentPage}
+                  className={`rounded-full ${
+                    page === currentPage
+                      ? "rounded-full shadow-lg bg-white hover:bg-white transition-all border border-gray-200 text-primary hover:text-primary"
+                      : ""
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(Number(page));
@@ -95,7 +100,7 @@ export const CoursePagination: React.FC<CoursePaginationProps> = ({
                 e.preventDefault();
                 if (currentPage < totalPages) onPageChange(currentPage + 1);
               }}
-              className={`text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${
+              className={`text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-full p-3 ${
                 currentPage === totalPages
                   ? "pointer-events-none opacity-50"
                   : ""

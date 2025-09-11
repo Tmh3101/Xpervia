@@ -7,7 +7,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { CourseList } from "@/components/course/CourseList";
 import { getCoursesApi } from "@/lib/api/course-api";
 import { CoursePagination } from "@/components/CoursePagination";
-import { Loading } from "@/components/Loading";
 import type { Course } from "@/lib/types/course";
 
 export default function Home() {

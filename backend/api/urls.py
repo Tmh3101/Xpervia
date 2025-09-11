@@ -11,7 +11,8 @@ from api.views import (
     lesson_completion_view,
     course_view,
     auth_view,
-    favorite_view
+    favorite_view,
+    reco_view
 )
 
 urlpatterns = [
@@ -113,4 +114,7 @@ urlpatterns = [
     path('favorites/create/<int:course_id>/', favorite_view.FavoriteCreateAPIView.as_view(), name='favorite-create'),
     path('favorites/<int:id>/', favorite_view.FavoriteRetrieveAPIView.as_view(), name='favorite-detail'),
     path('favorites/<int:course_id>/delete/', favorite_view.FavoriteDeleteAPIView.as_view(), name='favorite-delete'),
+
+    #=== Recommendation URLs ===#
+    path('reco/courses/similar/<int:course_id>/', reco_view.SimilarCourseListAPIView.as_view(), name='similar-course-list'),
 ]

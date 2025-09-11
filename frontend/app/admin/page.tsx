@@ -59,11 +59,7 @@ export default function AdminDashboard() {
   const recentCourses = getRecentCourses(7);
 
   const getNumLessons = (course: Course) => {
-    const lessons = course.course_content.chapters
-      .map((chapter) => chapter.lessons)
-      .flat()
-      .concat(course.course_content.lessons_without_chapter);
-    return lessons.length;
+    return course.course_content?.num_lessons || 0;
   };
 
   const truncateDescription = (description: string) => {

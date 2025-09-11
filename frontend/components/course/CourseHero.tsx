@@ -80,11 +80,11 @@ export function CourseHero({
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl">
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
+                <div className="max-w-lg">
                   <div className="mb-2 flex flex-wrap gap-1">
                     <CourseCategories categories={categories} />
                   </div>
-                  <h1 className="text-2xl text-destructive font-bold mb-2">
+                  <h1 className="text-2xl text-destructive font-bold mb-2 max-w-3xl">
                     {title}
                   </h1>
                   <div className="flex items-center mb-2 mt-2">

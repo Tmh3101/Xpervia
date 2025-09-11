@@ -24,6 +24,7 @@ export interface CourseContent {
   thumbnail_url: string;
   chapters: Chapter[];
   lessons_without_chapter: Lesson[];
+  num_lessons?: number;
 }
 
 export interface CourseContentWithDetailLessons extends CourseContent {

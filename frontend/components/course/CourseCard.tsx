@@ -58,7 +58,7 @@ export function CourseCard({
     ? favoritedCourseIds.includes(id)
     : false;
   return (
-    <Card className="overflow-hidden rounded-2xl border-0 shadow-lg flex flex-col">
+    <Card className="overflow-hidden rounded-2xl border-0 shadow-lg flex flex-col h-full">
       <CardHeader className="p-0 relative">
         <div className="w-full aspect-video overflow-hidden">
           <Image
@@ -172,7 +172,7 @@ export function CourseCard({
                           </span>
                         </div>
                       )}
-                      <span className="text-2xl text-destructive font-bold">
+                      <span className="text-xl text-destructive font-bold">
                         {currentPrice.toLocaleString("vi-VN")} ₫
                       </span>
                     </>

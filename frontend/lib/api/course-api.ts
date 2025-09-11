@@ -31,7 +31,7 @@ export const getCoursesApi = async (
 };
 
 export const getCoursesByAdminApi = async (
-  page: number,
+  page: number = 1,
   title?: string,
   is_visible?: boolean
 ): Promise<{
@@ -198,4 +198,12 @@ export const showCourseApi = async (id: number): Promise<Course> => {
   };
   const response = await authAxios.put(`courses/${id}/show/`, {}, { headers });
   return response.data.course;
+};
+
+// --- Recommended Courses API ---
+export const getSimilarCoursesApi = async (
+  course_id: number
+): Promise<Course[]> => {
+  const response = await authAxios.get(`reco/courses/similar/${course_id}/`);
+  return response.data.results;
 };
