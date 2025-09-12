@@ -131,13 +131,18 @@ class UserUpdateAPIView(generics.UpdateAPIView):
         
         try:
             logger.info("Updating user metadata in supabase auth")
-            supabase.auth.admin.update_user_by_id(instance.id, {
+            update_data = {
+                "email": request.data.get("email"),
+                "password": request.data.get("password"),
                 "user_metadata": {
                     "first_name": request.data.get("first_name"),
                     "last_name": request.data.get("last_name"),
                     "role": request.data.get("role")
                 }
-            })
+            }
+            # Remove None values from update_data
+            update_data = {k: v for k, v in update_data.items() if v is not None}
+            supabase.auth.admin.update_user_by_id(instance.id, update_data)
         except Exception as e:
             logger.error(f"Error updating user metadata in supabase auth: {str(e)}")
             raise ValidationError(f'User not updated in supabase: {str(e)}')

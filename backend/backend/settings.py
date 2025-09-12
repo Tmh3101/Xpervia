@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "api",
     "drf_yasg", # Swagger
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -110,6 +111,10 @@ DATABASES = {
         },
     }
 }
+
+# Cron job settings
+CELERY_BROKER_URL = "redis://localhost:6379/0"  # hoặc RabbitMQ
+CELERY_RESULT_BACKEND = "django-db"  # hoặc Redis
 
 # AUTH_USER_MODEL = 'api.User'
 

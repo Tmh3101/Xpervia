@@ -18,7 +18,7 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [courseDetailData, setCourseDetailData] = useState<Course | null>(null);
-  const [firstLessonId, setFirstLessonId] = useState<number | null>(null);
+  const [firstLessonId, setFirstLessonId] = useState<string | null>(null);
   const [similarCourses, setSimilarCourses] = useState<Course[]>([]);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function CourseDetailPage() {
         const lessons = courseDetail.course_content.chapters
           .flatMap((chapter: Chapter) => chapter.lessons)
           .concat(courseDetail.course_content.lessons_without_chapter);
-        setFirstLessonId(parseInt(lessons[0]?.id + "") || null);
+        setFirstLessonId(lessons[0]?.id + "" || null);
         // Lấy khóa học tương đồng
         const similar = await getSimilarCoursesApi(courseId);
         setSimilarCourses(similar);

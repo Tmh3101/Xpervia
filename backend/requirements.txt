@@ -10,3 +10,4 @@ underthesea==6.8.4
 scikit-learn==1.7.1
 scipy==1.16.1
 joblib==1.5.2
+django-celery-beat==2.8.1

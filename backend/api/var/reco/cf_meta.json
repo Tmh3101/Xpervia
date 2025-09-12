@@ -1,0 +1,9 @@
+{
+  "last_build_ts": "2025-09-12T16:10:01.715561+00:00",
+  "mode": "full",
+  "k_neighbors": 200,
+  "use_bm25": false,
+  "shrink_beta": 50.0,
+  "min_sim": 0.0,
+  "users_total": 5
+}
