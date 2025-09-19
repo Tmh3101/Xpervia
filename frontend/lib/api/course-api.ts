@@ -112,7 +112,7 @@ export const createCourseApi = async (
   };
 
   let formData = new FormData();
-  formData.append("thumbnail", data.thumbnail);
+  if (data.thumbnail) formData.append("thumbnail", data.thumbnail);
   formData.append("title", data.title);
   formData.append("description", data.description);
   formData.append("price", data.price.toString());
@@ -206,4 +206,23 @@ export const getSimilarCoursesApi = async (
 ): Promise<Course[]> => {
   const response = await authAxios.get(`reco/courses/similar/${course_id}/`);
   return response.data.results;
+};
+
+export const getHomepageRecommendedCoursesApi = async (
+  page = 1,
+  title?: string,
+  categories?: number | number[]
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const params: any = { page };
+  if (title) params.title = title;
+  if (categories) params.categories = categories;
+  const response = await authAxios.get(`reco/courses/home/`, {
+    params,
+  });
+  return response.data;
 };

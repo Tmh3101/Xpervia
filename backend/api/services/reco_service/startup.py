@@ -122,7 +122,6 @@ def ensure_tfidf_artifacts(force: bool = False) -> dict | None:
         return None
     
 def ensure_cf_artifacts(
-    *,
     force: bool = False,
     mode: str = "full",          # "full" | "streaming"
     use_bm25: bool = False,
@@ -172,8 +171,6 @@ def ensure_cf_artifacts(
         return None
 
 def maybe_refresh_cf_artifacts_on_new_events(
-    *,
-    minutes: int = 10,
     mode: str = "streaming",
     use_bm25: bool = False,
     shrink_beta: float | None = 50.0,

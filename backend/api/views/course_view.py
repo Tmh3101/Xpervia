@@ -55,7 +55,7 @@ class CourseListAPIView(generics.ListAPIView):
                 categories = [categories]
             queryset = queryset.filter(course_content__categories__id__in=categories).distinct()
         if is_visible is not None and self.request.user.role == 'admin':
-            queryset = queryset.filter(course_content__is_visible=is_visible)
+            queryset = queryset.filter(is_visible=is_visible)
         return queryset
 
     def list(self, request, *args, **kwargs):

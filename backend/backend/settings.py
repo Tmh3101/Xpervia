@@ -43,6 +43,11 @@ SUPABASE_STORAGE_PRIVATE_BUCKET=config('SUPABASE_STORAGE_PRIVATE_BUCKET')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
 
+# Celery configuration
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/1"  # nếu dùng Redis làm backend
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
 

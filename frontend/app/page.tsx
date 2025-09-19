@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { HeroSection } from "@/components/HeroSection";
 import { SearchBar } from "@/components/SearchBar";
 import { CourseList } from "@/components/course/CourseList";
-import { getCoursesApi } from "@/lib/api/course-api";
+import { getHomepageRecommendedCoursesApi } from "@/lib/api/course-api";
 import { CoursePagination } from "@/components/CoursePagination";
 import type { Course } from "@/lib/types/course";
 
@@ -21,13 +21,15 @@ export default function Home() {
   useEffect(() => {
     if (user && user.role === "teacher") return;
     setIsLoading(true);
-    getCoursesApi(page, searchQuery, selectedCategory || undefined).then(
-      (data) => {
-        setCount(data.count);
-        setFilteredCourses(data.results);
-        setIsLoading(false);
-      }
-    );
+    getHomepageRecommendedCoursesApi(
+      page,
+      searchQuery,
+      selectedCategory || undefined
+    ).then((data) => {
+      setCount(data.count);
+      setFilteredCourses(data.results);
+      setIsLoading(false);
+    });
   }, [user, page, searchQuery, selectedCategory]);
 
   const handleCategorySelect = (categoryId: number | null) => {

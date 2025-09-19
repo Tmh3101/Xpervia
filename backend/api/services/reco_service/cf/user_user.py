@@ -29,7 +29,6 @@ def compute_user_user_cosine(
     return U_mat 
 
 # Đếm số item 'chung' giữa các user (U × U), dùng ma trận nhị phân:
-#   B = binarize(R); C = B @ B.T
 def _pairwise_common_counts(R: sparse.csr_matrix) -> sparse.csr_matrix:
     if not sparse.isspmatrix_csr(R):
         R = R.tocsr()

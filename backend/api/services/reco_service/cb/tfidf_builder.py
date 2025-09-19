@@ -45,7 +45,7 @@ def _build_corpus() -> Tuple[List[int], List[str]]:
 def _build_vectorizer() -> TfidfVectorizer:
     return TfidfVectorizer(
         analyzer="word",
-        ngram_range=WORD_NGRAM or (1, 2),
+        ngram_range=WORD_NGRAM or (1, 2), # unigrams + bigrams
         min_df=TFIDF_MIN_DF or 1, # loại bỏ từ xuất hiện dưới 1% văn bản
         max_df=0.95, # loại bỏ từ xuất hiện trên 95% văn bản
         max_features=TFIDF_MAX_FEATURES or 50000, # giới hạn số từ đặc trưng (độ dài vector)

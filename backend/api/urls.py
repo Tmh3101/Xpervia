@@ -117,4 +117,5 @@ urlpatterns = [
 
     #=== Recommendation URLs ===#
     path('reco/courses/similar/<int:course_id>/', reco_view.SimilarCourseListAPIView.as_view(), name='similar-course-list'),
+    path('reco/courses/home/', reco_view.HomeRecoListAPIView.as_view(), name='recommend-home'),
 ]

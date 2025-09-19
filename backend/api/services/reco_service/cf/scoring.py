@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List, Tuple, Optional, Iterable
+from typing import Dict, Optional, Iterable
 from collections import defaultdict
 from api.services.reco_service.data_access.interactions import fetch_user_events
 from api.services.reco_service.cf.weighting import event_weight
@@ -51,7 +51,7 @@ def _min_max_normalize(scores: Dict[int, float]) -> Dict[int, float]:
 def collab_scores_for_user(
     user_id: str,
     *,
-    artifact_dir: str = "var/reco",
+    artifact_dir: str = "api/var/reco",
     k_neighbors: int = 200,
     max_items_per_neighbor: int = 500,
     candidates: Optional[Iterable[int]] = None,
@@ -117,14 +117,3 @@ def collab_scores_for_user(
         scores = {k: float(v) for k, v in scores.items()}
 
     return scores
-
-# Trả top-k (course_id, score) theo CF user-based.
-def top_k_collab_for_user(
-    user_id: str,
-    k: int = 12,
-    **kwargs,
-) -> List[Tuple[int, float]]:
-    scores = collab_scores_for_user(user_id, **kwargs)
-    if not scores:
-        return []
-    return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:k]

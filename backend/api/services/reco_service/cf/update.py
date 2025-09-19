@@ -24,7 +24,7 @@ khởi tạo/làm mới artifacts CF.
 # Trả về dict tóm tắt thông tin quá trình build.
 def rebuild_user_neighbors_full(
     *,
-    artifact_dir: str = "var/reco",
+    artifact_dir: str = "api/var/reco",
     use_bm25: bool = False,
     bm25_k1: float = 1.2,
     bm25_b: float = 0.75,
@@ -76,7 +76,7 @@ def rebuild_user_neighbors_full(
 # Trả về dict tóm tắt thông tin quá trình build.
 def rebuild_user_neighbors_streaming(
     *,
-    artifact_dir: str = "var/reco",
+    artifact_dir: str = "api/var/reco",
     use_bm25: bool = False,
     bm25_k1: float = 1.2,
     bm25_b: float = 0.75,

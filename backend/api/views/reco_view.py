@@ -5,10 +5,16 @@ from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from api.pagination import CoursePagination
 from api.models import Course
 from api.serializers import CourseSerializer
 from api.middlewares.authentication import SupabaseJWTAuthentication
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from api.services.reco_service.cb.similarity import top_k_similar_from_course
+from api.services.reco_service.hybrid.service import hybrid_recommend_home
+from api.services.reco_service.data_access.courses import fetch_popular_course_ids
+from api.services.reco_service.config import ALPHA_HOME, CACHE_TTL
 
 logger = logging.getLogger(__name__)
 
@@ -103,3 +109,86 @@ class SimilarCourseListAPIView(generics.ListAPIView):
             "message": "Recommended courses fetched successfully.",
             "results": results
         })
+
+# Home Recommendations
+@method_decorator(cache_page(CACHE_TTL), name="dispatch")
+class HomeRecoListAPIView(generics.ListAPIView):
+    authentication_classes = [SupabaseJWTAuthentication]
+    permission_classes = [AllowAny]
+    serializer_class = CourseSerializer
+    pagination_class = CoursePagination
+
+    # ------------ helpers ------------
+    def _parse_float(self, value: str | None, default: float) -> float:
+        if not value:
+            return default
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    def list(self, request, *args, **kwargs):
+        alpha = self._parse_float(request.query_params.get("alpha"), ALPHA_HOME)
+        title = self.request.query_params.get("title")
+        categories = self.request.query_params.getlist("categories") or self.request.query_params.get("categories")
+        is_visible = self.request.query_params.get("is_visible")
+
+        # Guest → Popular fallback
+        if not getattr(request.user, "is_authenticated", False):
+            logger.info(f"[reco_home] guest request")
+            # Lấy danh sách course phổ biến nhất
+            popular = fetch_popular_course_ids(limit=-1)
+            payload = [{"course_id": cid, "score": score} for (cid, score) in popular]
+        else:
+            user_id = str(request.user.id)
+            logger.info(f"[reco_home] user={user_id}, alpha={alpha}")
+            payload = hybrid_recommend_home(
+                user_id=user_id,
+                alpha=alpha,
+            )
+
+        if not payload:
+            return Response({
+                "success": True,
+                "message": "No recommendations available.",
+                "results": []
+            })
+
+        # Lấy IDs theo thứ tự đã xếp hạng
+        ordered_ids = [p["course_id"] for p in payload]
+
+        # Query Course + annotate để đồng nhất format
+        qs = (
+            Course.objects.filter(id__in=ordered_ids)
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True),
+            )
+        )
+
+        # Áp filter bổ sung nếu có
+        if title:
+            qs = qs.filter(course_content__title__icontains=title)
+        if categories:
+            if isinstance(categories, str):
+                categories = [categories]
+            qs = qs.filter(course_content__categories__id__in=categories).distinct()
+        if is_visible is not None and self.request.user.role == 'admin':
+            qs = qs.filter(is_visible=is_visible)
+
+        # Map id -> Course & giữ thứ tự theo payload
+        course_by_id: Dict[int, Course] = {c.id: c for c in qs}
+        ordered_courses: List[Course] = [course_by_id[cid] for cid in ordered_ids if cid in course_by_id]
+
+        # Pagination thủ công theo list đã sắp xếp
+        page = self.paginate_queryset(ordered_courses)
+        results = []
+        for course in page:
+            data = CourseSerializer(course).data
+            data["num_students"] = course.num_students
+            data["num_favorites"] = course.num_favorites
+            results.append(data)
+
+        logger.info(f"[reco_home] returned {len(results)} items")
+        return self.get_paginated_response(results)
