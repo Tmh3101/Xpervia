@@ -5,7 +5,7 @@ from .user_model import User
 
 class LessonCompletion(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='completions')
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='completions')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_completions', default=None)
     completed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 from api.exceptions.custom_exceptions import Existed
 from api.models import LessonCompletion, Course
 from api.serializers import LessonCompletionSerializer
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class LessonCompletionListAPIView(generics.ListAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin | IsCourseOwner]
 
     def list(self, request, *args, **kwargs):
@@ -36,19 +36,18 @@ class LessonCompletionListAPIView(generics.ListAPIView):
 class LessonCompletionListByStudentAPIView(generics.ListAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsStudent]
 
     def list(self, request, *args, **kwargs):
         logger.info(f"Listing lesson completions for student ID: {request.user.id} and course ID: {self.kwargs.get('course_id')}")
-        student_id = request.user.id
         course_id = self.kwargs.get('course_id')
         course = Course.objects.filter(id=course_id).first()
         if not course:
             raise NotFound('Course not found')
 
         course_content = course.course_content
-        queryset = self.get_queryset().filter(student_id=student_id, lesson__course_content=course_content)
+        queryset = self.get_queryset().filter(student_id=request.user.id, lesson__course_content=course_content)
         serializer = LessonCompletionSerializer(queryset, many=True)
         logger.info("Successfully listed lesson completions for student")
         return Response({
@@ -62,43 +61,49 @@ class LessonCompletionListByStudentAPIView(generics.ListAPIView):
 class LessonCompletionCreateAPIView(generics.CreateAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled]
 
     def create(self, request, *args, **kwargs):
         logger.info(f"Creating lesson completion for lesson ID: {self.kwargs.get('lesson_id')} by student ID: {request.user.id}")
+
+        student_id = request.user.id
         lesson_id = self.kwargs.get('lesson_id')
-        lesson_completion = LessonCompletion.objects.filter(student=request.user, lesson_id=lesson_id).first()
-        if lesson_completion:
+
+        if LessonCompletion.objects.filter(student_id=student_id, lesson_id=lesson_id).exists():
             raise Existed('Lesson completion already exists')
-        request.data['student_id'] = request.user.id
+        
+        request.data['student_id'] = student_id
         request.data['lesson_id'] = lesson_id
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             raise ValidationError(f'Lesson completion not created: {serializer.errors}')
+        
         self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
         logger.info("Lesson completion created successfully")
         return Response({
             'success': True,
             'message': 'Lesson completion has been created successfully',
             'data': serializer.data
-        }, status=status.HTTP_201_CREATED)
-    
+        }, status=status.HTTP_201_CREATED, headers=headers)
+
 
 # LessonCompletion API to delete a lesson completion
 class LessonCompletionDeleteAPIView(generics.DestroyAPIView):
     queryset = LessonCompletion.objects.all()
     serializer_class = LessonCompletionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled]
 
     def destroy(self, request, *args, **kwargs):
         logger.info(f"Deleting lesson completion for lesson ID: {self.kwargs.get('lesson_id')} by student ID: {request.user.id}")
         lesson_id = self.kwargs.get('lesson_id')
-        lesson_completion = LessonCompletion.objects.filter(student=request.user, lesson_id=lesson_id).first()
+        lesson_completion = LessonCompletion.objects.filter(student_id=request.user.id, lesson_id=lesson_id).first()
         if not lesson_completion:
             raise NotFound('Lesson completion not found')
+        
         self.perform_destroy(lesson_completion)
         logger.info("Lesson completion deleted successfully")
         return Response({

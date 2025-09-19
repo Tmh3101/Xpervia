@@ -1,159 +1,228 @@
-import authAxios from './axios-auth'
-import {
-    Course,
-    CourseWithDetailLessons,
-    CreateCourseRequest
-} from '@/lib/types/course'
-import { Category } from '@/lib/types/course-content'
+import authAxios from "./axios-auth";
+import type {
+  Course,
+  CourseWithDetailLessons,
+  CreateCourseRequest,
+} from "@/lib/types/course";
 
-export const getCoursesApi = async () : Promise<Course[]> => {
-    const response = await authAxios.get(`courses/`)
-    return response.data.courses.filter((course: Course) => course.is_visible)
-}
+export const getCoursesApi = async (
+  page = 1,
+  title?: string,
+  categories?: number | number[]
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const params: any = { page };
+  if (title) params.title = title;
+  if (categories) params.categories = categories;
+  const response = await authAxios.get(`courses/`, {
+    params,
+  });
+  const { count, next, previous, results } = response.data;
+  return {
+    count,
+    next,
+    previous,
+    results: results.filter((course: Course) => course.is_visible),
+  };
+};
 
-export const getCoursesByAdminApi = async () : Promise<Course[]> => {
-    const response = await authAxios.get(`courses/`)
-    return response.data.courses
-}
+export const getCoursesByAdminApi = async (
+  page: number = 1,
+  title?: string,
+  is_visible?: boolean
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const response = await authAxios.get(`courses/`, {
+    params: { page, title, is_visible },
+  });
+  const { count, next, previous, results } = response.data;
+  return {
+    count,
+    next,
+    previous,
+    results: results.filter((course: Course) => course.is_visible),
+  };
+};
 
-export const getCourseDetailApi = async (id: number) : Promise<Course> => {
-    const response = await authAxios.get(
-        `courses/${id}/`
-    )
-    return response.data.course
-}
+export const getEnrolledCoursesApi = async (): Promise<Course[]> => {
+  const response = await authAxios.get(`courses/student/enrolled/`);
+  return response.data.courses;
+};
 
-export const getCourseByTeacherApi = async () : Promise<Course[]> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
-    }
-    const response = await authAxios.get(
-        `courses/teacher/`,
-        { headers }
-    )
-    return response.data.courses
-}
+export const getFavoritedCoursesApi = async (): Promise<Course[]> => {
+  const response = await authAxios.get(`courses/student/favorited/`);
+  return response.data.courses;
+};
 
-export const getCourseWithDetailLessonsApi = async (id: number) : Promise<CourseWithDetailLessons> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
-    }
-    const response = await authAxios.get(
-        `courses/${id}/detail-lessons/`,
-        { headers }
-    )
-    return response.data.course
-}
+export const getCourseDetailApi = async (id: number): Promise<Course> => {
+  const response = await authAxios.get(`courses/${id}/`);
+  return response.data.course;
+};
 
-export const createCourseApi = async (data: CreateCourseRequest) : Promise<Course> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
-        'Content-Type': 'multipart/form-data'
-    }
+export const getCourseByTeacherApi = async (
+  page = 1
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  };
+  const response = await authAxios.get(`courses/teacher/`, {
+    headers,
+    params: { page },
+  });
+  const { count, next, previous, results } = response.data;
+  return {
+    count,
+    next,
+    previous,
+    results,
+  };
+};
 
-    let formData = new FormData()
-    formData.append('thumbnail', data.thumbnail)
-    formData.append('title', data.title)
-    formData.append('description', data.description)
-    formData.append('price', data.price.toString())
-    formData.append('start_date', data.start_date || '')
-    formData.append('regis_start_date', data.regis_start_date || '')
-    formData.append('regis_end_date', data.regis_end_date || '')
-    formData.append('max_students', data.max_students.toString())
-    formData.append('is_visible', data.is_visible.toString())
-    formData.append('categories', JSON.stringify(data.categories))
-    formData.append('discount', data.discount?.toString() || '')
- 
-    const response = await authAxios.post(
-        `courses/create/`,
-        formData,
-        { headers }
-    )
-    return response.data.course
-}
+export const getCourseWithDetailLessonsApi = async (
+  courseId: number
+): Promise<CourseWithDetailLessons> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  };
+  const response = await authAxios.get(`courses/${courseId}/detail-lessons/`, {
+    headers,
+  });
+  return response.data.course;
+};
 
-export const updateCourseApi = async (id: number, data: CreateCourseRequest) : Promise<Course> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
-        'Content-Type': 'multipart/form-data'
-    }
+export const createCourseApi = async (
+  data: CreateCourseRequest
+): Promise<Course> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    "Content-Type": "multipart/form-data",
+  };
 
-    let formData = new FormData()
+  let formData = new FormData();
+  if (data.thumbnail) formData.append("thumbnail", data.thumbnail);
+  formData.append("title", data.title);
+  formData.append("description", data.description);
+  formData.append("price", data.price.toString());
+  formData.append("start_date", data.start_date || "");
+  formData.append("regis_start_date", data.regis_start_date || "");
+  formData.append("regis_end_date", data.regis_end_date || "");
+  formData.append("max_students", data.max_students.toString());
+  formData.append("is_visible", data.is_visible.toString());
+  formData.append("categories", JSON.stringify(data.categories));
+  formData.append("discount", data.discount?.toString() || "");
 
-    if (data.thumbnail) {
-        formData.append('thumbnail', data.thumbnail)
-    }
+  const response = await authAxios.post(`courses/create/`, formData, {
+    headers,
+  });
 
-    formData.append('title', data.title)
-    formData.append('description', data.description)
-    formData.append('price', data.price.toString())
+  return response.data.course;
+};
 
-    if (data.start_date){
-        formData.append('start_date', data.start_date)
-    }
+export const updateCourseApi = async (
+  id: number,
+  data: CreateCourseRequest
+): Promise<Course> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    "Content-Type": "multipart/form-data",
+  };
 
-    if (data.regis_start_date){
-        formData.append('regis_start_date', data.regis_start_date)
-    }
+  let formData = new FormData();
 
-    if (data.regis_end_date){
-        formData.append('regis_end_date', data.regis_end_date)
-    }
+  if (data.thumbnail) {
+    formData.append("thumbnail", data.thumbnail);
+  }
 
-    formData.append('max_students', data.max_students.toString())
-    formData.append('is_visible', data.is_visible.toString())
-    formData.append('categories', JSON.stringify(data.categories))
+  formData.append("title", data.title);
+  formData.append("description", data.description);
+  formData.append("price", data.price.toString());
 
-    if (data.discount) {
-        formData.append('discount', data.discount.toString())
-    }
+  if (data.start_date) {
+    formData.append("start_date", data.start_date);
+  }
 
-    const response = await authAxios.put(
-        `courses/${id}/update/`,
-        formData,
-        { headers }
-    )
-    return response.data.course
-}
+  if (data.regis_start_date) {
+    formData.append("regis_start_date", data.regis_start_date);
+  }
 
-export const deleteCourseApi = async (id: number) : Promise<boolean> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
-    }
-    const response = await authAxios.delete(
-        `courses/${id}/delete/`,
-        { headers }
-    )
-    return response.data.success
-}
+  if (data.regis_end_date) {
+    formData.append("regis_end_date", data.regis_end_date);
+  }
 
-export const getCategoriesApi = async () : Promise<Category[]> => {
-    const response = await authAxios.get(
-        `courses/categories/`,
-    )
-    return response.data.categories
-}
+  formData.append("max_students", data.max_students.toString());
+  formData.append("is_visible", data.is_visible.toString());
+  formData.append("categories", JSON.stringify(data.categories));
 
-export const hideCourseApi = async (id: number) : Promise<Course> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
-    }
-    const response = await authAxios.put(
-        `courses/${id}/hide/`,
-        {},
-        { headers }
-    )
-    return response.data.course
-}
+  if (data.discount) {
+    formData.append("discount", data.discount.toString());
+  }
 
-export const showCourseApi = async (id: number) : Promise<Course> => {
-    const headers = {
-        'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
-    }
-    const response = await authAxios.put(
-        `courses/${id}/show/`,
-        {},
-        { headers }
-    )
-    return response.data.course
-}
+  const response = await authAxios.put(`courses/${id}/update/`, formData, {
+    headers,
+  });
+  return response.data.course;
+};
+
+export const deleteCourseApi = async (id: number): Promise<boolean> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  };
+  const response = await authAxios.delete(`courses/${id}/delete/`, { headers });
+  return response.data.success;
+};
+
+export const hideCourseApi = async (id: number): Promise<Course> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  };
+  const response = await authAxios.put(`courses/${id}/hide/`, {}, { headers });
+  return response.data.course;
+};
+
+export const showCourseApi = async (id: number): Promise<Course> => {
+  const headers = {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  };
+  const response = await authAxios.put(`courses/${id}/show/`, {}, { headers });
+  return response.data.course;
+};
+
+// --- Recommended Courses API ---
+export const getSimilarCoursesApi = async (
+  course_id: number
+): Promise<Course[]> => {
+  const response = await authAxios.get(`reco/courses/similar/${course_id}/`);
+  return response.data.results;
+};
+
+export const getHomepageRecommendedCoursesApi = async (
+  page = 1,
+  title?: string,
+  categories?: number | number[]
+): Promise<{
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Course[];
+}> => {
+  const params: any = { page };
+  if (title) params.title = title;
+  if (categories) params.categories = categories;
+  const response = await authAxios.get(`reco/courses/home/`, {
+    params,
+  });
+  return response.data;
+};

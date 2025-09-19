@@ -1,159 +1,184 @@
-"use client"
+"use client";
 
-import { Loading } from "@/components/Loading"
-import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus, Edit } from "lucide-react"
-import Image from "next/image"
-import { getGoogleDriveImageUrl } from "@/lib/google-drive-url"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Submission } from "@/lib/types/submission"
-import type { CourseWithDetailLessons } from "@/lib/types/course"
-import type { AssignmentDetail } from "@/lib/types/assignment"
-import { getCourseWithDetailLessonsApi } from "@/lib/api/course-api"
-import { CourseCategories } from "@/components/course/CourseCategories"
-import { ChapterFormDialog } from "@/components/course/ChapterFormDialog"
-import { LessonFormDialog } from "@/components/course/LessonFormDialog"
-import { createChapterApi, updateChapterApi, deleteChapterApi } from "@/lib/api/chapter-api"
-import type { Chapter, CreateChapterRequest } from "@/lib/types/chapter"
-import type { LessonDetail, CreateLessonRequest } from "@/lib/types/lesson"
-import { createLessonApi, updateLessonApi, deleteLessonApi } from "@/lib/api/lesson-api"
-import { getEnrollmentsByCourseApi } from "@/lib/api/enrollment-api"
-import type { Enrollment } from "@/lib/types/enrollment"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Progress } from "@/components/course/Progress"
-import userAvatar from "@/public/user-avatar.svg"
+import { Loading } from "@/components/Loading";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Plus, Edit } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/course/Progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CourseCategories } from "@/components/course/CourseCategories";
+import { ChapterFormDialog } from "@/components/course/ChapterFormDialog";
+import { LessonFormDialog } from "@/components/course/LessonFormDialog";
+import {
+  createChapterApi,
+  updateChapterApi,
+  deleteChapterApi,
+} from "@/lib/api/chapter-api";
+import {
+  createLessonApi,
+  updateLessonApi,
+  deleteLessonApi,
+} from "@/lib/api/lesson-api";
+import { getCourseWithDetailLessonsApi } from "@/lib/api/course-api";
+import { getEnrollmentsByCourseApi } from "@/lib/api/enrollment-api";
+import type { CourseWithDetailLessons } from "@/lib/types/course";
+import type { Chapter, CreateChapterRequest } from "@/lib/types/chapter";
+import type { LessonDetail, CreateLessonRequest } from "@/lib/types/lesson";
+import type { Enrollment } from "@/lib/types/enrollment";
+import userAvatar from "@/public/user-avatar.svg";
 
 export default function CourseDetail() {
-  const params = useParams()
-  const router = useRouter()
-  const [course, setCourse] = useState<CourseWithDetailLessons | null>(null)
-  const [assignmentDetails, setAssignmentDetails] = useState<AssignmentDetail[]>([])
-  const [isChapterFormOpen, setIsChapterFormOpen] = useState(false)
-  const [isLessonFormOpen, setIsLessonFormOpen] = useState(false)
-  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null)
-  const [editingChapter, setEditingChapter] = useState<Chapter | null>(null)
-  const [editingLesson, setEditingLesson] = useState<LessonDetail | null>(null)
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
-  const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false)
+  const params = useParams();
+  const router = useRouter();
+  const [course, setCourse] = useState<CourseWithDetailLessons | null>(null);
+  const [isChapterFormOpen, setIsChapterFormOpen] = useState(false);
+  const [isLessonFormOpen, setIsLessonFormOpen] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+  const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [editingLesson, setEditingLesson] = useState<LessonDetail | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
 
   useEffect(() => {
     if (params.id) {
       const fetchCourseDetail = async () => {
-        const courseDetail = await getCourseWithDetailLessonsApi(Number.parseInt(params.id))
-        setCourse(courseDetail)
-      }
+        const courseDetail = await getCourseWithDetailLessonsApi(
+          Number.parseInt(params.id + "")
+        );
+        setCourse(courseDetail);
+      };
 
-      fetchCourseDetail()
+      fetchCourseDetail();
     }
-  }, [params.id])
+  }, [params.id]);
 
   useEffect(() => {
     if (params.id) {
       const fetchEnrollments = async () => {
-        setIsLoadingEnrollments(true)
+        setIsLoadingEnrollments(true);
         try {
-          const enrollmentData = await getEnrollmentsByCourseApi(Number.parseInt(params.id))
-          setEnrollments(enrollmentData)
+          const enrollmentData = await getEnrollmentsByCourseApi(
+            Number.parseInt(params.id + "")
+          );
+          setEnrollments(enrollmentData);
         } catch (error) {
-          console.error("Error fetching enrollments:", error)
+          console.error("Error fetching enrollments:", error);
         } finally {
-          setIsLoadingEnrollments(false)
+          setIsLoadingEnrollments(false);
         }
-      }
+      };
 
-      fetchEnrollments()
+      fetchEnrollments();
     }
-  }, [params.id])
+  }, [params.id]);
 
   if (!course) {
-    return <Loading />
+    return <Loading />;
   }
 
   const handleCreateChapter = async (data: CreateChapterRequest) => {
     if (editingChapter) {
       // Update chapter
-      await updateChapterApi(editingChapter.id, data)
+      await updateChapterApi(editingChapter.id, data);
     } else {
       // Create chapter
-      await createChapterApi(Number.parseInt(params.id), data)
+      await createChapterApi(Number.parseInt(params.id + ""), data);
     }
-    setIsChapterFormOpen(false)
+    setIsChapterFormOpen(false);
 
-    getCourseWithDetailLessonsApi(Number.parseInt(params.id)).then((courseDetail) => {
-      setCourse(courseDetail)
-    })
-  }
+    getCourseWithDetailLessonsApi(Number.parseInt(params.id + "")).then(
+      (courseDetail) => {
+        setCourse(courseDetail);
+      }
+    );
+  };
 
   const handleDeleteChapter = async () => {
-    if (!editingChapter) return
+    if (!editingChapter) return;
 
-    await deleteChapterApi(editingChapter.id)
-    setIsChapterFormOpen(false)
-    setEditingChapter(null)
+    await deleteChapterApi(editingChapter.id);
+    setIsChapterFormOpen(false);
+    setEditingChapter(null);
 
-    getCourseWithDetailLessonsApi(Number.parseInt(params.id)).then((courseDetail) => {
-      setCourse(courseDetail)
-    })
-  }
+    getCourseWithDetailLessonsApi(Number.parseInt(params.id + "")).then(
+      (courseDetail) => {
+        setCourse(courseDetail);
+      }
+    );
+  };
 
   const handleEditChapter = (chapter: Chapter) => {
-    setEditingChapter(chapter)
-    setIsChapterFormOpen(true)
-  }
+    setEditingChapter(chapter);
+    setIsChapterFormOpen(true);
+  };
 
   const handleCreateLesson = async (data: CreateLessonRequest) => {
     if (course) {
       if (editingLesson) {
-        await updateLessonApi(editingLesson.id, data)
+        await updateLessonApi(editingLesson.id, data);
       } else {
-        await createLessonApi(course.id, selectedChapter?.id ? selectedChapter.id : null, data)
+        await createLessonApi(
+          course.id,
+          selectedChapter ? selectedChapter.id : null,
+          data
+        );
       }
     }
-    setIsLessonFormOpen(false)
+    setIsLessonFormOpen(false);
 
-    getCourseWithDetailLessonsApi(Number.parseInt(params.id)).then((courseDetail) => {
-      setCourse(courseDetail)
-    })
-  }
+    getCourseWithDetailLessonsApi(Number.parseInt(params.id + "")).then(
+      (courseDetail) => {
+        setCourse(courseDetail);
+      }
+    );
+  };
 
   const handleDeleteLesson = async () => {
-    if (!editingLesson) return
+    if (!editingLesson) return;
 
-    await deleteLessonApi(editingLesson.id)
-    setIsLessonFormOpen(false)
-    setEditingLesson(null)
+    await deleteLessonApi(editingLesson.id);
+    setIsLessonFormOpen(false);
+    setEditingLesson(null);
 
-    getCourseWithDetailLessonsApi(Number.parseInt(params.id)).then((courseDetail) => {
-      setCourse(courseDetail)
-    })
-  }
+    getCourseWithDetailLessonsApi(Number.parseInt(params.id + "")).then(
+      (courseDetail) => {
+        setCourse(courseDetail);
+      }
+    );
+  };
 
   const handleEditLesson = (lesson: LessonDetail) => {
-    setEditingLesson(lesson)
-    setIsLessonFormOpen(true)
-  }
+    setEditingLesson(lesson);
+    setIsLessonFormOpen(true);
+  };
 
   const handleAddLesson = (chapter: Chapter | null) => {
-    setSelectedChapter(chapter)
-    setEditingLesson(null)
-    setIsLessonFormOpen(true)
-  }
+    setSelectedChapter(chapter);
+    setEditingLesson(null);
+    setIsLessonFormOpen(true);
+  };
 
-  const handleViewLessonDetail = (lessonId: number) => {
-    router.push(`/teacher/courses/${params.id}/lessons/${lessonId}`)
-  }
+  const handleViewLessonDetail = (lessonId: string) => {
+    router.push(`/teacher/courses/${params.id}/lessons/${lessonId}`);
+  };
 
   if (!course) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Button variant="ghost" className="mb-6" onClick={() => router.push("/teacher")}>
+    <div className="container mx-auto py-8 mt-16">
+      <Button variant="ghost" onClick={() => router.push("/teacher")}>
         <ArrowLeft className="w-4 h-4 mr-2" />
         Trở về
       </Button>
@@ -163,15 +188,21 @@ export default function CourseDetail() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-2xl font-bold mb-2">{course.course_content.title}</h1>
+              <h1 className="text-2xl font-bold mb-2">
+                {course.course_content.title}
+              </h1>
               <div className="flex items-center gap-2">
-                <CourseCategories categories={course.course_content.categories.map((c) => c.name)} />
+                <CourseCategories
+                  categories={course.course_content.categories.map(
+                    (c) => c.name
+                  )}
+                />
               </div>
             </div>
           </div>
           <div className="aspect-video relative rounded-lg overflow-hidden mb-4">
             <Image
-              src={getGoogleDriveImageUrl(course.course_content.thumbnail_id) || "/placeholder.svg"}
+              src={course.course_content.thumbnail_url}
               alt={course.course_content.title}
               fill
               className="object-cover"
@@ -184,8 +215,8 @@ export default function CourseDetail() {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    setEditingChapter(null)
-                    setIsChapterFormOpen(true)
+                    setEditingChapter(null);
+                    setIsChapterFormOpen(true);
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -208,59 +239,79 @@ export default function CourseDetail() {
 
             <TabsContent value="content">
               <div className="space-y-4">
-                {course.course_content.chapters?.map((chapter: any, chapterIndex: number) => (
-                  <Card key={chapter.id}>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle>{chapter.title}</CardTitle>
-                        {/* <CardDescription>
+                {course.course_content.chapters?.map(
+                  (chapter: any, chapterIndex: number) => (
+                    <Card key={chapter.id}>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>{chapter.title}</CardTitle>
+                          {/* <CardDescription>
                           {chapter.totalVideos} bài học • {chapter.totalDuration}
                         </CardDescription> */}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEditChapter(chapter)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Sửa
-                        </Button>
-                        <Button size="sm" onClick={() => handleAddLesson(chapter)}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Thêm bài học
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent> 
-                      <div className="space-y-2">
-                        {chapter.lessons.sort((a: LessonDetail, b: LessonDetail) => a.order - b.order).map((lesson: LessonDetail, index: number) => (
-                          <div
-                            key={lesson.id}
-                            className="flex justify-between items-center p-3 rounded-lg bg-primary/10 text-primary"
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditChapter(chapter)}
                           >
-                            <div>
-                              <h4 className="font-medium">{index + 1}. {lesson.title}</h4>
-                              {/* <p className="text-sm text-gray-500">{lesson.duration}</p> */}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="hover:bg-primary hover:text-white"
-                                onClick={() => handleViewLessonDetail(lesson.id)}>
-                                Chi tiết
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="hover:bg-primary hover:text-white"
-                                onClick={() => handleEditLesson(lesson)}>
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                            <Edit className="w-4 h-4 mr-2" />
+                            Sửa
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddLesson(chapter)}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Thêm bài học
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {chapter.lessons
+                            .sort(
+                              (a: LessonDetail, b: LessonDetail) =>
+                                a.order - b.order
+                            )
+                            .map((lesson: LessonDetail, index: number) => (
+                              <div
+                                key={lesson.id}
+                                className="flex justify-between items-center p-3 rounded-lg bg-primary/10 text-primary"
+                              >
+                                <div>
+                                  <h4 className="font-medium">
+                                    {index + 1}. {lesson.title}
+                                  </h4>
+                                  {/* <p className="text-sm text-gray-500">{lesson.duration}</p> */}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-primary hover:text-white"
+                                    onClick={() =>
+                                      handleViewLessonDetail(lesson.id)
+                                    }
+                                  >
+                                    Chi tiết
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-primary hover:text-white"
+                                    onClick={() => handleEditLesson(lesson)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                )}
 
                 {course.course_content.lessons_without_chapter?.length > 0 && (
                   <Card>
@@ -269,37 +320,43 @@ export default function CourseDetail() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {course.course_content.lessons_without_chapter.sort((a: LessonDetail, b: LessonDetail) => a.order - b.order).map((lesson: LessonDetail, index: number) => (
-                          <div
-                            key={lesson.id}
-                            className="flex justify-between items-center p-3 rounded-lg bg-primary/10 text-primary"
-                          >
-                            <div>
-                              <h4 className="font-medium">{index + 1}. {lesson.title}</h4>
+                        {course.course_content.lessons_without_chapter
+                          .sort(
+                            (a: LessonDetail, b: LessonDetail) =>
+                              a.order - b.order
+                          )
+                          .map((lesson: LessonDetail, index: number) => (
+                            <div
+                              key={lesson.id}
+                              className="flex justify-between items-center p-3 rounded-lg bg-primary/10 text-primary"
+                            >
+                              <div>
+                                <h4 className="font-medium">
+                                  {index + 1}. {lesson.title}
+                                </h4>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="hover:bg-primary hover:text-white"
+                                  onClick={() =>
+                                    handleViewLessonDetail(lesson.id)
+                                  }
+                                >
+                                  Chi tiết
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="hover:bg-primary hover:text-white"
+                                  onClick={() => handleEditLesson(lesson)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              {assignmentDetails[lesson.id] && (
-                                <Badge color="success" className="text-sm">
-                                  {assignmentDetails[lesson.id].content}
-                                </Badge>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="hover:bg-primary hover:text-white"
-                                onClick={() => handleViewLessonDetail(lesson.id)}>
-                                Chi tiết
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="hover:bg-primary hover:text-white"
-                                onClick={() => handleEditLesson(lesson)}>
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -311,11 +368,15 @@ export default function CourseDetail() {
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle>Danh sách học viên</CardTitle>
-                  <CardDescription>Tổng số: {enrollments.length} học viên</CardDescription>
+                  <CardDescription>
+                    Tổng số: {enrollments.length} học viên
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoadingEnrollments ? (
-                    <div className="text-center py-4">Đang tải danh sách học viên...</div>
+                    <div className="text-center py-4">
+                      Đang tải danh sách học viên...
+                    </div>
                   ) : enrollments.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
                       Chưa có học viên nào tham gia khóa học này
@@ -324,11 +385,14 @@ export default function CourseDetail() {
                     <ScrollArea className="px-4">
                       <div className="space-y-2">
                         {enrollments.map((enrollment) => (
-                          <div key={enrollment.id} className="flex items-center p-3 rounded-lg bg-primary/10">
+                          <div
+                            key={enrollment.id}
+                            className="flex items-center p-3 rounded-lg bg-primary/10"
+                          >
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
                               <Image
                                 src={userAvatar}
-                                alt={`${enrollment.student.first_name} ${enrollment.student.last_name}`}  
+                                alt={`${enrollment.student.first_name} ${enrollment.student.last_name}`}
                                 width={32}
                                 height={32}
                                 className="h-full w-full object-cover"
@@ -336,13 +400,20 @@ export default function CourseDetail() {
                             </div>
                             <div className="flex-1">
                               <h4 className="font-medium">
-                                {enrollment.student.first_name + " " + enrollment.student.last_name}
+                                {enrollment.student.first_name +
+                                  " " +
+                                  enrollment.student.last_name}
                               </h4>
-                              <p className="text-sm text-gray-500">{enrollment.student.email}</p>
+                              <p className="text-sm text-gray-500">
+                                {enrollment.student.email}
+                              </p>
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="text-sm text-gray-500">
-                                Tham gia ngày: {new Date(enrollment.created_at).toLocaleDateString()}
+                                Tham gia ngày:{" "}
+                                {new Date(
+                                  enrollment.created_at
+                                ).toLocaleDateString()}
                               </div>
                               <Progress progress={enrollment.progress} />
                             </div>
@@ -390,6 +461,5 @@ export default function CourseDetail() {
         />
       )}
     </div>
-  )
+  );
 }
-

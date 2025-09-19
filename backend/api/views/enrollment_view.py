@@ -4,19 +4,17 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError
 from api.exceptions.custom_exceptions import Existed
-from api.models import Enrollment, Course, LessonCompletion, CourseContent
-from api.serializers import (
-    EnrollmentSerializer, PaymentSerializer
-)
+from api.models import Enrollment, Course, LessonCompletion, CourseContent, User
+from api.serializers import EnrollmentSerializer, PaymentSerializer
 from api.permissions import IsAdmin, IsCourseOwner, IsStudent
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 
 logger = logging.getLogger(__name__)
 
-def get_course_progress(course_content, student):
+def get_course_progress(course_content, student_id):
     total_lessons = course_content.lessons.count()
     completed_lessons = LessonCompletion.objects.filter(
-        lesson__course_content=course_content, student=student
+        lesson__course_content=course_content, student_id=student_id
     ).count()
     return round(completed_lessons / total_lessons * 100, 2) if total_lessons > 0 else 0
 
@@ -25,7 +23,7 @@ def get_course_progress(course_content, student):
 class EnrollmentListAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def list(self, request, *args, **kwargs):
@@ -44,13 +42,12 @@ class EnrollmentListAPIView(generics.ListAPIView):
 class EnrollmentListByCourseAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     
     def list(self, request, *args, **kwargs):
         logger.info(f"Listing enrollments for course ID: {self.kwargs.get('course_id')}")
-        course_id = self.kwargs.get('course_id')
-        course = Course.objects.filter(id=course_id).first()
+        course = Course.objects.filter(id=self.kwargs.get('course_id')).first()
         if not course:
             raise NotFound('Course not found')
         
@@ -58,9 +55,10 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
         enrollments = EnrollmentSerializer(queryset, many=True).data.copy()
 
         for enrollment in enrollments:
-            student = enrollment['student']
-            student_id = student['id']
-            enrollment['progress'] = get_course_progress(course.course_content, student_id)
+            enrollment['progress'] = get_course_progress(
+                course.course_content,
+                enrollment['student']['id'] 
+            )
 
         logger.info("Successfully listed enrollments for course")
         return Response({
@@ -73,19 +71,22 @@ class EnrollmentListByCourseAPIView(generics.ListAPIView):
 class EnrollmentListByStudentAPIView(generics.ListAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        logger.info(f"Listing enrollments for student ID: {request.user.id}")
-        queryset = self.get_queryset().filter(student=request.user)
+
+        student = User.objects.get(id=request.user.id)
+
+        logger.info(f"Listing enrollments for student ID: {student.id}")
+        queryset = self.get_queryset().filter(student_id=student.id)
         enrollments = EnrollmentSerializer(queryset, many=True).data.copy()
 
         for enrollment in enrollments:
             course = enrollment['course']
-            course_conent_id = course['course_content']['id']
-            course_content = CourseContent.objects.filter(id=course_conent_id).first()
-            enrollment['progress'] = get_course_progress(course_content, request.user)
+            course_content_id = course['course_content']['id']
+            course_content = CourseContent.objects.filter(id=course_content_id).first()
+            enrollment['progress'] = get_course_progress(course_content, student.id)
 
         logger.info("Successfully listed enrollments for student")
         return Response({
@@ -99,7 +100,7 @@ class EnrollmentListByStudentAPIView(generics.ListAPIView):
 class EnrollmentCreateAPIView(generics.CreateAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsStudent]
 
     def create(self, request, *args, **kwargs):
@@ -110,21 +111,23 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
             raise NotFound('Course not found')
         request.data['course_id'] = course.id
 
-        student = request.user
-        if course.enrollments.filter(student=student).exists():
+        if course.enrollments.filter(student_id=request.user.id).exists():
+            logger.warning(f"Enrollment already exists for student ID: {request.user.id} in course ID: {course.id}")
             raise Existed('You have already enrolled in this course')
-        request.data['student_id'] = student.id
+        request.data['student_id'] = request.user.id
 
         if not course.get_discounted_price() == 0:
             # Create payment
             payment_serializer = PaymentSerializer(data={'amount': course.get_discounted_price()})
             if not payment_serializer.is_valid():
+                logger.error(f"Payment creation failed: {payment_serializer.errors}")
                 raise ValidationError(f'Payment not created: {payment_serializer.errors}')
             payment = payment_serializer.save()
             request.data['payment_id'] = payment.id
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
+            logger.error(f"Enrollment creation failed: {serializer.errors}")
             raise ValidationError(f'Enrollment not created: {serializer.errors}')
         
         self.perform_create(serializer)
@@ -133,7 +136,7 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Enrollment created successfully',
-            'data': serializer.data
+            'enrollment': serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
     
 
@@ -141,7 +144,7 @@ class EnrollmentCreateAPIView(generics.CreateAPIView):
 class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
@@ -159,18 +162,13 @@ class EnrollmentRetrieveAPIView(generics.RetrieveAPIView):
             'message': 'Enrollment retrieved successfully',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
-    
-
-
-# Enrollment API to update a enrollment
-
 
 
 # Enrollment API to delete a enrollment
 class EnrollmentDeleteAPIView(generics.DestroyAPIView):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 

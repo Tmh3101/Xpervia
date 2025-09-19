@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.middlewares.authentication import SupabaseJWTAuthentication
 from api.models import Submission, SubmissionScore
 from api.serializers import SubmissionScoreSerializer
 from api.permissions import IsCourseOwner
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class SubmissionScoreCreateAPIView(generics.CreateAPIView):
     queryset = SubmissionScore.objects.all()
     serializer_class = SubmissionScoreSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
@@ -34,7 +34,7 @@ class SubmissionScoreCreateAPIView(generics.CreateAPIView):
         return Response({
             'success': True,
             'message': 'Submission score has been created successfully',
-            'submission': serializer.data
+            'submission_score': serializer.data
         }, status=status.HTTP_201_CREATED)
 
 
@@ -42,7 +42,7 @@ class SubmissionScoreCreateAPIView(generics.CreateAPIView):
 class SubmissionScoreUpdateAPIView(generics.UpdateAPIView):
     queryset = SubmissionScore.objects.all()
     serializer_class = SubmissionScoreSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -62,7 +62,7 @@ class SubmissionScoreUpdateAPIView(generics.UpdateAPIView):
         return Response({
             'success': True,
             'message': 'Submission score has been updated successfully',
-            'data': serializer.data
+            'submission_score': serializer.data
         }, status=status.HTTP_200_OK)
     
 
@@ -70,7 +70,7 @@ class SubmissionScoreUpdateAPIView(generics.UpdateAPIView):
 class SubmissionScoreDeleteAPIView(generics.DestroyAPIView):
     queryset = SubmissionScore.objects.all()
     serializer_class = SubmissionScoreSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 

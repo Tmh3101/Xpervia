@@ -1,18 +1,24 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import type { LessonDetail } from "@/lib/types/lesson"
-import { Trash2 } from "lucide-react"
-import { FileText } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import type { LessonDetail } from "@/lib/types/lesson";
+import { Trash2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,27 +28,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-
-const lessonFormSchema = z.object({
-  title: z.string().min(3, "Tiêu đề phải có ít nhất 3 ký tự"),
-  content: z.string().min(20, "Nội dung phải có ít nhất 20 ký tự"),
-  video: z.any().optional(),
-  subtitle_vi: z.any().optional(),
-  attachment: z.any().optional(),
-  is_visible: z.boolean().default(true),
-  order: z.number().default(0),
-})
+} from "@/components/ui/alert-dialog";
 
 type LessonFormProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (data: any) => void
-  onDelete?: () => void
-  chapterTitle?: string | null
-  mode: "create" | "edit"
-  initialData?: Partial<LessonDetail>
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: any) => void;
+  onDelete?: () => void;
+  chapterTitle?: string | null;
+  mode: "create" | "edit";
+  initialData?: Partial<LessonDetail>;
+};
 
 export const LessonFormDialog = ({
   open,
@@ -53,8 +49,21 @@ export const LessonFormDialog = ({
   mode,
   initialData,
 }: LessonFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const lessonFormSchema = z.object({
+    title: z.string().min(3, "Tiêu đề phải có ít nhất 3 ký tự"),
+    content: z.string().min(20, "Nội dung phải có ít nhất 20 ký tự"),
+    video:
+      mode === "edit"
+        ? z.any().optional()
+        : z.any().refine((file) => file instanceof File, "Video là bắt buộc"),
+    subtitle_vi: z.any().optional(),
+    attachment: z.any().optional(),
+    is_visible: z.boolean().default(true),
+    order: z.number().default(0),
+  });
 
   const form = useForm({
     resolver: zodResolver(lessonFormSchema),
@@ -67,7 +76,7 @@ export const LessonFormDialog = ({
       is_visible: true,
       order: 0,
     },
-  })
+  });
 
   // Update form values when initialData changes
   useEffect(() => {
@@ -78,30 +87,31 @@ export const LessonFormDialog = ({
         video: null, // Can't pre-fill file inputs
         subtitle_vi: null,
         attachment: null,
-        is_visible: initialData.is_visible !== undefined ? initialData.is_visible : true,
+        is_visible:
+          initialData.is_visible !== undefined ? initialData.is_visible : true,
         order: initialData.order || 0,
-      })
+      });
     }
-  }, [initialData, form])
+  }, [initialData, form]);
 
   const handleSubmit = async (data: any) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await onSubmit(data)
-      form.reset()
+      await onSubmit(data);
+      form.reset();
     } catch (error) {
-      console.error("Lỗi khi gửi biểu mẫu:", error)
+      console.error("Lỗi khi gửi biểu mẫu:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleDelete = () => {
-    setIsDeleteDialogOpen(false)
+    setIsDeleteDialogOpen(false);
     if (onDelete) {
-      onDelete()
+      onDelete();
     }
-  }
+  };
 
   return (
     <>
@@ -117,19 +127,29 @@ export const LessonFormDialog = ({
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {form.formState.errors && Object.values(form.formState.errors).length > 0 && (
-              <div className="text-red-500 text-center italic text-sm">
-                {Object.values(form.formState.errors)[0]?.message as string}
-              </div>
-            )}
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            {form.formState.errors &&
+              Object.values(form.formState.errors).length > 0 && (
+                <div className="text-red-500 text-center italic text-sm">
+                  {Object.values(form.formState.errors)[0]?.message as string}
+                </div>
+              )}
 
             <div className="space-y-1">
               <Label htmlFor="title">Tiêu đề bài học</Label>
               <Controller
                 name="title"
                 control={form.control}
-                render={({ field }: any) => <Input id="title" placeholder="Nhập tiêu đề bài học" {...field} />}
+                render={({ field }: any) => (
+                  <Input
+                    id="title"
+                    placeholder="Nhập tiêu đề bài học"
+                    {...field}
+                  />
+                )}
               />
             </div>
 
@@ -139,13 +159,21 @@ export const LessonFormDialog = ({
                 name="content"
                 control={form.control}
                 render={({ field }: any) => (
-                  <Textarea id="content" placeholder="Nhập nội dung bài học" className="min-h-[100px]" {...field} />
+                  <Textarea
+                    id="content"
+                    placeholder="Nhập nội dung bài học"
+                    className="min-h-[100px]"
+                    {...field}
+                  />
                 )}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="video">Upload Video {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}</Label>
+              <Label htmlFor="video">
+                Upload Video{" "}
+                {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}
+              </Label>
               <Controller
                 name="video"
                 control={form.control}
@@ -155,9 +183,9 @@ export const LessonFormDialog = ({
                     type="file"
                     accept="video/*"
                     onChange={(e) => {
-                      const file = e.target.files?.[0]
+                      const file = e.target.files?.[0];
                       if (file) {
-                        onChange(file)
+                        onChange(file);
                       }
                     }}
                   />
@@ -167,7 +195,8 @@ export const LessonFormDialog = ({
 
             <div className="space-y-1">
               <Label htmlFor="subtitle_vi">
-                Upload File Phụ đề {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}
+                Upload File Phụ đề{" "}
+                {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}
               </Label>
               <Controller
                 name="subtitle_vi"
@@ -177,9 +206,9 @@ export const LessonFormDialog = ({
                     id="subtitle_vi"
                     type="file"
                     onChange={(e) => {
-                      const file = e.target.files?.[0]
+                      const file = e.target.files?.[0];
                       if (file) {
-                        onChange(file)
+                        onChange(file);
                       }
                     }}
                   />
@@ -188,12 +217,17 @@ export const LessonFormDialog = ({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="attachment">Tệp đính kèm {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}</Label>
+              <Label htmlFor="attachment">
+                Tệp đính kèm{" "}
+                {mode === "edit" && "(Để trống nếu không muốn thay đổi)"}
+              </Label>
               <div className="flex items-center space-x-2">
                 {initialData?.attachment && (
                   <div className="relative max-w-[160px] flex items-center space-x-2 bg-primary text-white border rounded-md p-2">
                     <FileText className="w-4 h-4" />
-                    <p className="text-sm font-medium truncate w-24">{initialData?.attachment.file_name}</p>
+                    <p className="text-sm font-medium truncate w-24">
+                      {initialData?.attachment.file_name}
+                    </p>
                   </div>
                 )}
                 <Controller
@@ -204,9 +238,9 @@ export const LessonFormDialog = ({
                       id="attachment"
                       type="file"
                       onChange={(e) => {
-                        const file = e.target.files?.[0]
+                        const file = e.target.files?.[0];
                         if (file) {
-                          onChange(file)
+                          onChange(file);
                         }
                       }}
                     />
@@ -220,7 +254,11 @@ export const LessonFormDialog = ({
                 name="is_visible"
                 control={form.control}
                 render={({ field }: any) => (
-                  <Checkbox id="is_visible" checked={field.value} onCheckedChange={field.onChange} />
+                  <Checkbox
+                    id="is_visible"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 )}
               />
               <Label htmlFor="is_visible">Hiển thị bài học cho học viên</Label>
@@ -238,7 +276,11 @@ export const LessonFormDialog = ({
                   Xóa
                 </Button>
               )}
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Hủy
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -258,23 +300,29 @@ export const LessonFormDialog = ({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn bài học này và tất cả dữ liệu liên quan.
+              Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn bài
+              học này và tất cả dữ liệu liên quan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-500 text-red-500-foreground hover:bg-red-600 text-white"
+            >
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
-
+  );
+};

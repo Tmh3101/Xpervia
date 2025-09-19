@@ -1,150 +1,216 @@
 import json
 import logging
+from django.conf import settings
 from django.http import Http404
+from api.enums import RoleEnum
+from django.shortcuts import get_object_or_404
+from django.db.models import Count
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound, ValidationError
-from api.exceptions.custom_exceptions import FileUploadException
-from api.models import Course, Lesson, CourseContent, Enrollment
+from api.pagination import CoursePagination
+from api.models import Course, Lesson, User
 from api.serializers import (
     CourseSerializer,
     CourseContentSerializer,
     ChapterSerializer,
-    SimpleLessonSerializer,
     LessonSerializer
 )
-from api.permissions import IsTeacher, IsCourseOwner, IsAdmin
-from api.services.google_drive_service import upload_file, delete_file    
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.permissions import IsTeacher, IsCourseOwner, IsAdmin   
+from api.middlewares.authentication import SupabaseJWTAuthentication
+from api.services.supabase.storage import delete_file
+from api.utils import (
+    get_course_content,
+    delete_course_content,
+    get_course_content_lessons,
+    add_file_url_for,
+    get_course_progress
+)
 
 logger = logging.getLogger(__name__)
-
-# Create a course data from request
-def get_course_content(request):
-    course_content = {}
-    course_content['teacher_id'] = request.user.id
-
-    if request.FILES.get('thumbnail'):
-        try:
-            thumbnail_id = upload_file(request.FILES.get('thumbnail'))
-            thumbnail_id = thumbnail_id.get('file_id')
-        except Exception as e:
-            raise FileUploadException(f'Error uploading thumbnail: {str(e)}')
-        course_content['thumbnail_id'] = thumbnail_id
-    if request.data.get('title'):
-        course_content['title'] = request.data.get('title')
-    if request.data.get('description'):
-        course_content['description'] = request.data.get('description')
-    
-
-    return course_content
-
-# Create a course detail data from request
-def get_course_data(request):
-    course_data = {}
-
-    if request.data.get('price'):
-        course_data['price'] = request.data.get('price')
-    if request.data.get('discount'):
-        course_data['discount'] = request.data.get('discount')
-    if request.data.get('is_visible'):
-        course_data['is_visible'] = request.data.get('is_visible')
-    if request.data.get('start_date'):
-        course_data['start_date'] = request.data.get('start_date')
-    if request.data.get('regis_start_date'):
-        course_data['regis_start_date'] = request.data.get('regis_start_date')
-    if request.data.get('regis_end_date'):
-        course_data['regis_end_date'] = request.data.get('regis_end_date')
-    if request.data.get('max_students'):
-        course_data['max_students'] = request.data.get('max_students')
-
-    return course_data
-
-# Delete a course if course detail creation fails
-def delete_course_content(course_content_id):
-    course_content = CourseContent.objects.get(id=course_content_id)
-    if course_content:
-        delete_file(course_content.thumbnail_id)
-        course_content.delete()
-
-def get_course_content_lessons(course_content):
-    chapters = course_content.chapters.all()
-    chapters_data = []
-    for chapter in chapters:
-        chapter_serializer = ChapterSerializer(chapter)
-        chapter_data = chapter_serializer.data.copy()
-        lessons = Lesson.objects.filter(chapter=chapter)
-        lessons_data = SimpleLessonSerializer(lessons, many=True).data.copy()
-        for lesson in lessons_data:
-            lesson.pop('chapter', None)
-            lesson.pop('course_content', None)
-        chapter_data['lessons'] = lessons_data
-        chapter_data.pop('course_content')
-        chapters_data.append(chapter_data)
-
-    lessons_without_chapter = Lesson.objects.filter(course_content=course_content, chapter__isnull=True)
-    lessons_without_chapter_data = SimpleLessonSerializer(lessons_without_chapter, many=True).data.copy()
-    for lesson in lessons_without_chapter_data:
-        lesson.pop('chapter', None)
-        lesson.pop('course_content', None)
-
-    return chapters_data, lessons_without_chapter_data
-
 
 # Course Detail API to list all course
 class CourseListAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
+    pagination_class = CoursePagination
+
+    def get_queryset(self):
+        queryset = Course.objects.select_related("course_content").annotate(
+            num_students=Count("enrollments", distinct=True),
+            num_favorites=Count("favorites", distinct=True)
+        ).order_by("-created_at")
+
+        title = self.request.query_params.get("title")
+        categories = self.request.query_params.getlist("categories") or self.request.query_params.get("categories")
+        is_visible = self.request.query_params.get("is_visible")
+
+        if title:
+            queryset = queryset.filter(course_content__title__icontains=title)
+        if categories:
+            if isinstance(categories, str):
+                categories = [categories]
+            queryset = queryset.filter(course_content__categories__id__in=categories).distinct()
+        if is_visible is not None and self.request.user.role == 'admin':
+            queryset = queryset.filter(is_visible=is_visible)
+        return queryset
 
     def list(self, request, *args, **kwargs):
         logger.info("Listing all courses")
-        queryset = self.get_queryset().filter()
-        courses_data = CourseSerializer(queryset, many=True).data.copy()
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
 
-        for course in courses_data:
-            course_content = Course.objects.get(id=course['id']).course_content
-            course_content_data = CourseContentSerializer(course_content).data.copy()
-            chapters_data, lessons_without_chapter = get_course_content_lessons(course_content)
-            course_content_data['chapters'] = chapters_data
-            course_content_data['lessons_without_chapter'] = lessons_without_chapter
-            course['course_content'] = course_content_data
-            # Add num_students to each course
-            enrollments = Enrollment.objects.filter(course=course['id'])
-            course['num_students'] = enrollments.count()
-        
+        results = []
+        for course in page:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
+            cc_data["num_lessons"] = cc.lessons.count()
+            c_data["course_content"] = cc_data
+            c_data["num_students"] = course.num_students
+            c_data["num_favorites"] = course.num_favorites
+            c_data["progress"] = get_course_progress(cc, request.user.id)
+
+            results.append(c_data)
+
         logger.info("Successfully listed all courses")
-        return Response({
-            'success': True,
-            'message': 'All courses have been listed successfully',
-            'courses': courses_data
-        }, status=status.HTTP_200_OK)
+        return self.get_paginated_response(results)
+
     
 # Course Detail API to list all course of a teacher
 class CourseListByTeacherAPIView(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
+    pagination_class = CoursePagination
+
+    def get_queryset(self):
+        teacher = User.objects.get(id=self.request.user.id)
+        return (
+            Course.objects
+            .filter(course_content__teacher=teacher)
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True)
+            )
+            .order_by("-created_at")
+        )
 
     def list(self, request, *args, **kwargs):
         logger.info(f"Listing courses for teacher ID: {request.user.id}")
-        queryset = self.get_queryset().filter(course_content__teacher=request.user)
-        courses_serializer = CourseSerializer(queryset, many=True)
-        courses_data = courses_serializer.data.copy()
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
 
-        # Add num_students to each course
-        for course in courses_data:
-            enrollments = Enrollment.objects.filter(course=course['id'])
-            course['num_students'] = enrollments.count()
+        results = []
+        for course in page:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
 
-        logger.info("Successfully listed courses for teacher")
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            results.append(c_data)
+
+        logger.info("Successfully listed teacher's courses")
+        return self.get_paginated_response(results)
+
+
+# Enroled Course list for student without pagination
+class EnrolledCourseListAPIView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    authentication_classes = [SupabaseJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination
+
+    def get_queryset(self):
+        student = User.objects.get(id=self.request.user.id)
+        return (
+            Course.objects
+            .filter(enrollments__student=student)
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True)
+            )
+            .order_by("-created_at")
+        )
+
+    def list(self, request, *args, **kwargs):
+        logger.info(f"Listing enrolled courses for student ID: {request.user.id}")
+        queryset = self.get_queryset()
+
+        results = []
+        for course in queryset:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
+
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            c_data["progress"] = get_course_progress(cc, request.user.id)
+            results.append(c_data)
+
+        logger.info("Successfully listed enrolled courses")
         return Response({
             'success': True,
-            'message': 'All courses have been listed successfully',
-            'courses': courses_data
+            'message': 'Enrolled courses retrieved successfully',
+            'courses': results
+        }, status=status.HTTP_200_OK) 
+    
+
+# Favorited Course list of student without pagination
+class FavoritedCourseListAPIView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    authentication_classes = [SupabaseJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination
+
+    def get_queryset(self):
+        student = User.objects.get(id=self.request.user.id)
+        return (
+            Course.objects
+            .filter(favorites__student=student)
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True)
+            )
+            .order_by("-created_at")
+        )
+
+    def list(self, request, *args, **kwargs):
+        logger.info(f"Listing favorite courses for student ID: {request.user.id}")
+        queryset = self.get_queryset()
+
+        results = []
+        for course in queryset:
+            c_data = CourseSerializer(course).data
+            cc = course.course_content
+            cc_data = CourseContentSerializer(cc).data
+
+            chapters, lessons_without_chapter = get_course_content_lessons(cc)
+            cc_data["chapters"] = chapters
+            cc_data["lessons_without_chapter"] = lessons_without_chapter
+            c_data["course_content"] = cc_data
+            c_data["num_students"] = course.num_students
+            c_data["num_favorites"] = course.num_favorites
+            c_data["progress"] = get_course_progress(cc, request.user.id)
+            results.append(c_data)
+
+        logger.info("Successfully listed favorite courses")
+        return Response({
+            'success': True,
+            'message': 'Favorite courses retrieved successfully',
+            'courses': results
         }, status=status.HTTP_200_OK)
 
 
@@ -152,19 +218,26 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
 class CourseCreateAPIView(generics.CreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def create(self, request, *args, **kwargs):
         logger.info(f"Creating course for teacher ID: {request.user.id}")
-        # Check & create the course
         course_content = get_course_content(request)
+        logger.info(f"Course content data: {course_content}")
+
         course_content_serializer = CourseContentSerializer(data=course_content)
+
         if not course_content_serializer.is_valid():
-            delete_file(request.data.get('thumbnail_id'))
+            logger.error(f"Course content serializer errors: {course_content_serializer.errors}")
+            delete_file(
+                bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
+                path=course_content.get('thumbnail_path')
+            )
             raise ValidationError(f'Error creating course: {course_content_serializer.errors}')
-        course_content = course_content_serializer.save()
         
+        course_content = course_content_serializer.save()
+
         # Set the categories (categories: ['1', '2', '3'])
         if request.data.get('categories'):
             categories = request.data.get('categories')
@@ -174,24 +247,26 @@ class CourseCreateAPIView(generics.CreateAPIView):
                 except json.JSONDecodeError:
                     categories = categories.split(',')
             course_content.categories.set(categories)
+            course_content.save()
 
-        # Check & create the course detail
-        course_data = get_course_data(request)
+        course_data = request.data
         course_data['course_content_id'] = course_content.id
 
         course_serializer = CourseSerializer(data=course_data)
         if not course_serializer.is_valid():
+            logger.error(f"Course serializer errors: {course_serializer.errors}")
             delete_course_content(course_content.id)
             raise ValidationError(f'Error creating course: {course_serializer.errors}')
         
         try:
             self.perform_create(course_serializer)
         except Exception as e:
+            logger.error(f"Error creating course: {str(e)}")
             delete_course_content(course_content.id)
             raise ValidationError(f'Error creating course: {str(e)}')
         
-        headers = self.get_success_headers(course_serializer.data)
         logger.info("Course created successfully")
+        headers = self.get_success_headers(course_serializer.data)
         return Response({
             'success': True,
             'message': 'Course created successfully',
@@ -203,9 +278,20 @@ class CourseCreateAPIView(generics.CreateAPIView):
 class CourseRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
     lookup_field = 'id'
+
+    def get_object(self):
+        qs = (
+            Course.objects
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True),
+            )
+        )
+        return get_object_or_404(qs, **{self.lookup_field: self.kwargs[self.lookup_field]})
 
     def retrieve(self, request, *args, **kwargs):
         logger.info(f"Retrieving course with ID: {kwargs.get('id')}")
@@ -222,6 +308,8 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
 
         course_data = self.get_serializer(instance).data.copy()
         course_data['course_content'] = course_content_data
+        course_data['num_students'] = instance.num_students
+        course_data['num_favorites'] = instance.num_favorites
 
         logger.info("Course retrieved successfully")
         return Response({
@@ -235,7 +323,7 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
 class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
@@ -256,6 +344,7 @@ class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
             for lesson in lessons_serializer.data:
                 lesson.pop('chapter', None)
                 lesson.pop('course_content', None)
+                add_file_url_for(lesson)    
             chapter_data['lessons'] = lessons_serializer.data
             chapter_data.pop('course_content')
             chapters_data.append(chapter_data)
@@ -282,20 +371,18 @@ class CourseRetrieveWithDetailLessonsAPIView(generics.RetrieveAPIView):
             'message': 'Course retrieved successfully',
             'course': course_data
         }, status=status.HTTP_200_OK)
-
     
 
 # Course Detail API to update a course detail
 class CourseUpdateAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
-        logger.info(f"Updating course with ID: {kwargs.get('id')}")
-        logger.info(f"Request data: {request.data}")
+        logger.info(f"Updating course with ID: {kwargs.get('id')} with data: {request.data}")
         try:
             instance = self.get_object()
         except Http404 as e:
@@ -307,23 +394,19 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
         # Check the course data
         course_content_serializer = CourseContentSerializer(instance.course_content, data=course_content, partial=True)
         if not course_content_serializer.is_valid():
-            if course_content.get('thumbnail_id'):
-                delete_file(course_content.get('thumbnail_id'))
+            if course_content.get('thumbnail_path'):
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
+                    path=course_content.get('thumbnail_path')
+                )
             raise ValidationError(f'Error updating course: {course_content_serializer.errors}')
 
         # Get the course detail data
-        course_data = get_course_data(request)
+        course_data = request.data.copy()
         course_data['course_content_id'] = instance.course_content.id
 
-        # Check the course detail data
-        course_serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if not course_serializer.is_valid():
-            if course_content.get('thumbnail_id'):
-                delete_file(course_content.get('thumbnail_id'))
-            raise ValidationError(f'Error updating course: {course_serializer.errors}')
-
         # Update the course and course detail
-        old_thumbnail_id = instance.course_content.thumbnail_id
+        old_thumbnail_path = instance.course_content.thumbnail_path
         course_content = course_content_serializer.save()
         if request.data.get('categories'):
             categories = request.data.get('categories')
@@ -335,11 +418,26 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
                 except Exception as e:
                     raise ValidationError(f'Error updating course: {str(e)}')
             course_content.categories.set(categories)
+
+
+        # Check the course detail data
+        course_serializer = self.get_serializer(instance, data=course_data, partial=True)
+        if not course_serializer.is_valid():
+            if course_content.get('thumbnail_path'):
+                delete_file(
+                    bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
+                    path=course_content.get('thumbnail_path')
+                )
+            raise ValidationError(f'Error updating course: {course_serializer.errors}')
+            
         self.perform_update(course_serializer)
 
         # Delete the old thumbnail
         if request.FILES.get('thumbnail'):
-            delete_file(old_thumbnail_id)
+            delete_file(
+                bucket=settings.SUPABASE_STORAGE_PUBLIC_BUCKET,
+                path=old_thumbnail_path
+            )
         
         logger.info("Course updated successfully")
         return Response({
@@ -353,26 +451,27 @@ class CourseUpdateAPIView(generics.UpdateAPIView):
 class CourseDeleteAPIView(generics.DestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
-        logger.info(f"Deleting course with ID: {kwargs.get('id')}")
+        course_id = kwargs.get('id')
+        logger.info(f"Deleting course with ID: {course_id}")
         try:
-            instance = self.get_object()
+            course = Course.objects.get(id=course_id)
         except Http404 as e:
             raise NotFound('Course not found')
-        
+
         # Delete the course detail
-        course_content_id = instance.course_content.id
-        self.perform_destroy(instance)
+        course_content_id = course.course_content.id
+        self.perform_destroy(course)
         delete_course_content(course_content_id)
 
         logger.info("Course deleted successfully")
         return Response({
             'success': True,
-            'message': f'Course "{instance}" deleted successfully'
+            'message': f'Course "{course}" deleted successfully'
         }, status=status.HTTP_204_NO_CONTENT)
     
 
@@ -380,7 +479,7 @@ class CourseDeleteAPIView(generics.DestroyAPIView):
 class CourseHideAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     lookup_field = 'id'
 
@@ -405,7 +504,7 @@ class CourseHideAPIView(generics.UpdateAPIView):
 class CourseShowAPIView(generics.UpdateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner | IsAdmin]
     lookup_field = 'id'
 

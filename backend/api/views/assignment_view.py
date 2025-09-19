@@ -1,20 +1,29 @@
 import logging
+from django.conf import settings
 from django.http import Http404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError
 from api.models import Assignment, Lesson, Submission, SubmissionScore
-from api.serializers import AssignmentSerializer, SimpleSubmissionSerializer, SubmissionScoreSerializer
+from api.serializers import AssignmentSerializer, SubmissionScoreSerializer, SubmissionSerializer
 from api.permissions import IsCourseOwner, WasCourseEnrolled
-from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from api.middlewares.authentication import SupabaseJWTAuthentication
+from api.services.supabase.storage import get_file_url
+    
 logger = logging.getLogger(__name__)
+
+def add_file_url_for(file):
+    file['file_url'] = get_file_url(
+        bucket=settings.SUPABASE_STORAGE_PRIVATE_BUCKET,
+        path=file['file_path'],
+        is_public=True
+    )
 
 # Assignment API to list all assignments of a lesson
 class AssignmentListAPIView(generics.ListAPIView):
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -32,13 +41,14 @@ class AssignmentListAPIView(generics.ListAPIView):
         for assignment in assingments_serializer:
             submissions = Submission.objects.filter(assignment_id=assignment['id'])
             if submissions:
-                assignment['submissions'] = SimpleSubmissionSerializer(submissions, many=True).data.copy()
+                assignment['submissions'] = SubmissionSerializer(submissions, many=True).data.copy()
                 for submission in assignment['submissions']:
                     if SubmissionScore.objects.filter(submission_id=submission['id']).exists():
                         submission_score = SubmissionScore.objects.get(submission_id=submission['id'])
                         submission['submission_score'] = SubmissionScoreSerializer(submission_score).data.copy()
                     else:
                         submission['submission_score'] = None
+                    add_file_url_for(submission['file'])
             else:
                 assignment['submissions'] = None
 
@@ -53,7 +63,7 @@ class AssignmentListAPIView(generics.ListAPIView):
 # Assignment API to list all assignments of a lesson by a student
 class AssignmentListByStudentAPIView(generics.ListAPIView):
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
 
     def get_queryset(self):
@@ -70,7 +80,8 @@ class AssignmentListByStudentAPIView(generics.ListAPIView):
         for assignment in assingments_serializer:
             submission = Submission.objects.filter(assignment_id=assignment['id'], student_id=request.user.id).first()
             if submission:
-                assignment['submission'] = SimpleSubmissionSerializer(submission).data.copy()
+                assignment['submission'] = SubmissionSerializer(submission).data.copy()
+                add_file_url_for(assignment['submission']['file'])
                 if SubmissionScore.objects.filter(submission_id=submission.id).exists():
                     submission_score = SubmissionScore.objects.get(submission_id=submission.id)
                     submission_score = SubmissionScoreSerializer(submission_score).data.copy()
@@ -92,7 +103,7 @@ class AssignmentListByStudentAPIView(generics.ListAPIView):
 # Assignment API to create a assignment
 class AssignmentCreateAPIView(generics.CreateAPIView):
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
 
     def create(self, request, *args, **kwargs):
@@ -128,7 +139,7 @@ class AssignmentCreateAPIView(generics.CreateAPIView):
 class AssignmentRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, WasCourseEnrolled | IsCourseOwner]
     lookup_field = 'id'
 
@@ -152,7 +163,7 @@ class AssignmentRetrieveAPIView(generics.RetrieveAPIView):
 class AssignmentUpdateAPIView(generics.UpdateAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 
@@ -180,7 +191,7 @@ class AssignmentUpdateAPIView(generics.UpdateAPIView):
 class AssignmentDeleteAPIView(generics.DestroyAPIView):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsCourseOwner]
     lookup_field = 'id'
 

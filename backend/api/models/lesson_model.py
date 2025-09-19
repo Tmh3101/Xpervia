@@ -5,10 +5,11 @@ from .file_model import File
 
 
 class Lesson(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
     title = models.CharField(max_length=255)
     content = models.TextField(blank=True, null=True)
-    video_id = models.CharField(max_length=50)
-    subtitle_vi_id = models.CharField(max_length=50, blank=True, null=True)
+    video_path = models.CharField(max_length=100)
+    subtitle_vi_path = models.CharField(max_length=100, blank=True, null=True)
     attachment = models.OneToOneField(File, on_delete=models.SET_NULL, null=True, blank=True, default=None, related_name="lesson")
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE, related_name="lessons")
     chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True, default=None, related_name="lessons")

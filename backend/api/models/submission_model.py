@@ -1,7 +1,7 @@
 from django.db import models
 from .assignment_model import Assignment
-from .user_model import User
 from .file_model import File
+from .user_model import User
 
 
 class Submission(models.Model):
@@ -16,5 +16,5 @@ class Submission(models.Model):
         verbose_name_plural = 'Submissions'
     
     def __str__(self):
-        return f'{self.assignment} - {self.student}'
+        return f'{self.assignment} - {self.student_id}'
     

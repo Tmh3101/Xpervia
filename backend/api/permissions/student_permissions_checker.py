@@ -43,7 +43,7 @@ class WasCourseEnrolled(BasePermission):
             return True
         
         return Enrollment.objects.filter(
-            student=request.user,
+            student_id=request.user.id,
             course__course_content=course_content
         ).exists()
 
@@ -56,12 +56,11 @@ class WasCourseEnrolled(BasePermission):
             return True
 
         return Enrollment.objects.filter(
-            student=request.user,
+            student_id=request.user.id,
             course__course_content=course_content
         ).exists()
     
 
 class IsSubmissionOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.student == request.user
-        
+        return obj.student_id == request.user.id

@@ -1,128 +1,150 @@
-"use client"
+"use client";
 
-import { Loading } from "@/components/Loading"
-import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { Edit, Trash } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus } from "lucide-react"
-import { Description } from "@/components/Description"
-import { VideoPlayer } from "@/components/lesson/VideoPlayer"
-import { LessonAttachment } from "@/components/lesson/LessonAttachment"
-import { getAssignmentSubmissionsApi } from "@/lib/api/assignment-api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import type { LessonDetail } from "@/lib/types/lesson"
-import type { AssignmentSubmissions } from "@/lib/types/assignment"
-import { createAssignmentApi, deleteAssignmentApi, updateAssignmentApi } from "@/lib/api/assignment-api"
-import { getLessonDetailApi } from "@/lib/api/lesson-api"
-import { AssignmentFormDialog } from "@/components/course/AssignmentFormDialog"
-import { SubmissionDialog } from "@/components/course/SubmissionDialog"
+import { Loading } from "@/components/Loading";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Edit, Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Plus } from "lucide-react";
+import { Description } from "@/components/Description";
+import { VideoPlayer } from "@/components/lesson/VideoPlayer";
+import { LessonAttachment } from "@/components/lesson/LessonAttachment";
+import { AssignmentFormDialog } from "@/components/course/AssignmentFormDialog";
+import { SubmissionDialog } from "@/components/course/SubmissionDialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  createAssignmentApi,
+  deleteAssignmentApi,
+  updateAssignmentApi,
+} from "@/lib/api/assignment-api";
+import { getAssignmentSubmissionsApi } from "@/lib/api/assignment-api";
+import { getLessonDetailApi } from "@/lib/api/lesson-api";
+import type { LessonDetail } from "@/lib/types/lesson";
+import type { AssignmentSubmissions } from "@/lib/types/assignment";
 
 export default function TeacherLessonDetail() {
-  const params = useParams()
-  const router = useRouter()
-  const [lesson, setLesson] = useState<LessonDetail | null>(null)
-  const [assignments, setAssignments] = useState<AssignmentSubmissions[]>([])
-  const [isAddAssignmentOpen, setIsAddAssignmentOpen] = useState(false)
-  const [isEditingAssignment, setIsEditingAssignment] = useState(false)
-  const [selectedAssignment, setSelectedAssignment] = useState<AssignmentSubmissions | null>(null)
-  const [isViewingSubmissions, setIsViewingSubmissions] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const params = useParams();
+  const router = useRouter();
+  const [lesson, setLesson] = useState<LessonDetail | null>(null);
+  const [assignments, setAssignments] = useState<AssignmentSubmissions[]>([]);
+  const [isAddAssignmentOpen, setIsAddAssignmentOpen] = useState(false);
+  const [isEditingAssignment, setIsEditingAssignment] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<AssignmentSubmissions | null>(null);
+  const [isViewingSubmissions, setIsViewingSubmissions] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (params.id && params.lessonId) {
-      console.log("Fetching lesson detail:", params.lessonId)
       const fetchLessonDetail = async () => {
-        setIsLoading(true)
+        setIsLoading(true);
         try {
-          const lessonDetail = await getLessonDetailApi(Number.parseInt(params.lessonId))
-          setLesson(lessonDetail)
-          console.log("Lesson detail:", lessonDetail)
+          const lessonDetail = await getLessonDetailApi(params.lessonId + "");
+          setLesson(lessonDetail);
           if (lessonDetail) {
-            const assignmentsData = await getAssignmentSubmissionsApi(lessonDetail.id)
-            setAssignments(assignmentsData)
-            console.log("AssignmentsData:", assignmentsData)
-            console.log("Assignments:", assignments)
+            const assignmentsData = await getAssignmentSubmissionsApi(
+              lessonDetail.id
+            );
+            setAssignments(assignmentsData);
           }
         } catch (error) {
-          console.error("Error fetching data:", error)
+          console.error("Error fetching data:", error);
         } finally {
-          setIsLoading(false)
+          setIsLoading(false);
         }
-      }
+      };
 
-      fetchLessonDetail()
+      fetchLessonDetail();
     }
-  }, [params.id, params.lessonId])
+  }, [params.id, params.lessonId]);
 
   if (!lesson) {
-    return <Loading />
+    return <Loading />;
   }
 
   const handleAddAssignment = async (data: any) => {
     try {
-      if (!data) return
+      if (!data) return;
       if (isEditingAssignment) {
         // Update assignment
-        if (!selectedAssignment) return
-        await updateAssignmentApi(selectedAssignment.id, data)
+        if (!selectedAssignment) return;
+        await updateAssignmentApi(selectedAssignment.id, data);
       } else {
         // Create assignment
-        await createAssignmentApi(Number.parseInt(params.lessonId), data)
+        await createAssignmentApi(params.lessonId + "", data);
       }
 
       // Refresh assignments
-      const assignmentsData = await getAssignmentSubmissionsApi(Number.parseInt(params.lessonId))
-      setAssignments(assignmentsData)
-      setIsEditingAssignment(false)
-      setIsAddAssignmentOpen(false)
+      const assignmentsData = await getAssignmentSubmissionsApi(
+        params.lessonId + ""
+      );
+      setAssignments(assignmentsData);
+      setIsEditingAssignment(false);
+      setIsAddAssignmentOpen(false);
     } catch (error) {
-      console.error("Error creating or editing assignment:", error)
+      console.error("Error creating or editing assignment:", error);
     }
-  }
+  };
 
   const handleDeleteAssignment = async () => {
     try {
       // Delete assignment
-      if (!selectedAssignment) return
-      const assignmentId = selectedAssignment.id
-      await deleteAssignmentApi(assignmentId)
+      if (!selectedAssignment) return;
+      const assignmentId = selectedAssignment.id;
+      await deleteAssignmentApi(assignmentId);
       // Refresh assignments
-      setAssignments(assignments.filter((assignment) => assignment.id !== assignmentId))
+      setAssignments(
+        assignments.filter((assignment) => assignment.id !== assignmentId)
+      );
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
     }
-    catch (error) {
-      console.error("Error deleting assignment:", error)
-    }
-  }
+  };
 
   const handleEditAssignment = (assignment: AssignmentSubmissions) => {
-    setSelectedAssignment(assignment)
-    setIsEditingAssignment(true)
-    setIsAddAssignmentOpen(true)
-  }
+    setSelectedAssignment(assignment);
+    setIsEditingAssignment(true);
+    setIsAddAssignmentOpen(true);
+  };
 
   const handleCloseAssignmentForm = () => {
-    setIsEditingAssignment(false)
-    setIsAddAssignmentOpen(false)
-    setSelectedAssignment(null)
-  }
+    setIsEditingAssignment(false);
+    setIsAddAssignmentOpen(false);
+    setSelectedAssignment(null);
+  };
 
   const handleViewSubmissions = (assignment: AssignmentSubmissions) => {
-    setSelectedAssignment(assignment)
-    setIsViewingSubmissions(true)
-  }
+    setSelectedAssignment(assignment);
+    setIsViewingSubmissions(true);
+  };
 
   if (isLoading) {
-    return <div className="container mx-auto py-8 text-center">Đang tải...</div>
+    return (
+      <div className="container mx-auto py-8 text-center">Đang tải...</div>
+    );
   }
 
   if (!lesson) {
-    return <div className="container mx-auto py-8 text-center">Không tìm thấy bài học</div>
+    return (
+      <div className="container mx-auto py-8 text-center">
+        Không tìm thấy bài học
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto py-8 mt-[80px]">
-      <Button variant="ghost" onClick={() => router.push(`/teacher/courses/${params.id}/detail`)}>
+      <Button
+        variant="ghost"
+        onClick={() => router.push(`/teacher/courses/${params.id}/detail`)}
+      >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Trở về khóa học
       </Button>
@@ -131,10 +153,13 @@ export default function TeacherLessonDetail() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h1 className="text-2xl font-bold mb-4">{lesson.title}</h1>
           <div className="aspect-video relative rounded-lg overflow-hidden mb-4">
-            <VideoPlayer videoId={lesson.video_id} />
+            <VideoPlayer videoUrl={lesson.video_url} />
           </div>
 
-          <Description title="Nội dung bài học" description={lesson.content || "Không có nội dung."} />
+          <Description
+            title="Nội dung bài học"
+            description={lesson.content || "Không có nội dung."}
+          />
 
           {lesson.attachment && (
             <div className="mt-4">
@@ -155,7 +180,9 @@ export default function TeacherLessonDetail() {
           </div>
 
           {assignments.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Chưa có bài tập nào cho bài học này</div>
+            <div className="text-center py-8 text-gray-500">
+              Chưa có bài tập nào cho bài học này
+            </div>
           ) : (
             <div className="space-y-4">
               {assignments.map((assignment) => (
@@ -163,43 +190,44 @@ export default function TeacherLessonDetail() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="mb-2">{assignment.title}</CardTitle>
+                        <CardTitle className="mb-2">
+                          {assignment.title}
+                        </CardTitle>
                         <CardDescription>
-                          Bắt đầu vào {new Date(assignment.start_at).toLocaleDateString()}
-                          {assignment.due_at && ` - Hạn nộp: ${new Date(assignment.due_at).toLocaleDateString()}`}
+                          Bắt đầu vào{" "}
+                          {new Date(assignment.start_at).toLocaleDateString()}
+                          {assignment.due_at &&
+                            ` - Hạn nộp: ${new Date(
+                              assignment.due_at
+                            ).toLocaleDateString()}`}
                         </CardDescription>
                       </div>
                       <div>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="absolute top-2 right-14"
+                          className="absolute top-2 right-2"
                           onClick={() => handleEditAssignment(assignment)}
                         >
                           <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="absolute top-2 right-2 bg-red-200 text-red-500 hover:bg-red-300 hover:text-red-600"
-                          onClick={() => handleEditAssignment(assignment)}
-                        >
-                          <Trash className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-justify">
-                      {assignment.content}
-                    </p>
+                    <p className="text-justify">{assignment.content}</p>
                   </CardContent>
                   <CardFooter>
                     <Button
                       variant="outline"
                       className="border border-primary bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-                      onClick={() => handleViewSubmissions(assignment)}>
-                      Xem bài nộp ({assignment.submissions ? assignment.submissions.length : 0})
+                      onClick={() => handleViewSubmissions(assignment)}
+                    >
+                      Xem bài nộp (
+                      {assignment.submissions
+                        ? assignment.submissions.length
+                        : 0}
+                      )
                     </Button>
                   </CardFooter>
                 </Card>
@@ -225,8 +253,14 @@ export default function TeacherLessonDetail() {
           open={isViewingSubmissions}
           onOpenChange={setIsViewingSubmissions}
           assignment={selectedAssignment}
+          initialData={
+            selectedAssignment.submissions.length > 0 &&
+            selectedAssignment.submissions[0]?.submission_score
+              ? selectedAssignment.submissions[0]?.submission_score
+              : undefined
+          }
         />
       )}
     </div>
-  )
+  );
 }

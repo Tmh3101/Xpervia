@@ -1,0 +1,67 @@
+argon2	argon2
+aspnet	asp.net
+aws	aws
+azure	azure
+bcrypt	bcrypt
+c	c
+c++	c++
+cd	cd
+ci	ci
+cpp	c++
+cs	c#
+csharp	c#
+cv	computer vision
+cv2	opencv
+dl	deep learning
+dotnet	.net
+drf	django rest framework
+es	elasticsearch
+expressjs	express.js
+faiss	faiss
+gcp	google cloud
+gh	github
+gha	github actions
+gql	graphql
+hf	hugging face
+js	javascript
+jsx	javascript
+jwt	jwt
+k8s	kubernetes
+ml	machine learning
+mongo	mongodb
+mssql	sql server
+nextjs	next.js
+nginx	nginx
+nlp	nlp
+node	node.js
+oidc	openid connect
+opencv	opencv
+orm	orm
+pg	postgresql
+postgre	postgresql
+postgres	postgresql
+psql	postgresql
+py	python
+rb	ruby
+rbac	rbac
+reactjs	react.js
+reactnative	react native
+rn	react native
+rtk	redux toolkit
+rtkq	redux toolkit query
+sequelizejs	sequelize
+sklearn	scikit-learn
+spacy	spacy
+sqlite3	sqlite
+sqlserver	sql server
+sso	sso
+tailwind	tailwind css
+tailwindcss	tailwind css
+tf	tensorflow
+tf2	tensorflow
+tfjs	tensorflow.js
+torch	pytorch
+ts	typescript
+tsx	typescript
+vitejs	vite
+vuejs	vue.js

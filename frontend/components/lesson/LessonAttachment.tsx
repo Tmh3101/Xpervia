@@ -1,26 +1,36 @@
-import { FileText, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useState } from "react"
-import { getGoogleDriveDownloadFileUrl, getGoogleDriveFileUrl } from "@/lib/google-drive-url"
-import { File } from "@/lib/types/file"
-
+import { useState } from "react";
+import { FileText, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { downloadViaFetch } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { File } from "@/lib/types/file";
 
 interface LessonAttachmentsProps {
-  attachment: File
+  attachment: File;
 }
 
 export function LessonAttachment({ attachment }: LessonAttachmentsProps) {
-  const [selectedAttachment, setSelectedAttachment] = useState<File | null>(null)
+  const [selectedAttachment, setSelectedAttachment] = useState<File | null>(
+    null
+  );
 
+  // Xử lý tải xuống cho file_url
   const handleDownload = () => {
     if (selectedAttachment) {
-      window.open(getGoogleDriveDownloadFileUrl(selectedAttachment.file_id), "_blank")
+      downloadViaFetch(
+        selectedAttachment.file_url,
+        selectedAttachment.file_name
+      );
     }
-  }
+  };
 
   if (!attachment) {
-    return
+    return;
   }
 
   return (
@@ -37,8 +47,11 @@ export function LessonAttachment({ attachment }: LessonAttachmentsProps) {
         </Button>
       </div>
 
-      <Dialog open={!!selectedAttachment} onOpenChange={() => setSelectedAttachment(null)}>
-        <DialogContent className="max-w-4xl h-[80vh]">
+      <Dialog
+        open={!!selectedAttachment}
+        onOpenChange={() => setSelectedAttachment(null)}
+      >
+        <DialogContent className="max-w-4xl h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between mt-3">
               {selectedAttachment && (
@@ -54,18 +67,16 @@ export function LessonAttachment({ attachment }: LessonAttachmentsProps) {
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full min-h-0 -mt-[220px] h-auto">
+          <div className="flex-1 w-full min-h-0 -mt-[290px] h-auto">
             {selectedAttachment && (
               <iframe
-                src={getGoogleDriveFileUrl(selectedAttachment.file_id)}
+                src={selectedAttachment.file_url}
                 className="w-full h-full rounded-md"
-                allow="autoplay"
               />
             )}
           </div>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

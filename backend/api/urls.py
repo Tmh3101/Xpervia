@@ -1,10 +1,5 @@
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenRefreshView,
-    TokenVerifyView,    
-)
 from api.views import (
-    auth_view,
     user_view,
     category_view,
     chapter_view,
@@ -15,38 +10,46 @@ from api.views import (
     submission_score_view,
     lesson_completion_view,
     course_view,
-    image_proxy_view,
+    auth_view,
+    favorite_view,
+    reco_view
 )
 
 urlpatterns = [
-    # User URLs
-    path('users/', user_view.UserListAPIView.as_view(), name='user-list'),
-    path('users/create/', user_view.UserCreateAPIView.as_view(), name='user-create'),
-    path('users/<uuid:id>/', user_view.UserRetrieveAPIView.as_view(), name='user-detail'),
-    path('users/me/', user_view.CurrentUserAPIView.as_view(), name='current-user'),
-    path('users/<uuid:id>/update/', user_view.UserUpdateAPIView.as_view(), name='user-update'),
-    path('users/<uuid:id>/delete/', user_view.UserDeleteAPIView.as_view(), name='user-delete'),
-    path('users/<uuid:id>/update-password/', user_view.UserPasswordUpdateAPIView.as_view(), name='user-password-update'),
-    path('register/', user_view.UserRegisterAPIView.as_view(), name='user-register'),
-    path('users/<uuid:id>/disable/', user_view.UserDisableAPIView.as_view(), name='user-disable'),
-    path('users/<uuid:id>/enable/', user_view.UserEnableAPIView.as_view(), name='user-enable'),
+    #=== Authentication URLs ===#
+    path('auth/register/', auth_view.register_view, name='register'),
+    path('auth/login/', auth_view.login_view, name='login'),
+    path('auth/refresh-session/', auth_view.refresh_session_view, name='refresh-session'),
+    path('auth/request-reset-password/', auth_view.request_reset_password_view, name='request-reset-password'),
+    path('auth/reset-password/', auth_view.reset_password_view, name='reset-password'),
+    path('auth/current-user/', auth_view.get_current_user, name='current-user'),
 
-    # Auth URLs
-    path('token/login/', auth_view.CustomTokenObtainPairView.as_view(), name='token-login'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
-    path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),
-    path('token/logout/', auth_view.LogoutView.as_view(), name='token-logout'),
+    path('users/<uuid:id>/change-password/', user_view.UserChangePasswordAPIView.as_view(), name='change-password'),
 
-    # Course Category URLs
-    path('courses/categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
-    path('courses/categories/create/', category_view.CategoryCreateAPIView.as_view(), name='category-create'),
-    path('courses/categories/<int:id>/', category_view.CategoryRetrieveAPIView.as_view(), name='category-detail'),
-    path('courses/categories/<int:id>/update/', category_view.CategoryUpdateAPIView.as_view(), name='category-update'),
-    path('courses/categories/<int:id>/delete/', category_view.CategoryDeleteAPIView.as_view(), name='category-delete'),
+    #=== Admin URLs ===#
+    # Users Management URLs (Admin only)
+    path('admin/users/', user_view.UserListAPIView.as_view(), name='admin-user-list'),
+    path('admin/users/<uuid:id>/', user_view.UserRetrieveAPIView.as_view(), name='admin-user-detail'),
+    path('admin/users/create/', user_view.UserCreateAPIView.as_view(), name='admin-user-create'),
+    path('admin/users/<uuid:id>/update/', user_view.UserUpdateAPIView.as_view(), name='admin-user-update'),
+    path('admin/users/<uuid:id>/delete/', user_view.UserDeleteAPIView.as_view(), name='admin-user-delete'),
+    path('admin/users/<uuid:id>/disable/', user_view.UserDisableAPIView.as_view(), name='admin-user-disable'),
+    path('admin/users/<uuid:id>/enable/', user_view.UserEnableAPIView.as_view(), name='admin-user-enable'),
+
+    # Category Management URLs (Admin only)
+    path('admin/categories/', category_view.CategoryAdminAPIView.as_view(), name='admin-category-list-create'),
+    path('admin/categories/<int:id>/', category_view.CategoryAdminAPIView.as_view(), name='admin-category-update-delete'),
+
+    #=== Courses Management URLs ===#
+    # Category URLs
+    path('categories/', category_view.CategoryListAPIView.as_view(), name='category-list'),
+    path('categories/<int:id>/', category_view.CategoryDetailAPIView.as_view(), name='category-detail'),
 
     # Course URLs
     path('courses/', course_view.CourseListAPIView.as_view(), name='course-list'),
     path('courses/teacher/', course_view.CourseListByTeacherAPIView.as_view(), name='course-list-teacher'),
+    path('courses/student/enrolled/', course_view.EnrolledCourseListAPIView.as_view(), name='enrolled-course-list'),
+    path('courses/student/favorited/', course_view.FavoritedCourseListAPIView.as_view(), name='favorited-course-list'),
     path('courses/create/', course_view.CourseCreateAPIView.as_view(), name='course-create'),
     path('courses/<int:id>/', course_view.CourseRetrieveAPIView.as_view(), name='course-detail'),
     path('courses/<int:id>/update/', course_view.CourseUpdateAPIView.as_view(), name='course-update'),
@@ -57,10 +60,9 @@ urlpatterns = [
 
     # Enrollment URLs
     path('courses/enrollments/', enrollment_view.EnrollmentListAPIView.as_view(), name='enrollment-list'),
-    path('courses/<int:course_id>/enrollments/', enrollment_view.EnrollmentListByCourseAPIView.as_view(), name='enrollment-list'),
-    path('courses/<int:course_id>/enrollments/create/', enrollment_view.EnrollmentCreateAPIView.as_view(), name='course-enroll'),
+    path('courses/<int:course_id>/enrollments/', enrollment_view.EnrollmentListByCourseAPIView.as_view(), name='enrollment-list-by-course'),
+    path('courses/<int:course_id>/enroll/', enrollment_view.EnrollmentCreateAPIView.as_view(), name='course-enroll'),
     path('courses/enrollments/<int:id>/', enrollment_view.EnrollmentRetrieveAPIView.as_view(), name='enrollment-detail'),
-    # path('courses/enrollments/<int:id>/update/', enrollment_view.EnrollmentUpdateAPIView.as_view(), name='enrollment-update'),
     path('courses/enrollments/<int:id>/delete/', enrollment_view.EnrollmentDeleteAPIView.as_view(), name='enrollment-delete'),
     path('courses/enrollments/student/', enrollment_view.EnrollmentListByStudentAPIView.as_view(), name='enrollment-student-list'),
 
@@ -75,20 +77,20 @@ urlpatterns = [
     path('courses/<int:course_id>/lessons/', lesson_view.LessonListByCourseAPIView.as_view(), name='lesson-list'),
     path('courses/chapters/<int:chapter_id>/lessons/', lesson_view.LessonListByChapterAPIView.as_view(), name='lesson-list'),
     path('courses/<int:course_id>/lessons/create/', lesson_view.LessonCreateAPIView.as_view(), name='lesson-create'),
-    path('courses/lessons/<int:id>/', lesson_view.LessonRetrieveAPIView.as_view(), name='lesson-detail'),
-    path('courses/lessons/<int:id>/update/', lesson_view.LessonUpdateAPIView.as_view(), name='lesson-update'),
-    path('courses/lessons/<int:id>/delete/', lesson_view.LessonDeleteAPIView.as_view(), name='lesson-delete'),
+    path('courses/lessons/<uuid:id>/', lesson_view.LessonRetrieveAPIView.as_view(), name='lesson-detail'),
+    path('courses/lessons/<uuid:id>/update/', lesson_view.LessonUpdateAPIView.as_view(), name='lesson-update'),
+    path('courses/lessons/<uuid:id>/delete/', lesson_view.LessonDeleteAPIView.as_view(), name='lesson-delete'),
 
     # Lesson Completion URLs
-    path('courses/lessons/<int:lesson_id>/completions/', lesson_completion_view.LessonCompletionListAPIView.as_view(), name='lesson-complete-list'),
+    path('courses/lessons/<uuid:lesson_id>/completions/', lesson_completion_view.LessonCompletionListAPIView.as_view(), name='lesson-complete-list'),
     path('courses/<int:course_id>/lessons/completions/student/', lesson_completion_view.LessonCompletionListByStudentAPIView.as_view(), name='lesson-complete-list'),
-    path('courses/lessons/<int:lesson_id>/completions/create/', lesson_completion_view.LessonCompletionCreateAPIView.as_view(), name='lesson-complete'),
-    path('courses/lessons/<int:lesson_id>/completions/delete/', lesson_completion_view.LessonCompletionDeleteAPIView.as_view(), name='lesson-complete-delete'),
+    path('courses/lessons/<uuid:lesson_id>/completions/create/', lesson_completion_view.LessonCompletionCreateAPIView.as_view(), name='lesson-complete'),
+    path('courses/lessons/<uuid:lesson_id>/completions/delete/', lesson_completion_view.LessonCompletionDeleteAPIView.as_view(), name='lesson-complete-delete'),
 
     # Assignment URLs
-    path('courses/lessons/<int:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),
-    path('courses/lessons/<int:lesson_id>/assignments/student/', assignment_view.AssignmentListByStudentAPIView.as_view(), name='assignment-list-student'),
-    path('courses/lessons/<int:lesson_id>/assignments/create/', assignment_view.AssignmentCreateAPIView.as_view(), name='assignment-create'),
+    path('courses/lessons/<uuid:lesson_id>/assignments/', assignment_view.AssignmentListAPIView.as_view(), name='assignment-list'),
+    path('courses/lessons/<uuid:lesson_id>/assignments/student/', assignment_view.AssignmentListByStudentAPIView.as_view(), name='assignment-list-student'),
+    path('courses/lessons/<uuid:lesson_id>/assignments/create/', assignment_view.AssignmentCreateAPIView.as_view(), name='assignment-create'),
     path('courses/lessons/assignments/<int:id>/', assignment_view.AssignmentRetrieveAPIView.as_view(), name='assignment-detail'),
     path('courses/lessons/assignments/<int:id>/update/', assignment_view.AssignmentUpdateAPIView.as_view(), name='assignment-update'),
     path('courses/lessons/assignments/<int:id>/delete/', assignment_view.AssignmentDeleteAPIView.as_view(), name='assignment-delete'),
@@ -101,10 +103,19 @@ urlpatterns = [
     path('courses/assignments/submissions/<int:id>/delete/', submission_view.SubmissionDeleteAPIView.as_view(), name='submission-delete'),
 
     # Submission Score URLs
-    path('courses/assignments/submissions/<int:submission_id>/score/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
+    path('courses/assignments/submissions/<int:submission_id>/score/create/', submission_score_view.SubmissionScoreCreateAPIView.as_view(), name='submission-score-create'),
     path('courses/assignments/submissions/score/<int:id>/update/', submission_score_view.SubmissionScoreUpdateAPIView.as_view(), name='submission-score-update'),
     path('courses/assignments/submissions/score/<int:id>/delete/', submission_score_view.SubmissionScoreDeleteAPIView.as_view(), name='submission-score-delete'),
 
-    # Image Proxy URLs
-    path('proxy/image/<str:file_id>/', image_proxy_view.ImageProxyView.as_view(), name='proxy-image'),
+    # Favorite URLs
+    path('favorites/', favorite_view.FavoriteListAPIView.as_view(), name='favorite-list'),
+    path('favorites/course/<int:course_id>/', favorite_view.FavoriteListByCourseAPIView.as_view(), name='favorite-list-by-course'),
+    path('favorites/student/', favorite_view.FavoriteListByStudentAPIView.as_view(), name='favorite-list-by-student'),
+    path('favorites/create/<int:course_id>/', favorite_view.FavoriteCreateAPIView.as_view(), name='favorite-create'),
+    path('favorites/<int:id>/', favorite_view.FavoriteRetrieveAPIView.as_view(), name='favorite-detail'),
+    path('favorites/<int:course_id>/delete/', favorite_view.FavoriteDeleteAPIView.as_view(), name='favorite-delete'),
+
+    #=== Recommendation URLs ===#
+    path('reco/courses/similar/<int:course_id>/', reco_view.SimilarCourseListAPIView.as_view(), name='similar-course-list'),
+    path('reco/courses/home/', reco_view.HomeRecoListAPIView.as_view(), name='recommend-home'),
 ]

@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 from api.enums import RoleEnum
 from api.models import (
-    Course, Chapter, Lesson, Assignment, Submission, SubmissionScore, CourseContent
+    Course, Chapter, Lesson, Assignment, Submission, SubmissionScore
 )
 
 class IsTeacher(BasePermission):
@@ -11,56 +11,57 @@ class IsTeacher(BasePermission):
 # Owner permission for course, chapter, lesson
 class IsCourseOwner(BasePermission):
     def has_permission(self, request, view):
-
-        if view.kwargs.get('course_id'):
+        if 'course_id' in view.kwargs:
             try:
                 course = Course.objects.get(id=view.kwargs.get('course_id'))
             except Course.DoesNotExist:
                 return True
-            return course.course_content.teacher == request.user
+            return course.course_content.teacher_id == request.user.id
         
-        if view.kwargs.get('chapter_id'):
+        if 'chapter_id' in view.kwargs:
             try:
                 chapter = Chapter.objects.get(id=view.kwargs.get('chapter_id'))
             except Chapter.DoesNotExist:
                 return True
-            return chapter.course_content.teacher == request.user
-        
-        if view.kwargs.get('lesson_id'):
+            return chapter.course_content.teacher_id == request.user.id
+
+        if 'lesson_id' in view.kwargs:
             try:
                 lesson = Lesson.objects.get(id=view.kwargs.get('lesson_id'))
             except Lesson.DoesNotExist:
                 return True
-            return lesson.course_content.teacher == request.user
-        
-        if view.kwargs.get('assignment_id'):
+            return lesson.course_content.teacher_id == request.user.id
+
+        if 'assignment_id' in view.kwargs:
             try:
                 assignment = Assignment.objects.get(id=view.kwargs.get('assignment_id'))
             except Assignment.DoesNotExist:
                 return True
-            return assignment.lesson.course_content.teacher == request.user
+            return assignment.lesson.course_content.teacher_id == request.user.id
         
-        if view.kwargs.get('submission_id'):
+        if 'submission_id' in view.kwargs:
             try:
                 submission = Submission.objects.get(id=view.kwargs.get('submission_id'))
             except Submission.DoesNotExist:
                 return True
-            return submission.assignment.lesson.course_content.teacher == request.user
+            return submission.assignment.lesson.course_content.teacher_id == request.user.id
         
         return True
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Course):
-            return obj.course_content.teacher == request.user
-        elif isinstance(obj, Chapter) or isinstance(obj, Lesson):
-            return obj.course_content.teacher == request.user
-        elif isinstance(obj, Assignment):
-            course_content = obj.lesson.course_content
-            return course_content.teacher == request.user
-        elif isinstance(obj, Submission):
-            course_content = obj.assignment.lesson.course_content
-            return course_content.teacher == request.user
-        elif isinstance(obj, SubmissionScore):
-            course_content = obj.submission.assignment.lesson.course_content
-            return course_content.teacher == request.user
+            return obj.course_content.teacher_id == request.user.id
+        
+        if isinstance(obj, Chapter) or isinstance(obj, Lesson):
+            return obj.course_content.teacher_id == request.user.id
+        
+        if isinstance(obj, Assignment):
+            return obj.lesson.course_content.teacher_id == request.user.id
+        
+        if isinstance(obj, Submission):
+            return obj.assignment.lesson.course_content.teacher_id == request.user.id
+        
+        if isinstance(obj, SubmissionScore):
+            return obj.submission.assignment.lesson.course_content.teacher_id == request.user.id
+
         return True

@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { Loading } from "@/components/Loading"
-import { getCourseDetailApi } from "@/lib/api/course-api"
+import { useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Loading } from "@/components/Loading";
+import { getCourseDetailApi } from "@/lib/api/course-api";
 
 export default function CoursePage() {
-  const router = useRouter()
-  const params = useParams()
+  const router = useRouter();
+  const params = useParams();
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
       try {
-        const courseId = params.courseId
-        const courseDetail = await getCourseDetailApi(parseInt(courseId))
+        const courseId = params.courseId + "";
+        const courseDetail = await getCourseDetailApi(parseInt(courseId));
         const lessons = courseDetail.course_content.chapters
           .flatMap((chapter) => chapter.lessons)
-          .concat(courseDetail.course_content.lessons_without_chapter)
-        const firstLessonId = lessons[0].id
-        router.push(`/student/lessons/${courseId}/${firstLessonId}`)
+          .concat(courseDetail.course_content.lessons_without_chapter);
+        const firstLessonId = lessons[0].id;
+        router.push(`/student/lessons/${courseId}/${firstLessonId}`);
       } catch (error) {
-        console.error("Failed to fetch course detail", error)
+        console.error("Failed to fetch course detail", error);
       }
-    }
+    };
 
-    fetchCourseDetail()
-  }, [params.courseId, router])
+    fetchCourseDetail();
+  }, [params.courseId, router]);
 
-  return <Loading />
+  return <Loading />;
 }

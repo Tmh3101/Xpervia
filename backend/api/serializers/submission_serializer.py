@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from api.models import Submission, Assignment, User, File
-from .user_serializer import SimpleUserSerializer
+from api.models import Submission, Assignment, File
 from .assignment_serializer import SimpleAssignmentSerializer
 from .file_serializer import FileSerializer
+from api.models import User
+from .user_serializer import UserSerializer
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -13,7 +14,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    student = SimpleUserSerializer(read_only=True)
+    student = UserSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source='student',
@@ -30,10 +31,3 @@ class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = '__all__'
-
-class SimpleSubmissionSerializer(serializers.ModelSerializer):
-    file = FileSerializer(read_only=True)
-    student = SimpleUserSerializer(read_only=True)
-    class Meta:
-        model = Submission
-        fields = ['id', 'file', 'student', 'created_at']

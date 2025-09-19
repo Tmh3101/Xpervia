@@ -1,98 +1,124 @@
-"use client"
+"use client";
 
-import { Loading } from "@/components/Loading"
-import { useEffect, useState } from "react"
-import { CourseCard } from "@/components/course/CourseCard"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Loading } from "@/components/Loading";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CourseList } from "@/components/course/CourseList";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { CourseFormDialog } from "@/components/course/CourseFormDialog";
 import {
   getCourseByTeacherApi,
   createCourseApi,
   updateCourseApi,
-  deleteCourseApi
-} from "@/lib/api/course-api"
-import type { Course } from "@/lib/types/course"
-import { CourseFormDialog } from "@/components/course/CourseFormDialog"
-import type { CreateCourseRequest } from "@/lib/types/course"
-import { useRouter } from "next/navigation"
+  deleteCourseApi,
+} from "@/lib/api/course-api";
+import { CoursePagination } from "@/components/CoursePagination";
+import type { Course } from "@/lib/types/course";
+import type { CreateCourseRequest } from "@/lib/types/course";
 
 export default function TeacherDashboard() {
-  const router = useRouter()
-  const [courses, setCourses] = useState<Course[]>([])
-  const [isCourseFormOpen, setIsCourseFormOpen] = useState(false)
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
+  const router = useRouter();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
+  const [isCourseFormOpen, setIsCourseFormOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const courses = await getCourseByTeacherApi()
-        setCourses(courses)
+        setIsLoading(true);
+        const data = await getCourseByTeacherApi(page);
+        setCourses(data.results);
+        setCount(data.count);
       } catch (error) {
-        console.error("Failed to fetch courses", error)
+        console.error("Failed to fetch courses", error);
+      } finally {
+        setIsLoading(false);
       }
-    }
-
-    fetchCourses()
-  }, [])
+    };
+    fetchCourses();
+  }, [page]);
 
   if (!courses) {
-    return <Loading />
+    return <Loading />;
   }
 
   const handleEditCourse = (course: Course) => {
-    setEditingCourse(course)
-    setIsCourseFormOpen(true)
-  }
+    setEditingCourse(course);
+    setIsCourseFormOpen(true);
+  };
 
   const handleCreateCourse = async (createCourseData: CreateCourseRequest) => {
-    let newCourse = null
+    let newCourse = null;
     if (editingCourse) {
-      const course = await updateCourseApi(editingCourse.id, createCourseData)
-      console.log("Updating course:", course)
-      setCourses(courses.map((c) => (c.id === course.id ? course : c)))
+      const course = await updateCourseApi(editingCourse.id, createCourseData);
+      console.log("Updating course:", course);
+      setCourses(courses.map((c) => (c.id === course.id ? course : c)));
     } else {
-      const course = await createCourseApi(createCourseData)
-      newCourse = course
-      console.log("Creating course:", newCourse)
-      setCourses((prevCourses) => [...prevCourses, course])
+      const course = await createCourseApi(createCourseData);
+      newCourse = course;
+      console.log("Creating course:", newCourse);
+      setCourses((prevCourses) => [...prevCourses, course]);
     }
-    setIsCourseFormOpen(false)
+    setIsCourseFormOpen(false);
     if (newCourse) {
-      router.push(`/teacher/courses/${newCourse.id}/detail`)
+      router.push(`/teacher/courses/${newCourse.id}/detail`);
     }
-  }
+  };
 
   const handleDeleteCourse = async () => {
-    if (!editingCourse) return
-    await deleteCourseApi(editingCourse.id)
-    setEditingCourse(null)
-    setIsCourseFormOpen(false)
-    const newCourses = courses.filter((course) => course.id !== editingCourse.id)
-    setCourses(newCourses)
-  }
+    if (!editingCourse) return;
+    await deleteCourseApi(editingCourse.id);
+    setEditingCourse(null);
+    setIsCourseFormOpen(false);
+    const newCourses = courses.filter(
+      (course) => course.id !== editingCourse.id
+    );
+    setCourses(newCourses);
+  };
 
   return (
-    <div className="container mx-auto py-[90px] px-4 mt-[40px]">
+    <div className="container mx-auto py-[90px] px-4 mt-[40px] min-h-[500px]">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Khóa học của tôi</h1>
-          <p className="text-gray-600">
-            {courses.length} khóa học
-          </p>
+          <p className="text-gray-600">{count} khóa học</p>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <Button className="bg-primary hover:bg-primary/90 rounded-full" onClick={() => setIsCourseFormOpen(true)}>
+          <Button
+            className="bg-primary hover:bg-primary/90 rounded-full"
+            onClick={() => setIsCourseFormOpen(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Tạo khóa học
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {courses.map((course) => (
-          <CourseCard key={course.id} {...course} mode="teacher" onEditClick={() => handleEditCourse(course)} />
-        ))}
-      </div>
+      {courses.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-600">Bạn chưa có khóa học nào.</p>
+        </div>
+      ) : (
+        <>
+          <CourseList
+            mode="teacher"
+            courses={courses}
+            handleEditCourse={handleEditCourse}
+            isLoading={isLoading}
+          />
+          {count > 12 && (
+            <CoursePagination
+              currentPage={page}
+              totalPages={Math.ceil(count / 12)}
+              onPageChange={setPage}
+            />
+          )}
+        </>
+      )}
 
       <CourseFormDialog
         open={isCourseFormOpen}
@@ -103,6 +129,5 @@ export default function TeacherDashboard() {
         initialData={editingCourse ? editingCourse : undefined}
       />
     </div>
-  )
+  );
 }
-

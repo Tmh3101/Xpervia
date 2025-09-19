@@ -1,14 +1,14 @@
 from django.db import models
-from .user_model import User
 from .category_model import Category
+from .user_model import User
 
 
 class CourseContent(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    thumbnail_id = models.CharField(max_length=50, null=True, blank=True)
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'teacher'})
-
+    thumbnail_path = models.CharField(max_length=100)
+    thumbnail_url = models.URLField(max_length=200, null=True, default=None)
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher')
     categories = models.ManyToManyField(Category, related_name='course_contents')
 
     class Meta:

@@ -1,19 +1,24 @@
-import { routePermissions } from "./role-access-rules"
+import { routePermissions } from "./role-access-rules";
 
-export function authorizeWith(pathname: string, role: string): "allowed" | "not-allowed" | "not-found" {
-  // Lấy tất cả các pattern cho vai trò hiện tại
-  const patterns = routePermissions[role as keyof typeof routePermissions] || []
+// Check if user is authorized to access a route
+export function authorizeWith(
+  pathname: string,
+  role: string
+): "allowed" | "not-allowed" | "not-found" {
+  // Get all patterns for the current role
+  const patterns =
+    routePermissions[role as keyof typeof routePermissions] || [];
 
-  // Kiểm tra xem route có tồn tại trong bất kỳ vai trò nào không
+  // Check if the route exists in any role
   const isValidRoute = Object.values(routePermissions).some((patterns) =>
     patterns.some((pattern) => pattern.test(pathname))
-  )
+  );
 
   if (!isValidRoute) {
-    return "not-found" // Route không tồn tại
+    return "not-found"; // Route does not exist
   }
 
-  // Kiểm tra quyền truy cập
-  const isAllowed = patterns.some((pattern) => pattern.test(pathname))
-  return isAllowed ? "allowed" : "not-allowed"
+  // Check access rights
+  const isAllowed = patterns.some((pattern) => pattern.test(pathname));
+  return isAllowed ? "allowed" : "not-allowed";
 }
