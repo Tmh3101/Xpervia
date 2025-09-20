@@ -1,3 +1,18 @@
+<div align="center">
+    <br/>
+	<img src="https://wvhmkaizijngdfbmpenf.supabase.co/storage/v1/object/public/xpervia-public/assets/logo-ngang.png" alt="Xpervia Logo" width="160"/>
+    <br/>
+    <br/>
+</div>
+
+![React](https://img.shields.io/badge/React-18.x-61DAFB?style=flat&logo=react)
+![Next.js](https://img.shields.io/badge/Next.js-14.x-000000?style=flat&logo=next.js)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=flat&logo=tailwind-css)
+![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-latest-000000?style=flat&logo=shadcn%2Fui)
+![Django](https://img.shields.io/badge/Django-5.1.x-092E20?style=flat&logo=django)
+![Django REST Framework](https://img.shields.io/badge/Django_REST_Framework-3.15.x-A020F0?style=flat&logo=django-rest-framework)
+![Supabase](https://img.shields.io/badge/Supabase-2.15.x-3FC084?style=flat&logo=supabase)
+
 # Xpervia - Hệ Thống Quản Lý Khóa Học Trực Tuyến
 
 ## Giới Thiệu
@@ -15,9 +30,15 @@ Xpervia là nền tảng học tập trực tuyến giúp quản lý khóa học
 
 ## Công Nghệ Sử Dụng
 
-- **Backend**: Django Rest Framework, Supabase PostgreSQL, Google Drive API, Reco Service (gợi ý khóa học)
+- **Backend**: Django Rest Framework, Supabase PostgreSQL, Supabase Storage, Reco Service (gợi ý khóa học)
 - **Frontend**: Next.js, React, ShadCN/UI
-- **Authentication**: Token-based Authentication
+- **Authentication**: Supabase Auth (JWT)
+
+<div align="center">
+    <img src="https://wvhmkaizijngdfbmpenf.supabase.co/storage/v1/object/public/xpervia-public/assets/system-structure.png" alt="System Architecture" width="600"/>
+    
+<strong>Hình 1:</strong> Sơ đồ kiến trúc hệ thống
+</div>
 
 ## Cài Đặt & Chạy Dự Án
 
@@ -51,6 +72,8 @@ python manage.py reco_init
 python manage.py runserver
 ```
 
+&rArr; Backend server sẽ được chạy tại: _http://localhost:8000_
+
 ### Frontend
 
 ```sh
@@ -62,6 +85,15 @@ npm install
 npm run dev
 ```
 
+&rArr; Truy cập website tại đường dẫn: _http://localhost:3000_
+
+<div align="center">
+    <br/>
+	<img src="https://wvhmkaizijngdfbmpenf.supabase.co/storage/v1/object/public/xpervia-public/assets/homepage.png" alt="Xpervia Homepage" width="700"/>
+    <br/>
+    <strong>Hình 2:</strong> </i>Giao diện trang chủ website</i>
+</div>
+
 ## Đóng Góp
 
 Mọi đóng góp đều được hoan nghênh! Hãy tạo issue hoặc gửi pull request.
@@ -69,3 +101,9 @@ Mọi đóng góp đều được hoan nghênh! Hãy tạo issue hoặc gửi pu
 ## Thay Đổi & Lịch Sử Phiên Bản
 
 Xem chi tiết các thay đổi tại file [CHANGELOG.md](./CHANGELOG.md) (bắt đầu từ version 2 dev).
+
+---
+
+## Báo Cáo Đề Tài
+
+[Xem bài báo cáo chi tiết tại đây](https://drive.google.com/file/d/1vF0H3_JqWuyNd-l0RUjkytHR8bqpEysx/view?usp=sharing)
