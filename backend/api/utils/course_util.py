@@ -90,9 +90,49 @@ def add_file_url_for(lesson):
                 is_public=True
             )
 
+from django.db.models import Count
 def get_course_progress(course_content, student_id):
     total_lessons = course_content.lessons.count()
     completed_lessons = LessonCompletion.objects.filter(
         lesson__course_content=course_content, student_id=student_id
     ).count()
     return round(completed_lessons / total_lessons * 100, 2) if total_lessons > 0 else 0
+
+def get_progress_map_bulk(content_ids, user_id):
+    """
+    Trả về dict: {course_content_id: progress_float 0..1}
+    - 1 query đếm tổng lessons theo content_id
+    - 1 query đếm completions theo content_id cho user
+    - Join ở Python → O(n) theo số content trong page
+    """
+    if not content_ids:
+        return {}
+
+    # Tổng số lessons theo content_id
+    total_qs = (
+        Lesson.objects
+        .filter(course_content_id__in=content_ids)
+        .values("course_content_id")
+        .annotate(total=Count("id"))
+    )
+    total_map = {row["course_content_id"]: row["total"] for row in total_qs}
+
+    # Số completions theo content_id cho user
+    # (join qua lesson → course_content_id)
+    completed_qs = (
+        LessonCompletion.objects
+        .filter(student_id=user_id, lesson__course_content_id__in=content_ids)
+        .values("lesson__course_content_id")
+        .annotate(done=Count("id"))
+    )
+    done_map = {row["lesson__course_content_id"]: row["done"] for row in completed_qs}
+
+    # Tính progress
+    progress_map = {}
+    for cid in content_ids:
+        total = total_map.get(cid, 0)
+        done = done_map.get(cid, 0)
+        # làm tròn 2 chữ số thập phân
+        progress_map[cid] = round(float(done) / float(total) * 100, 2) if total > 0 else 0.0
+
+    return progress_map

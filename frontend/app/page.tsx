@@ -42,6 +42,8 @@ export default function Home() {
     setSearchQuery(query);
   };
 
+  console.log("Filtered Courses:", filteredCourses);
+
   return (
     <main>
       <HeroSection />

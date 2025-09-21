@@ -2,7 +2,6 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { CourseCard } from "./CourseCard";
-import { useEffect, useState } from "react";
 import { Loading } from "@/components/Loading";
 import type { Course } from "@/lib/types/course";
 

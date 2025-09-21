@@ -6,4 +6,4 @@ logger = logging.getLogger(__name__)
 
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role == RoleEnum.ADMIN.name
+        return request.user and request.user.role == RoleEnum.ADMIN.name

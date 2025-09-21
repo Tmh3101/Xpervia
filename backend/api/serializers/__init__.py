@@ -1,7 +1,7 @@
 from .assignment_serializer import AssignmentSerializer, SimpleAssignmentSerializer
 from .category_serializer import CategorySerializer
 from .chapter_serializer import ChapterSerializer, SimpleChapterSerializer
-from .course_serializer import CourseDetailSerializer, CourseSerializer
+from .course_serializer import CourseSerializer, CourseListItemSerializer, SimpleCourseSerializer
 from .course_content_serializer import CourseContentSerializer, SimpleCourseContentSerializer
 from .enrollment_serializer import EnrollmentSerializer, SimpleEnrollmentSerializer
 from .lesson_completion_serializer import LessonCompletionSerializer

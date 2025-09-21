@@ -2,22 +2,23 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { CourseCard } from "@/components/course/CourseCard";
-import { useRouter } from "next/navigation";
+import { Loading } from "@/components/Loading";
 import { useEffect, useState } from "react";
 import { getFavoritedCoursesApi } from "@/lib/api/course-api";
 import type { Course } from "@/lib/types/course";
 
 export default function StudentFavoritesPage() {
   const { favoritedCourseIds, enrolledCourseIds, toggleFavorite } = useAuth();
-  const router = useRouter();
   const [localFavoriteCourseIds, setLocalFavoriteCourseIds] =
     useState(favoritedCourseIds);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       const favoritedCourses = await getFavoritedCoursesApi();
       setCourses(favoritedCourses);
+      setLoading(false);
     };
 
     fetchData();
@@ -37,6 +38,10 @@ export default function StudentFavoritesPage() {
     if (!enrolledCourseIds) return false;
     return enrolledCourseIds.includes(courseId);
   };
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <main className="pt-24">

@@ -24,9 +24,18 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = ['id', 'course_content']
 
-class CourseDetailSerializer(serializers.ModelSerializer):
+class CourseListItemSerializer(serializers.ModelSerializer):
+    # Các trường annotate (read_only)
+    num_students = serializers.IntegerField(read_only=True)
+    num_favorites = serializers.IntegerField(read_only=True)
+    progress = serializers.SerializerMethodField()
     course_content = CourseContentSerializer(read_only=True)
-    
+
     class Meta:
         model = Course
         fields = '__all__'
+
+    def get_progress(self, obj):
+        # Lấy từ progress_map do view truyền vào context
+        mp = self.context.get("progress_map") or {}
+        return mp.get(obj.course_content_id, 0.0)

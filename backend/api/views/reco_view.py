@@ -7,13 +7,14 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from api.pagination import CoursePagination
 from api.models import Course
-from api.serializers import CourseSerializer
+from api.serializers import CourseSerializer, CourseListItemSerializer
 from api.middlewares.authentication import SupabaseJWTAuthentication
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from api.services.reco_service.cb.similarity import top_k_similar_from_course
 from api.services.reco_service.hybrid.service import hybrid_recommend_home
 from api.services.reco_service.data_access.courses import fetch_popular_course_ids
+from api.utils.course_util import get_progress_map_bulk
 from api.services.reco_service.config import ALPHA_HOME, CACHE_TTL
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ class SimilarCourseListAPIView(generics.ListAPIView):
             .annotate(
                 num_students=Count("enrollments", distinct=True),
                 num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True),
             )
         )
         # Đưa về dict để match theo id -> Giữ thứ tự theo score do mô hình trả về
@@ -97,10 +99,6 @@ class SimilarCourseListAPIView(generics.ListAPIView):
             c_data = CourseSerializer(course).data
             c_data["num_students"] = course.num_students
             c_data["num_favorites"] = course.num_favorites
-
-            # có thể đính kèm 'reason' / 'score' phục vụ explain/debug (tùy bạn)
-            # tìm score từ danh sách similar
-            # lưu ý: nếu muốn tối ưu O(1), bạn có thể build map trước
             results.append(c_data)
 
         logger.info(f"Returned {len(results)} recommended courses for course_id={course_id}")
@@ -111,11 +109,11 @@ class SimilarCourseListAPIView(generics.ListAPIView):
         })
 
 # Home Recommendations
-@method_decorator(cache_page(CACHE_TTL), name="dispatch")
+# @method_decorator(cache_page(CACHE_TTL), name="dispatch")
 class HomeRecoListAPIView(generics.ListAPIView):
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
-    serializer_class = CourseSerializer
+    serializer_class = CourseListItemSerializer
     pagination_class = CoursePagination
 
     # ------------ helpers ------------
@@ -164,6 +162,7 @@ class HomeRecoListAPIView(generics.ListAPIView):
             .annotate(
                 num_students=Count("enrollments", distinct=True),
                 num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True)
             )
         )
 
@@ -183,12 +182,12 @@ class HomeRecoListAPIView(generics.ListAPIView):
 
         # Pagination thủ công theo list đã sắp xếp
         page = self.paginate_queryset(ordered_courses)
-        results = []
-        for course in page:
-            data = CourseSerializer(course).data
-            data["num_students"] = course.num_students
-            data["num_favorites"] = course.num_favorites
-            results.append(data)
 
-        logger.info(f"[reco_home] returned {len(results)} items")
-        return self.get_paginated_response(results)
+        # Tính progress theo lô (nếu user đăng nhập)
+        progress_map = {}
+        user = getattr(request, "user", None)
+        if page and getattr(user, "is_authenticated", False):
+            content_ids = [c.course_content_id for c in page]
+            progress_map = get_progress_map_bulk(content_ids, user.id)
+        serializer = self.get_serializer(page, many=True, context={"progress_map": progress_map})
+        return self.get_paginated_response(serializer.data)

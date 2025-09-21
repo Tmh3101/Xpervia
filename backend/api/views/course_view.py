@@ -15,7 +15,8 @@ from api.serializers import (
     CourseSerializer,
     CourseContentSerializer,
     ChapterSerializer,
-    LessonSerializer
+    LessonSerializer,
+    CourseListItemSerializer
 )
 from api.permissions import IsTeacher, IsCourseOwner, IsAdmin   
 from api.middlewares.authentication import SupabaseJWTAuthentication
@@ -25,65 +26,60 @@ from api.utils import (
     delete_course_content,
     get_course_content_lessons,
     add_file_url_for,
-    get_course_progress
+    get_progress_map_bulk
 )
 
 logger = logging.getLogger(__name__)
 
-# Course Detail API to list all course
+# Course List API with filtering and pagination
 class CourseListAPIView(generics.ListAPIView):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = CourseListItemSerializer
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [AllowAny]
     pagination_class = CoursePagination
 
     def get_queryset(self):
-        queryset = Course.objects.select_related("course_content").annotate(
-            num_students=Count("enrollments", distinct=True),
-            num_favorites=Count("favorites", distinct=True)
-        ).order_by("-created_at")
+        qs = (
+            Course.objects
+            .select_related("course_content")
+            .annotate(
+                num_students=Count("enrollments", distinct=True),
+                num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True),
+            )
+            .order_by("-created_at")
+        )
 
-        title = self.request.query_params.get("title")
-        categories = self.request.query_params.getlist("categories") or self.request.query_params.get("categories")
-        is_visible = self.request.query_params.get("is_visible")
+        request = self.request
+        params = request.query_params
+
+        title = params.get("title")
+        categories = params.getlist("categories") or params.get("categories")
+        is_visible = params.get("is_visible")
 
         if title:
-            queryset = queryset.filter(course_content__title__icontains=title)
+            qs = qs.filter(course_content__title__icontains=title)
+
         if categories:
             if isinstance(categories, str):
                 categories = [categories]
-            queryset = queryset.filter(course_content__categories__id__in=categories).distinct()
-        if is_visible is not None and self.request.user.role == 'admin':
-            queryset = queryset.filter(is_visible=is_visible)
-        return queryset
+            qs = qs.filter(course_content__categories__id__in=categories).distinct()
+
+        if is_visible:
+            qs = qs.filter(is_visible=is_visible)
+
+        return qs
 
     def list(self, request, *args, **kwargs):
-        logger.info("Listing all courses")
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-
-        results = []
-        for course in page:
-            c_data = CourseSerializer(course).data
-            cc = course.course_content
-            cc_data = CourseContentSerializer(cc).data
-            cc_data["num_lessons"] = cc.lessons.count()
-            c_data["course_content"] = cc_data
-            c_data["num_students"] = course.num_students
-            c_data["num_favorites"] = course.num_favorites
-            c_data["progress"] = get_course_progress(cc, request.user.id)
-
-            results.append(c_data)
-
-        logger.info("Successfully listed all courses")
-        return self.get_paginated_response(results)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     
 # Course Detail API to list all course of a teacher
 class CourseListByTeacherAPIView(generics.ListAPIView):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = CourseListItemSerializer
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated, IsTeacher]
     pagination_class = CoursePagination
@@ -96,35 +92,22 @@ class CourseListByTeacherAPIView(generics.ListAPIView):
             .select_related("course_content")
             .annotate(
                 num_students=Count("enrollments", distinct=True),
-                num_favorites=Count("favorites", distinct=True)
+                num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True),
             )
             .order_by("-created_at")
         )
 
     def list(self, request, *args, **kwargs):
-        logger.info(f"Listing courses for teacher ID: {request.user.id}")
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-
-        results = []
-        for course in page:
-            c_data = CourseSerializer(course).data
-            cc = course.course_content
-            cc_data = CourseContentSerializer(cc).data
-
-            chapters, lessons_without_chapter = get_course_content_lessons(cc)
-            cc_data["chapters"] = chapters
-            cc_data["lessons_without_chapter"] = lessons_without_chapter
-            c_data["course_content"] = cc_data
-            results.append(c_data)
-
-        logger.info("Successfully listed teacher's courses")
-        return self.get_paginated_response(results)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 # Enroled Course list for student without pagination
 class EnrolledCourseListAPIView(generics.ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CourseListItemSerializer
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = None  # Disable pagination
@@ -137,39 +120,35 @@ class EnrolledCourseListAPIView(generics.ListAPIView):
             .select_related("course_content")
             .annotate(
                 num_students=Count("enrollments", distinct=True),
-                num_favorites=Count("favorites", distinct=True)
+                num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True),
             )
             .order_by("-created_at")
         )
 
     def list(self, request, *args, **kwargs):
         logger.info(f"Listing enrolled courses for student ID: {request.user.id}")
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
 
-        results = []
-        for course in queryset:
-            c_data = CourseSerializer(course).data
-            cc = course.course_content
-            cc_data = CourseContentSerializer(cc).data
+        progress_map = {}
+        user = getattr(request, "user", None)
+        if queryset and getattr(user, "is_authenticated", False):
+            content_ids = [c.course_content_id for c in queryset]
+            progress_map = get_progress_map_bulk(content_ids, user.id)
 
-            chapters, lessons_without_chapter = get_course_content_lessons(cc)
-            cc_data["chapters"] = chapters
-            cc_data["lessons_without_chapter"] = lessons_without_chapter
-            c_data["course_content"] = cc_data
-            c_data["progress"] = get_course_progress(cc, request.user.id)
-            results.append(c_data)
+        serializer = self.get_serializer(queryset, many=True, context={"progress_map": progress_map})
 
         logger.info("Successfully listed enrolled courses")
         return Response({
             'success': True,
             'message': 'Enrolled courses retrieved successfully',
-            'courses': results
+            'courses': serializer.data
         }, status=status.HTTP_200_OK) 
     
 
 # Favorited Course list of student without pagination
 class FavoritedCourseListAPIView(generics.ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CourseListItemSerializer
     authentication_classes = [SupabaseJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = None  # Disable pagination
@@ -182,35 +161,29 @@ class FavoritedCourseListAPIView(generics.ListAPIView):
             .select_related("course_content")
             .annotate(
                 num_students=Count("enrollments", distinct=True),
-                num_favorites=Count("favorites", distinct=True)
+                num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True),
             )
             .order_by("-created_at")
         )
 
     def list(self, request, *args, **kwargs):
-        logger.info(f"Listing favorite courses for student ID: {request.user.id}")
-        queryset = self.get_queryset()
+        logger.info(f"Listing enrolled courses for student ID: {request.user.id}")
+        queryset = self.filter_queryset(self.get_queryset())
 
-        results = []
-        for course in queryset:
-            c_data = CourseSerializer(course).data
-            cc = course.course_content
-            cc_data = CourseContentSerializer(cc).data
+        progress_map = {}
+        user = getattr(request, "user", None)
+        if queryset and getattr(user, "is_authenticated", False):
+            content_ids = [c.course_content_id for c in queryset]
+            progress_map = get_progress_map_bulk(content_ids, user.id)
 
-            chapters, lessons_without_chapter = get_course_content_lessons(cc)
-            cc_data["chapters"] = chapters
-            cc_data["lessons_without_chapter"] = lessons_without_chapter
-            c_data["course_content"] = cc_data
-            c_data["num_students"] = course.num_students
-            c_data["num_favorites"] = course.num_favorites
-            c_data["progress"] = get_course_progress(cc, request.user.id)
-            results.append(c_data)
+        serializer = self.get_serializer(queryset, many=True, context={"progress_map": progress_map})
 
-        logger.info("Successfully listed favorite courses")
+        logger.info("Successfully listed enrolled courses")
         return Response({
             'success': True,
-            'message': 'Favorite courses retrieved successfully',
-            'courses': results
+            'message': 'Enrolled courses retrieved successfully',
+            'courses': serializer.data
         }, status=status.HTTP_200_OK)
 
 
@@ -272,7 +245,6 @@ class CourseCreateAPIView(generics.CreateAPIView):
             'message': 'Course created successfully',
             'course': course_serializer.data
         }, status=status.HTTP_201_CREATED, headers=headers)
-
     
 # Course API to retrieve a course detail
 class CourseRetrieveAPIView(generics.RetrieveAPIView):
@@ -289,6 +261,7 @@ class CourseRetrieveAPIView(generics.RetrieveAPIView):
             .annotate(
                 num_students=Count("enrollments", distinct=True),
                 num_favorites=Count("favorites", distinct=True),
+                num_lessons=Count("course_content__lessons", distinct=True),
             )
         )
         return get_object_or_404(qs, **{self.lookup_field: self.kwargs[self.lookup_field]})
