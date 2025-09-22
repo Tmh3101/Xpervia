@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from typing import List
 from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer
+
 from app import config
 
 def get_embeddings_model() -> SentenceTransformer:
@@ -21,4 +23,6 @@ def embed_documents(docs: List[Document]) -> List[List[float]]:
     return embs
 
 def embed_query(q: str) -> List[float]:
-    return get_embeddings_model().embed_query(q)
+    model = get_embeddings_model()
+    emb = model.encode(q, normalize_embeddings=True)
+    return emb

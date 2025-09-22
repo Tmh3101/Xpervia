@@ -6,6 +6,8 @@ create extension if not exists pg_trgm;
 create table if not exists public.rag_chunks (
   id bigserial primary key,
   chunk_uid varchar(64) unique not null,
+  chunk_index integer not null,
+  total_chunks integer not null,
   course_id bigint,
   doc_type varchar(64) not null,
   lang varchar(8) not null default 'vi',
@@ -14,7 +16,9 @@ create table if not exists public.rag_chunks (
   embedding vector(768) not null,
   metadata jsonb not null default '{}',
   created_at timestamptz not null,
-  updated_at timestamptz not null
+  updated_at timestamptz not null,
+
+  foreign key (course_id) references public.courses(id) on delete cascade
 );
 
 -- Tạo cột tsvector (nếu chưa có)

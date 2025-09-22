@@ -15,6 +15,8 @@ SUPABASE_DB_NAME = os.getenv("SUPABASE_DB_NAME", "postgres")
 SUPABASE_DB_USER = os.getenv("SUPABASE_DB_USER", "postgres")
 DATABASE_URL_ASYNC = f"postgresql+asyncpg://{SUPABASE_DB_USER}:{SUPABASE_DB_PASSWORD}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}"
 
+print("DATABASE_URL_ASYNC:", DATABASE_URL_ASYNC)
+
 # SUPABASE (cho API nếu cần)
 SUPABASE_URL = os.getenv("SUPABASE_URL", None)
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", None)
@@ -24,8 +26,8 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", None)
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # Chunking & Indexing
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 256))
-CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 32))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 512))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 64))
 
 # HuggingFace models
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base")
