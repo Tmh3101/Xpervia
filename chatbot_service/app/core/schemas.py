@@ -13,6 +13,8 @@ rag_chunks = Table(
     metadata,
     Column("id", BigInteger, primary_key=True, autoincrement=True),
     Column("chunk_uid", String(64), nullable=False, unique=True), # sha256 stable key, kết hợp course_id, doc_type, chunk_index, title, sha16(content)
+    Column("chunk_index", Integer, nullable=True), # chỉ số chunk trong document gốc
+    Column("total_chunks", Integer, nullable=True), # tổng số chunk trong document gốc
     Column("course_id", BigInteger, nullable=True), # khoá học gốc (nếu có)
     Column("doc_type", String(64), nullable=False), # loại document: course_overview, pricing, popularity
     Column("lang", String(8), nullable=False, default="vi"), # ngôn ngữ của content
@@ -24,7 +26,6 @@ rag_chunks = Table(
     Column("updated_at", DateTime(timezone=True), nullable=False), # thời điểm cập nhật bản ghi
 )
 
-# 
 class CourseOverviewMetadata(BaseModel):
     doc_type: str
     course_id: Optional[int]
