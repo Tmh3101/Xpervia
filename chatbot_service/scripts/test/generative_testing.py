@@ -15,9 +15,8 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 from app import config
 from app.rag.generative.model import (
-    build_chat_model, 
-    GenerativeConfig, 
-    create_model_summary,
+    GenerativeConfig,
+    build_chat_model,  
     get_model_info
 )
 from app.rag.generative.answer_generation import generate_answer
@@ -178,7 +177,7 @@ def main():
     # Cấu hình cho fine-tuned model
     model_config = GenerativeConfig(
         base_model_id="Qwen/Qwen2.5-0.5B-Instruct",
-        lora_path="model/qwen-500m-qlora-xpervia/final",
+        lora_path="model/qwen2_5_0_5b_lora_ragqa",
         device="cpu",  # Có thể chuyển sang "cuda" nếu có GPU
         dtype="float32",  # float32 cho CPU, float16 cho GPU
         load_in_4bit=False,  # False cho CPU, True cho GPU để tiết kiệm VRAM
@@ -310,8 +309,8 @@ def main():
         print(f"   Simple prompt: {scenario['use_simple_prompt']}")
         
         # Định nghĩa generation function cho scenario này
-        def generate_for_scenario():
-            return generate_answer(
+        async def generate_for_scenario():
+            return await generate_answer(
                 chat=chat_model,
                 question=scenario["question"],
                 retrieved_chunks=scenario["chunks"],

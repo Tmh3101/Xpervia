@@ -1,152 +1,58 @@
 from __future__ import annotations
-"""
-FastAPI entrypoint for Xpervia Chatbot (RAG) — ready for Colab or server.
-
-Usage (local/Colab):
-  uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --workers 1
-
-Environment:
-  - DATABASE_URL_ASYNC  (postgresql+asyncpg://...)
-  - API_KEY             (optional; if set, requests must include X-API-Key header)
-
-Endpoints:
-  - GET  /health
-  - POST /v1/chat               -> run one RAG turn (stores history in memory)
-  - POST /v1/history/clear      -> clear history for a session
-
-Notes:
-  - This file reuses the orchestration in app.rag.chain
-  - For production, replace in-memory history with Redis/DB in chain.py
-
-"""
-
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 import os
-import uvicorn
-from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
-
-from fastapi import FastAPI, Depends, Header, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from .schemas import AskDTO, AskResponse
+from app.rag.chain import RAGPipeline, GenerativeConfig
 
-from app import config
-from app.rag.chain import chat_once, RetrievalParams, _HISTORY
-from app.rag.generation.model import build_chat_model
+app = FastAPI(title="RAG Chatbot (LangChain + Qwen)", version="0.1.0")
 
-print("Config loaded. DATABASE_URL_ASYNC:", config.DATABASE_URL_ASYNC)
-
-
-API_KEY_ENV = os.getenv("API_KEY", "")
-
-
-async def require_auth(x_api_key: Optional[str] = Header(default=None)) -> None:
-    """Simple header auth. If API_KEY is not set, auth is disabled."""
-    if not API_KEY_ENV:
-        return
-    if not x_api_key or x_api_key != API_KEY_ENV:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-
-class ChatRequest(BaseModel):
-    session_id: str = Field(..., description="Session ID để lưu history")
-    question: str
-    strategy: str = Field("hybrid", pattern="^(semantic|lexical|hybrid)$")
-    top_k: int = Field(8, ge=1, le=50)
-    top_k_semantic: int = Field(12, ge=1, le=100)
-    top_k_lexical: int = Field(20, ge=1, le=100)
-    alpha: float = Field(0.6, ge=0.0, le=1.0, description="Trọng số semantic khi fuse trong hybrid")
-    course_id: Optional[int] = None
-    doc_types: Optional[List[str]] = None
-    lang: Optional[str] = None
-    ts_config: str = Field("simple", description="Postgres text search config: simple/english/... ")
-
-
-class ChatResponse(BaseModel):
-    answer: str
-    chunks: List[Dict[str, Any]]
-    history: List[List[str]]
-
-
-class ClearHistoryRequest(BaseModel):
-    session_id: str
-
-
-# Lifespan: manage DB engine
-engine: AsyncEngine | None = None
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    global engine
-    engine = create_async_engine(config.DATABASE_URL_ASYNC, pool_pre_ping=True)
-    try:
-        yield
-    finally:
-        if engine:
-            await engine.dispose()
-
-# FastAPI app
-app = FastAPI(title="Xpervia Chatbot API (RAG)", version="1.0", lifespan=lifespan)
-
-# CORS (allow all by default; tighten in production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Health check API - simple GET to verify service is up and running
+# --- Khởi tạo pipeline khi server start ---
+@app.on_event("startup")
+async def startup():
+    # Cấu hình mô hình sinh văn bản mặc định, tạo pipeline và giữ trong state
+    gen_cfg = GenerativeConfig()
+    app.state.pipeline = RAGPipeline(gen_cfg, return_chunks=True)
+
 @app.get("/health")
-async def health() -> Dict[str, Any]:
-    return {"ok": True}
+async def health():
+    ok = hasattr(app.state, "pipeline")
+    return {"status": "ok" if ok else "not_ready"}
 
-# Chat API - main RAG endpoint
-@app.post("/v1/chat", response_model=ChatResponse)
-async def chat_route(payload: ChatRequest, _: None = Depends(require_auth)) -> ChatResponse:
-    if engine is None:
-        raise HTTPException(status_code=500, detail="Engine not initialized")
+@app.post("/ask", response_model=AskResponse)
+async def ask(dto: AskDTO) -> AskResponse:
+    """
+    Endpoint chính để hỏi bot.
+    - question: câu hỏi người dùng
+    - history: danh sách lượt chat trước (role/content)
+    - system_prompt: prompt hệ thống (nếu muốn ép phong cách)
+    - use_simple_prompt: bật template prompt đơn giản trong generate_answer
+    - return_chunks: nếu True trả kèm các mảnh context đã retrieve (debug)
+    """
+    if not getattr(app.state, "pipeline", None):
+        raise HTTPException(status_code=503, detail="Pipeline chưa sẵn sàng")
 
-    params = RetrievalParams(
-        strategy=payload.strategy,
-        top_k=payload.top_k,
-        top_k_semantic=payload.top_k_semantic,
-        top_k_lexical=payload.top_k_lexical,
-        alpha=payload.alpha,
-        course_id=payload.course_id,
-        doc_types=payload.doc_types,
-        lang=payload.lang,
-        ts_config=payload.ts_config,
-    )
+    try:
+        out = await app.state.pipeline.ainvoke(
+            dto.question,
+            history=[h.model_dump() for h in dto.history] if dto.history else None,
+            system_prompt=dto.system_prompt,
+            use_simple_prompt=dto.use_simple_prompt,
+        )
+        # out là dict: {"answer": ..., "retrieved_chunks": ...?}
+        resp = AskResponse(answer=out["answer"])
+        if dto.return_chunks and "retrieved_chunks" in out:
+            resp.retrieved_chunks = out["retrieved_chunks"]
+        return resp
 
-    result = await chat_once(
-        session_id=payload.session_id,
-        question=payload.question,
-        engine=engine,
-        retrieval=params,
-        chat=chat,  # pre-built ChatHuggingFace model
-    )
-    return ChatResponse(**result)
-
-# Clear history API - clear in-memory history for a session
-@app.post("/v1/history/clear")
-async def clear_history(payload: ClearHistoryRequest, _: None = Depends(require_auth)) -> Dict[str, Any]:
-    _HISTORY.pop(payload.session_id, None)
-    return {"ok": True, "session_id": payload.session_id}
-
-# Pre-build a ChatHuggingFace model to speed up first request
-chat = build_chat_model()
-
-# For local testing - run at url: http://localhost:8000
-if __name__ == "__main__":
-    print(f"Loaded model: {config.LLM_MODEL}")
-    print("Starting server at http://localhost:8000")
-    uvicorn.run("app.api.main:app", host="localhost", port=8000, reload=False)
-    print("Server stopped")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Generation error: {e}")

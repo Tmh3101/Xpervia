@@ -1,15 +1,18 @@
 ---
 base_model: Qwen/Qwen2.5-0.5B-Instruct
-library_name: transformers
-model_name: qwen-500m-qlora-xpervia
+library_name: peft
+model_name: qwen2_5_0_5b_lora_ragqa
 tags:
-- generated_from_trainer
+- base_model:adapter:Qwen/Qwen2.5-0.5B-Instruct
+- lora
 - sft
+- transformers
 - trl
 licence: license
+pipeline_tag: text-generation
 ---
 
-# Model Card for qwen-500m-qlora-xpervia
+# Model Card for qwen2_5_0_5b_lora_ragqa
 
 This model is a fine-tuned version of [Qwen/Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct).
 It has been trained using [TRL](https://github.com/huggingface/trl).
@@ -34,10 +37,11 @@ This model was trained with SFT.
 
 ### Framework versions
 
+- PEFT 0.17.1
 - TRL: 0.23.1
-- Transformers: 4.56.2
+- Transformers: 4.57.0
 - Pytorch: 2.8.0+cu126
-- Datasets: 4.0.0
+- Datasets: 4.2.0
 - Tokenizers: 0.22.1
 
 ## Citations

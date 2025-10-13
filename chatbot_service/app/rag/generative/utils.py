@@ -1,13 +1,10 @@
 import os
 import time
 import psutil
-import logging
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import asdict
 
 from .model import GenerativeConfig, get_model_info
-
-logger = logging.getLogger(__name__)
 
 def measure_generation_performance(
     generation_func: Callable,
@@ -42,7 +39,7 @@ def measure_generation_performance(
         result = None
         success = False
         error = str(e)
-        logger.error(f"Generation failed: {error}")
+        print(f"Generation failed: {error}")
     
     end_time = time.time()
     
@@ -114,46 +111,6 @@ def validate_model_config(config: GenerativeConfig) -> List[str]:
     
     return errors
 
-def create_model_summary(config: GenerativeConfig) -> Dict[str, Any]:
-    """
-    Tạo summary thông tin model để logging/debug
-    
-    Args:
-        config: GenerativeConfig instance
-        
-    Returns:
-        Dict chứa thông tin tổng hợp
-    """
-    import torch
-    
-    summary = {
-        "config": asdict(config),
-        "validation_errors": validate_model_config(config),
-        "model_info": get_model_info(config),
-        "system_info": {
-            "cpu_count": psutil.cpu_count(),
-            "memory_total_gb": round(psutil.virtual_memory().total / 1024**3, 2),
-            "memory_available_gb": round(psutil.virtual_memory().available / 1024**3, 2),
-            "cuda_available": torch.cuda.is_available(),
-            "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
-        }
-    }
-    
-    # Thêm thông tin GPU nếu có
-    if torch.cuda.is_available():
-        try:
-            gpu_info = {}
-            for i in range(torch.cuda.device_count()):
-                gpu_info[f"gpu_{i}"] = {
-                    "name": torch.cuda.get_device_name(i),
-                    "memory_total_gb": round(torch.cuda.get_device_properties(i).total_memory / 1024**3, 2),
-                }
-            summary["gpu_info"] = gpu_info
-        except Exception as e:
-            summary["gpu_info"] = {"error": str(e)}
-    
-    return summary
-
 def estimate_context_tokens(text: str, approximate: bool = True) -> int:
     """
     Ước tính số tokens trong text
@@ -180,7 +137,7 @@ def estimate_context_tokens(text: str, approximate: bool = True) -> int:
             tokens = tokenizer.tokenize(text)
             return len(tokens)
         except Exception as e:
-            logger.warning(f"Cannot use exact tokenization, fallback to approximation: {e}")
+            print(f"Cannot use exact tokenization, fallback to approximation: {e}")
             return max(1, len(text) // 3)
 
 def truncate_context_if_needed(
@@ -224,7 +181,7 @@ def truncate_context_if_needed(
     truncated = context[:target_chars].rsplit(' ', 1)[0]
     truncated += "\n\n[...Nội dung đã được rút gọn để phù hợp với giới hạn token...]"
     
-    logger.info(f"Context truncated: {context_tokens} -> {estimate_context_tokens(truncated)} tokens")
+    print(f"Context truncated: {context_tokens} -> {estimate_context_tokens(truncated)} tokens")
     
     return truncated
 
