@@ -94,7 +94,7 @@ def generate_answer(
             raise RuntimeError(f"Answer generation failed: {e}")
 
 # Generate sử dụng ChatPromptTemplate (phương pháp chính)
-async def _generate_with_chat_template(
+def _generate_with_chat_template(
     chat: ChatHuggingFace,
     question: str,
     context: str, 
