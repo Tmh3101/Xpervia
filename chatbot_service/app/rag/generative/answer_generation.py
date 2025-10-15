@@ -101,7 +101,6 @@ def _generate_with_chat_template(
     history: Optional[List[Dict[str, str]]],
     system_prompt: Optional[str]
 ) -> str:
-    print("Using ChatPromptTemplate for generation")
     include_history = history is not None and len(history) > 0
     prompt_template = create_rag_prompt_template(
         system_prompt=system_prompt,

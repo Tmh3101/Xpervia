@@ -42,6 +42,8 @@ def make_rag_chain(
     # Bước Embed (async)
     def _do_embed(inp: ChainInput) -> Dict[str, Any]:
         question = inp["question"]
+        print("[EMBEDDING] Embedding question:", question)
+
         emb_res = embed_query(question)
         
         return {
@@ -61,6 +63,8 @@ def make_rag_chain(
             query_text=ctx["query_text"],
         )
         ctx["retrieved_chunks"] = chunks
+
+        print(f"[RETRIEVED] Retrieved {len(chunks)} chunks")
 
         return ctx
 
@@ -82,23 +86,13 @@ def make_rag_chain(
 
     # 5) ---- Lắp pipeline bằng LCEL ----
     # Mẹo: Dùng RunnablePassthrough để giữ nguyên payload, hoặc RunnableParallel để chia nhánh song song nếu cần.
-
-    identity = RunnablePassthrough()  # giữ nguyên dict đầu vào
-
-    # chain = (
-    #     identity
-    #     | RunnableLambda(_do_embed)       # -> dict gồm question/query_emb/query_text/...
-    #     | RunnableLambda(_do_retrieve)    # -> dict + retrieved_chunks
-    #     | RunnableLambda(_do_generate)    # -> ChainOutput
-    #     | StrOutputParser()               # chuẩn hoá về string nếu bạn muốn — ở đây ta trả JSON-like -> giữ nguyên
-    # )
-
-    # Nếu bạn muốn giữ nguyên dict (không ép về str), bỏ StrOutputParser():
+    identity = RunnablePassthrough()
     chain = (
         identity
         | RunnableLambda(_do_embed)
         | RunnableLambda(_do_retrieve)
         | RunnableLambda(_do_generate)
+        #     | StrOutputParser()               # chuẩn hoá về string nếu bạn muốn — ở đây ta trả JSON-like -> giữ nguyên
     )
 
     return chain
