@@ -1,4 +1,5 @@
-import re
+import json
+import requests
 from typing import List, Dict, Any, Optional
 from langchain_huggingface import ChatHuggingFace
 from langchain_core.messages import HumanMessage
@@ -10,6 +11,48 @@ from .prompt import (
     format_chat_history,
     create_simple_prompt_template
 )
+from app.config import COLAB_LLM_URL, IS_COLAB_LLM
+
+def _call_colab_generate(
+    prompt: str,
+    max_new_tokens: int = 256,
+    temperature: float = 0.7,
+    top_p: float = None,
+    stop: Optional[List[str]] = None,
+    timeout: int = 60
+) -> str:
+    if not COLAB_LLM_URL:
+        raise RuntimeError("COLAB_LLM_URL not configured")
+
+    url = f"{COLAB_LLM_URL}/generate"
+
+    payload = { "prompt": prompt }
+    if max_new_tokens:
+        payload["max_new_tokens"] = max_new_tokens
+    if temperature:
+        payload["temperature"] = temperature
+    if top_p:
+        payload["top_p"] = top_p
+    if stop:
+        payload["stop"] = stop
+
+    try:
+        resp = requests.post(url, json=payload, timeout=timeout)
+    except Exception as e:
+        raise RuntimeError(f"Colab LLM request failed: {e}")
+
+    if resp.status_code != 200:
+        raise RuntimeError(f"Colab LLM error: status={resp.status_code} body={resp.text}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        return resp.text
+
+    val = data["text"]
+    if isinstance(val, list):
+        return " ".join([str(x) for x in val])
+    return str(val)
 
 def _normalize_retrieved_chunks(raw: Any) -> List[Dict[str, Any]]:
     if raw is None:
@@ -43,7 +86,8 @@ def generate_answer(
     retrieved_chunks: List[Dict[str, Any]],
     history: Optional[List[Dict[str, str]]] = None,
     system_prompt: Optional[str] = None,
-    use_simple_prompt: bool = False
+    use_simple_prompt: bool = False,
+    chat_model_config: GenerativeConfig = None
 ) -> str:
     try:
         retrieved_chunks = _normalize_retrieved_chunks(retrieved_chunks)
@@ -51,19 +95,6 @@ def generate_answer(
         print(f"Failed to normalize retrieved_chunks: {e}")
         return "Tôi không tìm thấy thông tin này trong dữ liệu khóa học"
 
-    # If chat is None, lazy-build a default CPU model to avoid crashes
-    if chat is None:
-        print("Chat model is None, attempting to build a default CPU model...")
-        try:
-            cfg = GenerativeConfig()
-            cfg.load_in_4bit = False
-            chat = build_chat_model(cfg)
-        except Exception as e:
-            print(f"Cannot build default chat model lazily: {e}")
-            raise RuntimeError(f"Chat model unavailable and lazy build failed: {e}")
-
-
-    # Validate inputs
     if not question or not question.strip():
         raise ValueError("Question cannot be empty")
     
@@ -73,10 +104,10 @@ def generate_answer(
         
         if use_simple_prompt:
             print("Using simple prompt format as requested")
-            return _generate_with_simple_prompt(chat, question, context, system_prompt)
+            return _generate_with_simple_prompt(chat, question, context, system_prompt, chat_model_config)
         else:
             print("Using ChatPromptTemplate format for generation")
-            return _generate_with_chat_template(chat, question, context, history, system_prompt)
+            return _generate_with_chat_template(chat, question, context, history, system_prompt, chat_model_config)
     
     except Exception as e:
         print(f"Answer generation failed: {e}")
@@ -99,7 +130,8 @@ def _generate_with_chat_template(
     question: str,
     context: str, 
     history: Optional[List[Dict[str, str]]],
-    system_prompt: Optional[str]
+    system_prompt: Optional[str],
+    chat_model_config: GenerativeConfig = None
 ) -> str:
     include_history = history is not None and len(history) > 0
     prompt_template = create_rag_prompt_template(
@@ -118,8 +150,27 @@ def _generate_with_chat_template(
         input_vars["history"] = chat_history
         print(f"Using chat history with {len(chat_history)} messages")
     
-    chain = prompt_template | chat
     print("Invoking chat model...")
+    if IS_COLAB_LLM:
+        print("Detected IS_COLAB_LLM=True, calling external Colab LLM service...")
+        formatted_prompt = prompt_template.format(**input_vars)
+        answer = _call_colab_generate(prompt=formatted_prompt)
+        print("==> formatted_prompt:", formatted_prompt)
+        print("Received response from Colab LLM service")
+        print("==> answer:", answer)
+        return _clean_generated_answer(answer)
+
+    if chat is None:
+        print("Chat model is None, attempting to build a default CPU model...")
+        try:
+            cfg = chat_model_config or GenerativeConfig()
+            cfg.load_in_4bit = False
+            chat = build_chat_model(cfg)
+        except Exception as e:
+            print(f"Cannot build default chat model lazily: {e}")
+            raise RuntimeError(f"Chat model unavailable and lazy build failed: {e}")
+
+    chain = prompt_template | chat
     response = chain.invoke(input_vars)
     
     if hasattr(response, 'content'):
@@ -136,7 +187,8 @@ def _generate_with_simple_prompt(
     chat: ChatHuggingFace,
     question: str,
     context: str,
-    system_prompt: Optional[str]
+    system_prompt: Optional[str],
+    chat_model_config: GenerativeConfig = None
 ) -> str:    
     print("Using simple string prompt for generation")
     prompt_template = create_simple_prompt_template(system_prompt)
@@ -147,6 +199,36 @@ def _generate_with_simple_prompt(
     
     message = HumanMessage(content=formatted_prompt)
     print("Invoking chat model with simple prompt...")
+
+    if IS_COLAB_LLM:
+        print("Detected IS_COLAB_LLM=True, calling external Colab LLM service...")
+        gen_kwargs = chat_model_config.gen_kwargs if chat_model_config else {}
+        max_new_tokens = gen_kwargs.get("max_new_tokens", None)
+        temperature = gen_kwargs.get("temperature", None)
+        top_p = gen_kwargs.get("top_p", None)
+        stop = gen_kwargs.get("stop", None)
+        
+        answer = _call_colab_generate(
+            prompt=formatted_prompt,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stop=stop
+        )
+        print("Received response from Colab LLM service")
+        return _clean_generated_answer(answer)
+    
+    if chat is None:
+        print("Chat model is None, attempting to build a default CPU model...")
+        try:
+            cfg = chat_model_config or GenerativeConfig()
+            cfg.load_in_4bit = False
+            chat = build_chat_model(cfg)
+        except Exception as e:
+            print(f"Cannot build default chat model lazily: {e}")
+            raise RuntimeError(f"Chat model unavailable and lazy build failed: {e}")
+
+
     response = chat.invoke([message])
     
     if hasattr(response, 'content'):
@@ -160,7 +242,7 @@ def _generate_with_simple_prompt(
 
 # Nếu model trả về toàn bộ conversation với markers, trích xuất phần assistant.
 def _extract_assistant_block(text: str) -> str:
-    return text.split("assistant\n")[-1]
+    return text.split("Assistant:")[-1]
 
 def _clean_generated_answer(answer: str) -> str:
     if not answer:

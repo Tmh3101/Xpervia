@@ -18,10 +18,10 @@ async def hybrid_retrieve(
     engine: Engine,
     query_embedding: List[float],
     query_text: str,
-    top_k_semantic: int = 5,
-    top_k_lexical: int = 5,
-    top_k_final: int = 8,
-    alpha: float = 0.6,
+    top_k_semantic: int = 2,
+    top_k_lexical: int = 2,
+    top_k_final: int = 3,
+    alpha: float = 0.4,
     min_semantic: Optional[float] = None,
     course_id: Optional[int] = None,
     doc_types: Optional[List[str]] = None,
@@ -49,6 +49,7 @@ async def hybrid_retrieve(
         doc_types=doc_types,
         lang=lang,
     )
+    
     lex = await lexical_retrieve(
         engine,
         query_text=query_text,
@@ -58,6 +59,8 @@ async def hybrid_retrieve(
         doc_types=doc_types,
         lang=lang,
     )
+
+    print(f"[hybrid_retrieve] got {len(sem)} semantic, {len(lex)} lexical")
 
     sem_scores = _minmax_norm([x.score for x in sem]) or []
     lex_scores = _minmax_norm([x.score for x in lex]) or []

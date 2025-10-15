@@ -37,15 +37,19 @@ def make_rag_chain(
     Tạo một LCEL chain. Chain nhận `ChainInput` và trả về `ChainOutput`.
     """
     eng = engine or build_engine()
-    chat = build_chat_model(chat_model_config)
 
-    # Bước Embed (async)
+    if getattr(config, "IS_COLAB_LLM", False):
+        chat = None
+        print("[CHAIN] IS_COLAB_LLM=True -> skipping local model build (chat=None).")
+    else:
+        chat = build_chat_model(chat_model_config)
+        print("[CHAIN] Local chat model built at startup.")
+
     def _do_embed(inp: ChainInput) -> Dict[str, Any]:
         question = inp["question"]
         print("[EMBEDDING] Embedding question:", question)
 
         emb_res = embed_query(question)
-        
         return {
             "question": question,
             "query_emb": emb_res,
@@ -55,7 +59,6 @@ def make_rag_chain(
             "use_simple_prompt": inp.get("use_simple_prompt", False)
         }
 
-    # Bước Retrieve (async)
     async def _do_retrieve(ctx: Dict[str, Any]) -> Dict[str, Any]:
         chunks = await hybrid_retrieve(
             eng,
@@ -63,12 +66,9 @@ def make_rag_chain(
             query_text=ctx["query_text"],
         )
         ctx["retrieved_chunks"] = chunks
-
         print(f"[RETRIEVED] Retrieved {len(chunks)} chunks")
-
         return ctx
 
-    # Bước Generate (sync hoặc async tuỳ bạn đã triển khai)
     async def _do_generate(ctx: Dict[str, Any]) -> ChainOutput:
         ans = generate_answer(
             chat=chat,
@@ -77,6 +77,7 @@ def make_rag_chain(
             history=ctx.get("history"),
             system_prompt=ctx.get("system_prompt"),
             use_simple_prompt=ctx.get("use_simple_prompt", False),
+            chat_model_config=chat_model_config,
         )
 
         out: ChainOutput = {"answer": ans}
@@ -92,10 +93,10 @@ def make_rag_chain(
         | RunnableLambda(_do_embed)
         | RunnableLambda(_do_retrieve)
         | RunnableLambda(_do_generate)
-        #     | StrOutputParser()               # chuẩn hoá về string nếu bạn muốn — ở đây ta trả JSON-like -> giữ nguyên
+        #     | StrOutputParser() # chuẩn hoá về string nếu bạn muốn — ở đây ta trả JSON-like -> giữ nguyên
     )
-
     return chain
+
 class RAGPipeline:
     def __init__(self, chat_model_config: GenerativeConfig, engine: Optional[AsyncEngine] = None, return_chunks: bool = False):
         self.engine = engine or build_engine()

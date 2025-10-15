@@ -32,5 +32,9 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-bas
 EMBED_DIM = int(os.getenv("EMBED_DIM", 768))
 LLM_MODEL = os.getenv("LLM_MODEL", "arcee-ai/Arcee-VyLinh")
 
+# Colab LLM
+IS_COLAB_LLM = True if os.getenv("IS_COLAB_LLM", "False").lower() == "true" else False
+COLAB_LLM_URL = os.getenv("COLAB_LLM_URL")
+
 # Frontend base URL (nếu muốn tạo source_url)
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", None) 
