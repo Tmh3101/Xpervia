@@ -74,7 +74,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               ) : (
                 <>
                   <Header />
-                  {children}
+                  <div className="min-h-[80vh]">
+                    {children}
+                  </div>
                   <Footer />
                 </>
               )}

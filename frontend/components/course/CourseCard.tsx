@@ -77,7 +77,7 @@ export function CourseCard({
         {/* Nút yêu thích cho student */}
         {(mode === "student" || mode === "enrolled") && user && (
           <button
-            className="absolute top-[2px] right-2 z-10 p-2 rounded-full bg-white/25 shadow-md hover:scale-110 transition-all"
+            className={`absolute top-[2px] right-2 z-10 p-2 rounded-full shadow-md hover:scale-110 transition-all ${isFavorite ? "bg-red-500/35" : "bg-white/25"}`}
             onClick={(e) => {
               e.stopPropagation();
               toggleFavorite?.(id);
@@ -88,7 +88,7 @@ export function CourseCard({
               className={`w-5 h-5 transition-all duration-200 ${
                 isFavorite && "scale-110"
               }`}
-              color={isFavorite ? "#FFD600" : "#17A0F0"}
+              color={isFavorite ? "red" : "#17A0F0"}
             />
           </button>
         )}

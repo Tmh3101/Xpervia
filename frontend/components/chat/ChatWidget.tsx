@@ -6,12 +6,14 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import MessageList from "./MessageList";
 import ChatLauncher from "./ChatLauncher";
 import { sendMessageToChatbot, healthCheck } from "@/lib/api/chat-api";
 import { Send, ArrowDownToLine } from "lucide-react"
 import chatBg from "@/public/chat-bg.png"
+import logo from "@/public/logo-ngang.png";
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
@@ -160,7 +162,16 @@ export const ChatWidget: React.FC = () => {
         >
             <Card className="flex flex-col w-10/12 h-[60vh] sm:h-[78vh] md:h-[72vh] lg:h-[58vh] overflow-hidden shadow-2xl rounded-2xl">
                 <CardHeader className="flex justify-between p-4 border-b bg-primary">
-                    <CardTitle className="text-sm text-white font-semibold">Trợ lý Xpervia</CardTitle>
+                    <div className="flex items-center gap-3">
+                      {/* <CardTitle className="text-sm text-white font-semibold">Trợ lý học tập</CardTitle> */}
+                      <Image
+                        src={logo}
+                        alt="Logo"
+                        width={80}
+                        height={80}
+                        className="rounded-xl bg-white"
+                      />
+                    </div>
                 </CardHeader>
 
                 <CardContent
