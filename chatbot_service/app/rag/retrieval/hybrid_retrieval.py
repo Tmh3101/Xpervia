@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import List, Optional
-from sqlalchemy.engine import Engine
+from typing import List, Optional, Any, Dict
+from sqlalchemy.ext.asyncio import AsyncEngine
 from .search.retrived_schema import HybridRetrieved
 from .search.semantic_retrieval import semantic_retrieve
 from .search.lexical_retrieval import lexical_retrieve
@@ -13,9 +13,8 @@ def _minmax_norm(values: List[float]) -> List[float]:
         return [1.0 for _ in values]
     return [(v - vmin) / (vmax - vmin) for v in values]
 
-# Hybrid retrieval with score fusion
 async def hybrid_retrieve(
-    engine: Engine,
+    engine: AsyncEngine,
     query_embedding: List[float],
     query_text: str,
     top_k_semantic: int = 2,
@@ -29,17 +28,8 @@ async def hybrid_retrieve(
     ts_config: str = "simple",
 ) -> List[HybridRetrieved]:
     """
-    Hybrid retrieval = Vector + Lexical with score fusion.
-
-    Steps:
-      1) semantic_retrieve (cosine similarity)
-      2) lexical_retrieve (tsvector rank)
-      3) normalize each score list to [0,1]
-      4) fuse: final = alpha * sem + (1-alpha) * lex
-      5) deduplicate by chunk_uid, keep best final score
-      6) return top_k_final by score_final desc
+    Hybrid retrieval using updated rag_docs schema.
     """
-
     sem = await semantic_retrieve(
         engine,
         query_embedding=query_embedding,
@@ -65,16 +55,15 @@ async def hybrid_retrieve(
     sem_scores = _minmax_norm([x.score for x in sem]) or []
     lex_scores = _minmax_norm([x.score for x in lex]) or []
 
-    sem_by_uid = {x.chunk_uid: (x, sem_scores[i] if sem_scores else 0.0) for i, x in enumerate(sem)}
-    lex_by_uid = {x.chunk_uid: (x, lex_scores[i] if lex_scores else 0.0) for i, x in enumerate(lex)}
+    sem_by_id: Dict[int, tuple] = {x.id: (x, sem_scores[i] if sem_scores else 0.0) for i, x in enumerate(sem)}
+    lex_by_id: Dict[int, tuple] = {x.id: (x, lex_scores[i] if lex_scores else 0.0) for i, x in enumerate(lex)}
 
-    union_uids = set(sem_by_uid) | set(lex_by_uid)
+    union_ids = set(sem_by_id) | set(lex_by_id)
     fused: List[HybridRetrieved] = []
 
-    for uid in union_uids:
-        s_obj, s_norm = sem_by_uid.get(uid, (None, 0.0))
-        l_obj, l_norm = lex_by_uid.get(uid, (None, 0.0))
-        # Prefer taking fields from whichever exists; fall back if only one side has it
+    for _id in union_ids:
+        s_obj, s_norm = sem_by_id.get(_id, (None, 0.0))
+        l_obj, l_norm = lex_by_id.get(_id, (None, 0.0))
         base = s_obj or l_obj
         if base is None:
             continue
@@ -82,15 +71,14 @@ async def hybrid_retrieve(
         fused.append(
             HybridRetrieved(
                 id=base.id,
-                chunk_uid=base.chunk_uid,
                 course_id=base.course_id,
                 doc_type=base.doc_type,
                 lang=base.lang,
-                content=base.content,
+                content=(base.text if hasattr(base, "text") else getattr(base, "content", "")),
                 score_semantic=float(s_obj.score) if s_obj else 0.0,
                 score_lexical=float(l_obj.score) if l_obj else 0.0,
                 score_final=score_final,
-                metadata=base.metadata,
+                metadata=base.meta if hasattr(base, "meta") else getattr(base, "metadata", {}),
             )
         )
 

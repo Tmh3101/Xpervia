@@ -1,10 +1,11 @@
 import json
+import re
 import requests
 from typing import List, Dict, Any, Optional
 from langchain_huggingface import ChatHuggingFace
 from langchain_core.messages import HumanMessage
 
-from .model import GenerativeConfig, build_chat_model
+from app.core.model.model import GenerativeConfig, build_chat_model
 from .prompt import (
     create_rag_prompt_template, 
     format_context_from_chunks, 
@@ -15,7 +16,7 @@ from app.config import COLAB_LLM_URL, IS_COLAB_LLM
 
 def _call_colab_generate(
     prompt: str,
-    max_new_tokens: int = 256,
+    max_new_tokens: int = 320,
     temperature: float = 0.7,
     top_p: float = None,
     stop: Optional[List[str]] = None,
@@ -37,6 +38,8 @@ def _call_colab_generate(
         payload["stop"] = stop
 
     try:
+        print("Sending request to Colab LLM service...")
+        print("==> payload:", json.dumps(payload)[:1000])  # limit log size
         resp = requests.post(url, json=payload, timeout=timeout)
     except Exception as e:
         raise RuntimeError(f"Colab LLM request failed: {e}")
@@ -49,7 +52,7 @@ def _call_colab_generate(
     except Exception:
         return resp.text
 
-    val = data["text"]
+    val = data.get("text", data.get("result", data))
     if isinstance(val, list):
         return " ".join([str(x) for x in val])
     return str(val)
@@ -68,7 +71,7 @@ def _normalize_retrieved_chunks(raw: Any) -> List[Dict[str, Any]]:
                         or ""
             
             metadata = item.get("metadata") or item.get("meta") or {}
-            out.append({"content": content, "metadata": metadata})
+            out.append({"content": content, "metadata": metadata, "course_id": item.get("course_id")})
         else:
             content = getattr(item, "page_content", None)\
                         or getattr(item, "content", None)\
@@ -77,7 +80,8 @@ def _normalize_retrieved_chunks(raw: Any) -> List[Dict[str, Any]]:
             metadata = getattr(item, "metadata", None)\
                         or getattr(item, "meta", None) or {}
             
-            out.append({"content": content or str(item), "metadata": metadata or {}})
+            course_id = getattr(item, "course_id", None)
+            out.append({"content": content or str(item), "metadata": metadata or {}, "course_id": course_id})
     return out
 
 def generate_answer(
@@ -88,43 +92,73 @@ def generate_answer(
     system_prompt: Optional[str] = None,
     use_simple_prompt: bool = False,
     chat_model_config: GenerativeConfig = None
-) -> str:
+) -> Dict[str, Any]:
+    """
+    Return dict:
+      { "answer": <cleaned answer string>, "resources": [course_id, ...] }
+
+    - Extract course ids from retrieved_chunks (if present)
+    - Normalize retrieved_chunks for building context
+    - Generate answer (Colab or local model) and clean it
+    """
+    # Extract course ids early (raw items may contain course_id at top-level)
+    resource_ids = []
     try:
-        retrieved_chunks = _normalize_retrieved_chunks(retrieved_chunks)
+        for item in retrieved_chunks or []:
+            if isinstance(item, dict):
+                cid = item.get("course_id")
+            else:
+                cid = getattr(item, "course_id", None)
+            if cid is not None:
+                try:
+                    resource_ids.append(int(cid))
+                except Exception:
+                    continue
+        # dedupe preserving order
+        seen = set()
+        resources = []
+        for v in resource_ids:
+            if v not in seen:
+                seen.add(v)
+                resources.append(v)
+    except Exception:
+        resources = []
+
+    try:
+        normalized = _normalize_retrieved_chunks(retrieved_chunks)
     except Exception as e:
         print(f"Failed to normalize retrieved_chunks: {e}")
-        return "Tôi không tìm thấy thông tin này trong dữ liệu khóa học"
+        normalized = []
 
     if not question or not question.strip():
         raise ValueError("Question cannot be empty")
     
     try:
-        context = format_context_from_chunks(retrieved_chunks)
+        context = format_context_from_chunks(normalized)
         print(f"Formatted context length: {len(context)} characters")
         
         if use_simple_prompt:
             print("Using simple prompt format as requested")
-            return _generate_with_simple_prompt(chat, question, context, system_prompt, chat_model_config)
+            raw_answer = _generate_with_simple_prompt(chat, question, context, system_prompt, chat_model_config)
         else:
             print("Using ChatPromptTemplate format for generation")
-            return _generate_with_chat_template(chat, question, context, history, system_prompt, chat_model_config)
+            raw_answer = _generate_with_chat_template(chat, question, context, history, system_prompt, chat_model_config)
     
     except Exception as e:
         print(f"Answer generation failed: {e}")
-        
-        # Fallback: thử simple prompt
-        if not use_simple_prompt:
-            print("Falling back to simple prompt format...")
-            try:
-                context = format_context_from_chunks(retrieved_chunks)
-                return _generate_with_simple_prompt(chat, question, context, system_prompt)
-            except Exception as e2:
-                print(f"Fallback also failed: {e2}")
-                raise RuntimeError(f"Both prompt methods failed: {e}, {e2}")
-        else:
-            raise RuntimeError(f"Answer generation failed: {e}")
+        # Fallback: try simple prompt
+        try:
+            raw_answer = _generate_with_simple_prompt(chat, question, context, system_prompt, chat_model_config)
+        except Exception as e2:
+            print(f"Fallback also failed: {e2}")
+            raise RuntimeError(f"Both prompt methods failed: {e}, {e2}")
 
-# Generate sử dụng ChatPromptTemplate (phương pháp chính)
+    cleaned = _clean_generated_answer(raw_answer)
+    # Finalize
+    final_answer = _finalize_answer(cleaned)
+    return {"answer": final_answer, "resources": resources}
+
+# Generate using ChatPromptTemplate (primary)
 def _generate_with_chat_template(
     chat: ChatHuggingFace,
     question: str,
@@ -144,7 +178,7 @@ def _generate_with_chat_template(
         "context": context,
     }
     
-    # Thêm history nếu có
+    # Add history if present
     if include_history:
         chat_history = format_chat_history(history)
         input_vars["history"] = chat_history
@@ -155,10 +189,9 @@ def _generate_with_chat_template(
         print("Detected IS_COLAB_LLM=True, calling external Colab LLM service...")
         formatted_prompt = prompt_template.format(**input_vars)
         answer = _call_colab_generate(prompt=formatted_prompt)
-        print("==> formatted_prompt:", formatted_prompt)
+        print("==> formatted_prompt (truncated):", formatted_prompt[:1000])
         print("Received response from Colab LLM service")
-        print("==> answer:", answer)
-        return _clean_generated_answer(answer)
+        return str(answer or "")
 
     if chat is None:
         print("Chat model is None, attempting to build a default CPU model...")
@@ -180,9 +213,9 @@ def _generate_with_chat_template(
     else:
         answer = str(response)
     
-    return _clean_generated_answer(answer)
+    return answer
 
-# Generate sử dụng simple string format (fallback)
+# Generate using simple string prompt (fallback)
 def _generate_with_simple_prompt(
     chat: ChatHuggingFace,
     question: str,
@@ -216,7 +249,7 @@ def _generate_with_simple_prompt(
             stop=stop
         )
         print("Received response from Colab LLM service")
-        return _clean_generated_answer(answer)
+        return str(answer or "")
     
     if chat is None:
         print("Chat model is None, attempting to build a default CPU model...")
@@ -228,7 +261,6 @@ def _generate_with_simple_prompt(
             print(f"Cannot build default chat model lazily: {e}")
             raise RuntimeError(f"Chat model unavailable and lazy build failed: {e}")
 
-
     response = chat.invoke([message])
     
     if hasattr(response, 'content'):
@@ -238,63 +270,226 @@ def _generate_with_simple_prompt(
     else:
         answer = str(response)
     
-    return _clean_generated_answer(answer)
+    return answer
 
-# Nếu model trả về toàn bộ conversation với markers, trích xuất phần assistant.
 def _extract_assistant_block(text: str) -> str:
-    return text.split("Assistant:")[-1]
+    # attempt to find explicit assistant block (case-insensitive)
+    m = re.search(r"(?:\n|\A)(?:\s*(?:assistant|answer)\s*[:\-]\s*)(.*)$", text, flags=re.IGNORECASE | re.DOTALL)
+    if m:
+        return m.group(1).strip()
+    return text
+
+def _remove_bracketed_contexts(text: str) -> str:
+    # remove [Context ...] or [Source: ...] blocks to avoid leaking context markers into answer
+    return re.sub(r"\[.*?(?:Context|Source|Context\s*\d|Answer).*?\]", " ", text, flags=re.IGNORECASE | re.DOTALL)
 
 def _clean_generated_answer(answer: str) -> str:
+    """
+    Clean raw generated text from model / external service:
+    - remove bracketed context sections
+    - extract assistant/answer block if present
+    - strip repeated context markers and excessive whitespace
+    - ensure punctuation at the end
+    """
     if not answer:
         return "Xin lỗi, tôi không thể tạo câu trả lời lúc này."
 
-    # Extract assistant block first
-    answer = _extract_assistant_block(answer).strip()
-    artifacts_to_remove = [
-        "Trả lời:",
-        "Assistant:",
-        "AI:",
-        "<|im_start|>",
-        "<|im_end|>",
-        "<|assistant|>",
-        "<|user|>",
-        "<|system|>",
-    ]
+    text = str(answer)
 
-    for artifact in artifacts_to_remove:
-        if answer.startswith(artifact):
-            answer = answer[len(artifact):].strip()
+    # 0) Quick try: if the model returned a JSON object (or wrapped JSON),
+    # extract common keys like "answer" or "text".
+    try:
+        # try to find a JSON substring containing "answer" or "text"
+        m = re.search(r"(\{.*\"answer\".*\})", text, flags=re.DOTALL)
+        if not m:
+            m = re.search(r"(\{.*\"text\".*\})", text, flags=re.DOTALL)
+        if m:
+            try:
+                obj = json.loads(m.group(1))
+                if isinstance(obj, dict):
+                    if "answer" in obj:
+                        text = str(obj.get("answer") or "")
+                    elif "text" in obj:
+                        text = str(obj.get("text") or "")
+            except Exception:
+                # fallthrough to plain-text cleaning
+                pass
+    except Exception:
+        pass
 
-    answer = _remove_repetitive_patterns(answer)
-    if answer and not answer.endswith(('.', '!', '?', ':', ';')):
-        answer += '.'
+    # remove common context markers or sections in brackets
+    text = _remove_bracketed_contexts(text)
 
-    return answer
+    # remove markdown/code fences entirely (```...``` and ```) and inline backticks
+    text = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
+    text = re.sub(r"`+", "", text)
+
+    # remove headings (lines that are just #, ##, ### ...)
+    text = re.sub(r"^\s*#{1,6}\s*", "", text, flags=re.MULTILINE)
+
+    # remove common labeled blocks like "### Assistant" or "### Answer"
+    text = re.sub(r"^\s*(assistant|answer|response|kết luận)\s*[:\-]*\s*", "", text, flags=re.IGNORECASE | re.MULTILINE)
+
+    # remove inline citations like [1], [2,3]
+    text = re.sub(r"\[\s*\d+(?:\s*,\s*\d+)*\s*\]", "", text)
+    # remove (Source: ...), (Nguồn: ...)
+    text = re.sub(r"\(\s*(Source|Nguồn)\s*[:\-].*?\)", "", text, flags=re.IGNORECASE)
+
+    # normalize DOS/Windows newlines and trim
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # try extract assistant/answer section if present (fallback)
+    extracted = _extract_assistant_block(text)
+    if extracted:
+        text = extracted
+
+    # Line-by-line cleanup: drop noise lines and remove echoed prompts
+    lines = []
+    for ln in text.split("\n"):
+        tln = ln.strip()
+        if not tln:
+            continue
+        # Drop lines that start like "Human:" or variants
+        if re.match(r"^human[:\-]", tln, flags=re.IGNORECASE):
+            continue
+        # If a line starts with assistant: keep the remainder after the label
+        if re.match(r"^assistant[:\-]", tln, flags=re.IGNORECASE):
+            parts = re.split(r"assistant[:\-]\s*", tln, flags=re.IGNORECASE)
+            if len(parts) > 1 and parts[1]:
+                lines.append(parts[1].strip())
+            continue
+        # If a line starts with answer: keep the remainder
+        if re.match(r"^answer[:\-]", tln, flags=re.IGNORECASE):
+            parts = re.split(r"answer[:\-]\s*", tln, flags=re.IGNORECASE)
+            if len(parts) > 1 and parts[1]:
+                lines.append(parts[1].strip())
+            continue
+        # discard lines that only state "Context" or "Source"
+        if re.match(r"^\[?context\b", tln, flags=re.IGNORECASE):
+            continue
+        if re.match(r"^\[?source\b", tln, flags=re.IGNORECASE):
+            continue
+
+        lines.append(tln)
+
+    cleaned = "\n".join(lines).strip()
+
+    # Collapse multiple spaces but preserve paragraphs
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+
+    # Remove repetitive sentence patterns
+    cleaned = _remove_repetitive_patterns(cleaned)
+
+    # Remove leftover bracketed citations again just in case
+    cleaned = re.sub(r"\[\s*\d+(?:\s*,\s*\d+)*\s*\]", "", cleaned)
+
+    # ensure sentence ends with punctuation
+    if cleaned and cleaned[-1] not in (".", "?", "!", ":", ";"):
+        cleaned = cleaned + "."
+
+    # final trim
+    cleaned = cleaned.strip()
+
+    # safety: if cleaned is still too short, fallback to a friendly message
+    if not cleaned or len(cleaned) < 3:
+        return "Xin lỗi, tôi không thể tạo câu trả lời lúc này."
+
+    return cleaned
 
 def _remove_repetitive_patterns(text: str, max_repeat: int = 3) -> str:
     if not text:
         return text
 
-    sentences = text.split('.')
+    # Best-effort: split into sentences using punctuation marks
+    sentences = re.split(r'(?<=[\.\?\!])\s+', text)
     if len(sentences) <= 1:
         return text
     
-    cleaned_sentences = []
-    last_sentence = ""
-    repeat_count = 0
-    
-    for sentence in sentences:
-        sentence = sentence.strip()
-        if not sentence:
+    cleaned = []
+    last = ""
+    repeat = 0
+    for s in sentences:
+        s = s.strip()
+        if not s:
             continue
-            
-        if sentence == last_sentence:
-            repeat_count += 1
-            if repeat_count < max_repeat:
-                cleaned_sentences.append(sentence)
+        if s == last:
+            repeat += 1
+            if repeat < max_repeat:
+                cleaned.append(s)
         else:
-            repeat_count = 0
-            cleaned_sentences.append(sentence)
-            last_sentence = sentence
-    
-    return '. '.join(cleaned_sentences)
+            repeat = 0
+            cleaned.append(s)
+            last = s
+    return " ".join(cleaned)
+
+
+def _finalize_answer(text: str, max_sentences: int = 4, max_words: int = 64) -> str:
+    """
+    Post-process a cleaned answer to enforce a concise length and preserve any
+    trailing source lines. Behavior:
+    - Detect and extract trailing source lines beginning with 'Nguồn' or 'SOURCES'.
+    - Keep up to `max_sentences` sentences from the main answer body.
+    - Truncate to `max_words` words if still too long.
+    - Re-attach the source lines (if any) at the end separated by a blank line.
+    """
+    if not text:
+        return "Xin lỗi, tôi không thể tạo câu trả lời lúc này."
+
+    # Split into lines and pull off trailing source lines like 'Nguồn:' or 'SOURCES:'
+    lines = [ln.rstrip() for ln in text.strip().splitlines()]
+    source_lines = []
+    i = len(lines) - 1
+    while i >= 0:
+        if re.match(r"^\s*(Nguồn|SOURCES)\b", lines[i], flags=re.IGNORECASE):
+            source_lines.insert(0, lines[i].strip())
+            i -= 1
+            continue
+        break
+
+    main_lines = lines[: i + 1] if i >= 0 else []
+    main = "\n".join(main_lines).strip()
+
+    # If we didn't find source lines by line scan, try to find inline SOURCE patterns
+    if not source_lines:
+        m = re.search(r"(Nguồn\s*:\s*[^\n]+)", text, flags=re.IGNORECASE)
+        if m:
+            source_lines = [m.group(1).strip()]
+            main = re.sub(re.escape(m.group(1)), "", text, flags=re.IGNORECASE).strip()
+
+    # Sentence-split the main text
+    sentences = re.split(r'(?<=[\.\?\!])\s+', main)
+    # Filter out small administrative fragments
+    filtered = []
+    for s in sentences:
+        s = s.strip()
+        if not s:
+            continue
+        if re.match(r'^(Truy vấn|Phản hồi|Câu trả lời)\b', s, flags=re.IGNORECASE):
+            continue
+        filtered.append(s)
+
+    if not filtered:
+        filtered = [main] if main else []
+
+    selected = filtered[:max_sentences]
+    result = " ".join(selected).strip()
+
+    # Word-limit safety
+    words = result.split()
+    if len(words) > max_words:
+        result = " ".join(words[:max_words]).rstrip(" ,.;") + "."
+
+    # Ensure final punctuation
+    if result and result[-1] not in (".", "?", "!"):
+        result = result + "."
+
+    # Re-attach sources if present
+    if source_lines:
+        result = result + "\n\n" + "\n".join(source_lines)
+
+    # Fallback
+    if not result or len(result.strip()) < 3:
+        return "Xin lỗi, tôi không thể tạo câu trả lời lúc này."
+
+    return result

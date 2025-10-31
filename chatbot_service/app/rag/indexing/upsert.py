@@ -1,167 +1,128 @@
-from __future__ import annotations
+import json
+from typing import List, Optional
+from sqlalchemy.orm import Session
+from app.core.db import SessionLocal
+from sqlalchemy import select, text as sql_text
+from app.core.schemas import RagDocs, Users, Courses
+from app.rag.embedding.embedder import embed_docs
+from app.rag.indexing.build_docs import fetch_course_block, build_document_text
 
-import hashlib
-import tiktoken
-from typing import Any, Dict, List, Optional
-from datetime import datetime, timezone
-from langchain_core.documents import Document
-from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import delete
+def _full_name(u: Optional[Users]) -> str:
+    if not u:
+        return ""
+    return f"{(u.first_name or '').strip()} {(u.last_name or '').strip()}".strip()
 
-from app.core.schemas import rag_chunks
-from app.rag.embedding.embedder import embed_documents
-from app.rag.indexing.chunker import chunk_documents
+def _sha256(s: str) -> str:
+    import hashlib
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-def _utcnow():
-    return datetime.now(timezone.utc)
+def _json(obj) -> str:
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
-# Tạo khoá ổn định cho từng chunk: sha256(f"{course_id}|{doc_type}|{chunk_index}|{title}|sha16(content)}")
-def _generate_chunk_uid(course_id: Optional[int], doc_type: str, content: str, metadata: Dict[str, Any]) -> str:
-    idx = str(metadata.get("chunk_index", ""))
-    title = str(metadata.get("title", ""))
-    h_content = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
-    raw = f"{course_id}|{doc_type}|{idx}|{title}|{h_content}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
-
-# Ước lượng số token trong content (không chính xác tuyệt đối, nhưng nhanh)
-def _count_tokens_approx(s: str) -> int:
-    if not s:
-        return 0
-    
-    try:
-        enc = tiktoken.get_encoding("cl100k_base")
-        return len(enc.encode(s))
-    except Exception:
-        import re
-        return max(1, len(re.findall(r"\w+|[^\w\s]", s)))
-
-# Lưu các chunks đã có embedding vào CSDL
-async def save_chunks_with_embeddings(
-    engine: AsyncEngine,
-    docs: List[Document],
-    default_lang: str = "vi",
-    compute_tokens: bool = True,
-    batch_size: int = 500,
-) -> int:
-    if not docs:
-        return 0
-    
-    # Tạo chunks
-    chunks = chunk_documents(docs)
-    print(f"Chunked {len(docs)} documents into {len(chunks)} chunks.")
-    if not chunks:
-        return 0
-    
-    # Tạo embedding
-    embs = embed_documents(chunks)
-    print(f"Embedded {len(chunks)} chunks into vectors.")
-    
-    if len(chunks) != len(embs):
-        raise ValueError(f"Length mismatch: chunks={len(chunks)} vs embs={len(embs)}")
-
-    total = 0
-    now = _utcnow()
-    records = []
-
-    print(f"Preparing {len(chunks)} records to upsert into rag_chunks table...")
-
-    # đóng gói bản ghi
-    for doc, vec in zip(chunks, embs):
-        print(f"Processing chunk: {doc.metadata.get('title')}")
-        md: Dict[str, Any] = dict(doc.metadata or {})
-        course_id = md.get("course_id")
-        doc_type = md.get("doc_type", "course_overview")
-        content = doc.page_content or ""
-
-        uid = _generate_chunk_uid(course_id, doc_type, content, md)
-        records.append({
-            "chunk_uid": uid,
-            "chunk_index": md.get("chunk_index"),
-            "total_chunks": md.get("total_chunks"),
-            "course_id": md.get("course_id"),
-            "doc_type": md.get("doc_type", "course_overview"),
-            "lang": md.get("lang", default_lang),
-            "content": content,
-            "content_tokens": _count_tokens_approx(content) if compute_tokens else None,
-            "embedding": vec,
-            "metadata": md,
-            "created_at": now,
-            "updated_at": now,
-        })
-
-    print(f"Prepared {len(records)} records to upsert into rag_chunks table.")
-
-    # chèn theo lô - tránh chèn quá nhiều một lần
-    for i in range(0, len(records), batch_size):
-        batch = records[i:i+batch_size]
-        stmt = insert(rag_chunks).values(batch) # Không dùng on_conflict_do_update vì đã có rồi thì thôi
-        async with engine.begin() as conn:
-            await conn.execute(stmt)
-        total += len(batch)
-    return total
-
-# Upsert các chunks (khi đã có embedding) - dùng ON CONFLICT để tránh trùng lặp
-async def upsert_chunks(engine: AsyncEngine, rows: List[Dict[str, Any]], batch_size: int = 500) -> int:
-    if not rows:
-        return 0
-
-    # Chuẩn bị & format dữ liệu
-    now = _utcnow()
-    prepared = []
-    for r in rows:
-        md = dict(r.get("metadata") or {})
-        uid = _generate_chunk_uid(r.get("course_id"), r.get("doc_type"), r.get("content"), md)
-        prepared.append({
-            "chunk_uid": uid,
-            "chunk_index": md.get("chunk_index"),
-            "total_chunks": md.get("total_chunks"),
-            "course_id": md.get("course_id"),
-            "doc_type": md.get("doc_type"),
-            "lang": md.get("lang", "vi"),
-            "content": md.get("content"),
-            "content_tokens": md.get("content_tokens"),
-            "embedding": r.get("embedding"),
-            "metadata": md,
-            "created_at": now,
-            "updated_at": now,
-        })
-
-    # upsert theo lô - tránh upsert quá nhiều một lần
-    total = 0
-    for i in range(0, len(prepared), batch_size):
-        batch = prepared[i:i+batch_size]
-        stmt = insert(rag_chunks).values(batch)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["chunk_uid"],
-            set_={
-                "course_id": stmt.excluded.course_id,
-                "chunk_index": stmt.excluded.chunk_index,
-                "total_chunks": stmt.excluded.total_chunks,
-                "doc_type": stmt.excluded.doc_type,
-                "lang": stmt.excluded.lang,
-                "content": stmt.excluded.content,
-                "content_tokens": stmt.excluded.content_tokens,
-                "embedding": stmt.excluded.embedding,
-                "metadata": stmt.excluded.metadata,
-                "updated_at": stmt.excluded.updated_at,
-            },
+def get_existing_checksum(session: Session, course_id: int) -> Optional[str]:
+    row = session.execute(
+        select(RagDocs.checksum).where(
+            RagDocs.course_id == course_id,
+            RagDocs.doc_type == "course_overview"
         )
-        async with engine.begin() as conn:
-            res = await conn.execute(stmt)
-        total += len(batch)
-    return total
+    ).first()
+    return row[0] if row else None
 
-# Xoá các chunks theo khoá học hoặc loại document
-async def delete_by_course(engine: AsyncEngine, course_id: int) -> int:
-    """Xoá tất cả chunks của một khoá học (để reindex sạch)."""
-    async with engine.begin() as conn:
-        res = await conn.execute(delete(rag_chunks).where(rag_chunks.c.course_id == course_id))
-        return res.rowcount or 0
+def embed_course(course_id: int):
+    with SessionLocal() as session:
+        block = fetch_course_block(session, course_id)
+        if not block:
+            print(f"[embed_course] Course {course_id} not found.")
+            return
 
-# Xoá các chunks theo loại document
-async def delete_by_doc_type(engine: AsyncEngine, doc_type: str) -> int:
-    """Xoá tất cả chunks của một loại document (để reindex sạch)."""
-    async with engine.begin() as conn:
-        res = await conn.execute(delete(rag_chunks).where(rag_chunks.c.doc_type == doc_type))
-        return res.rowcount or 0
+        text, meta = build_document_text(block)
+        checksum = _sha256(text)
+        existing = get_existing_checksum(session, course_id)
+        if existing == checksum:
+            print(f"[embed_course] Course {course_id} is up-to-date.")
+            return
+
+        emb = embed_docs([text])[0]
+        upsert_document(session, course_id=course_id, text=text, meta=meta, embedding=emb, checksum=checksum)
+        session.commit()
+        print(f"[embed_course] Upserted document for course_id={course_id}.")
+
+def embed_all_courses():
+    with SessionLocal() as session:
+        course_ids = [r[0] for r in session.execute(select(Courses.id)).all()]
+        if not course_ids:
+            print("[embed_all_courses] No courses found.")
+            return
+
+        to_embed = []
+        for cid in course_ids:
+            block = fetch_course_block(session, cid)
+            if not block:
+                continue
+            text, meta = build_document_text(block)
+            checksum = _sha256(text)
+            existing = get_existing_checksum(session, cid)
+            if existing == checksum:
+                continue
+            to_embed.append((cid, text, meta, checksum))
+
+        if not to_embed:
+            print("[embed_all_courses] All documents are up-to-date.")
+            return
+
+        texts = [t[1] for t in to_embed]
+        embs = embed_docs(texts)
+        for (cid, text, meta, chksum), emb in zip(to_embed, embs):
+            upsert_document(session, course_id=cid, text=text, meta=meta, embedding=emb, checksum=chksum)
+
+        session.commit()
+        print(f"[embed_all_courses] Upserted {len(to_embed)} documents.")
+
+
+def upsert_document(session: Session, *, course_id: int, text: str, meta: dict, embedding: List[float], checksum: str):
+    print("[Upsert Document] Course Meta:", meta)
+    updated = session.execute(
+        sql_text("""
+            update rag_docs
+            set lang = :lang,
+                text = :text,
+                embedding = :embedding,
+                meta = CAST(:meta AS JSONB),
+                checksum = :checksum,
+                updated_at = now()
+            where course_id = :course_id and doc_type = 'course_overview' and checksum <> :checksum
+        """),
+        {
+            "lang": "multi",
+            "text": text,
+            "embedding": list(map(float, embedding)),
+            "meta": json.dumps(meta, ensure_ascii=False),
+            "checksum": checksum,
+            "course_id": course_id
+        }
+    ).rowcount
+
+    print("[Upsert Document] Rows updated:", updated)
+
+    if updated == 0:
+        session.execute(
+            sql_text("""
+                insert into rag_docs (course_id, doc_type, lang, text, embedding, meta, checksum, updated_at)
+                values (:course_id, 'course_overview', :lang, :text, :embedding, CAST(:meta AS JSONB), :checksum, now())
+                on conflict (course_id, doc_type) do update set
+                    lang = EXCLUDED.lang,
+                    text = EXCLUDED.text,
+                    embedding = EXCLUDED.embedding,
+                    meta = EXCLUDED.meta,
+                    checksum = EXCLUDED.checksum,
+                    updated_at = now()
+            """),
+            {
+                "course_id": course_id,
+                "lang": "multi",
+                "text": text,
+                "embedding": list(map(float, embedding)),
+                "meta": json.dumps(meta, ensure_ascii=False),
+                "checksum": checksum
+            }
+        )

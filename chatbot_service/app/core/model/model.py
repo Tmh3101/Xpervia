@@ -13,7 +13,7 @@ from peft import PeftModel, PeftConfig
 from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 from app import config
 
-LORA_ADAPTER_PATH = "model/qwen2_5_0_5b_lora_ragqa"
+LORA_ADAPTER_PATH = "./qwen2_5_0_5b_lora_ragqa"
 
 @dataclass
 class GenerativeConfig:
@@ -45,8 +45,8 @@ class GenerativeConfig:
             self.lora_path = str(current_dir / self.lora_path)
 
 class QwenLoraLoader:
-    def __init__(self, cfg: GenerativeConfig):
-        self.cfg = cfg
+    def __init__(self, cfg: GenerativeConfig = None):
+        self.cfg = cfg or GenerativeConfig()
         self.tokenizer = None
         self.model = None
         self.pipe = None
@@ -179,6 +179,31 @@ class QwenLoraLoader:
         except Exception as e:
             print(f"QwenLoraLoader failed: {e}")
             raise e
+        
+    def load_model_only(self):
+        try:
+            self._load_base_model()
+            self._apply_lora()
+            print("[SUCCESSFUL] Model with LoRA loaded successfully!")
+            return self.model
+        except Exception as e:
+            print(f"Loading model with LoRA failed: {e}")
+            raise e
+        
+    def load_tokenizer_only(self):
+        try:
+            self._load_tokenizer()
+            print("[SUCCESSFUL] Tokenizer loaded successfully!")
+            return self.tokenizer
+        except Exception as e:
+            print(f"Loading tokenizer failed: {e}")
+            raise e
+        
+def load_model_and_tokenizer(cfg: GenerativeConfig = None):
+    loader = QwenLoraLoader(cfg)
+    model = loader.load_model_only()
+    tokenizer = loader.load_tokenizer_only()
+    return tokenizer, model
 
 def build_chat_model(cfg: Optional[GenerativeConfig] = None) -> ChatHuggingFace:
     if cfg is None:

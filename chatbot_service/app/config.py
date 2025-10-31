@@ -31,6 +31,7 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 64))
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base")
 EMBED_DIM = int(os.getenv("EMBED_DIM", 768))
 LLM_MODEL = os.getenv("LLM_MODEL", "arcee-ai/Arcee-VyLinh")
+USE_CUDA = os.getenv("USE_CUDA", "0") == "1"
 
 # Colab LLM
 IS_COLAB_LLM = True if os.getenv("IS_COLAB_LLM", "False").lower() == "true" else False
