@@ -39,7 +39,6 @@ def _call_colab_generate(
 
     try:
         print("Sending request to Colab LLM service...")
-        print("==> payload:", json.dumps(payload)[:1000])  # limit log size
         resp = requests.post(url, json=payload, timeout=timeout)
     except Exception as e:
         raise RuntimeError(f"Colab LLM request failed: {e}")
@@ -156,6 +155,11 @@ def generate_answer(
     cleaned = _clean_generated_answer(raw_answer)
     # Finalize
     final_answer = _finalize_answer(cleaned)
+
+    print("[generate_answer] Raw answer:", raw_answer)
+    print("[generate_answer] Cleaned answer:", cleaned)
+    print("[generate_answer] Final answer:", final_answer)
+
     return {"answer": final_answer, "resources": resources}
 
 # Generate using ChatPromptTemplate (primary)
@@ -296,6 +300,18 @@ def _clean_generated_answer(answer: str) -> str:
 
     text = str(answer)
 
+    # If the model output contains administrative prefixes and an 'AI:' marker,
+    # only keep the content after the last 'AI:' occurrence. This handles cases
+    # like: "... Câu hỏi: ... AI: Khóa học có tổng ..." where we want the
+    # assistant-provided sentence only.
+    try:
+        ai_matches = list(re.finditer(r"(?i)\bAI\s*:\s*(.*)", text, flags=re.DOTALL))
+        if ai_matches:
+            # take content after the last AI: marker
+            text = ai_matches[-1].group(1).strip()
+    except Exception:
+        pass
+
     # 0) Quick try: if the model returned a JSON object (or wrapped JSON),
     # extract common keys like "answer" or "text".
     try:
@@ -319,6 +335,46 @@ def _clean_generated_answer(answer: str) -> str:
 
     # remove common context markers or sections in brackets
     text = _remove_bracketed_contexts(text)
+
+    # Remove inline or embedded 'Câu hỏi:' blocks while preserving a short
+    # immediate answer if present. Example handled:
+    # "... Câu hỏi: ...? Không, cả hai." -> keep 'Không, cả hai.' but drop the question.
+    try:
+        qm = re.search(r"(?is)\bCâu hỏi\s*:\s*", text)
+        if qm:
+            q_start = qm.start()
+            tail = text[q_start:]
+            # look for a question mark followed by a short answer fragment
+            m_ans = re.search(r"\?\s*([^\n\.]{1,100})(?:[\.\n]|$)", tail)
+            if m_ans:
+                ans_frag = m_ans.group(1).strip()
+                # accept short answers up to 10 words
+                if 0 < len(ans_frag.split()) <= 10:
+                    text = (text[:q_start].strip() + " " + ans_frag).strip()
+                else:
+                    text = text[:q_start].strip()
+            else:
+                # No short answer found — remove the question block entirely
+                text = text[:q_start].strip()
+    except Exception:
+        pass
+
+    # Remove quoted 'nguồn:' blocks that contain pasted source excerpts.
+    # Examples to catch:
+    # - "nguồn:\n- Khóa học ...\n- ..." (bullet lists)
+    # - "nguồn: Khóa học ... Các chương bao gồm: ..." (multi-sentence source paragraph)
+    try:
+        # Remove bullet-list style source blocks starting with 'nguồn:'
+        text = re.sub(r"(?im)\bnguồn\s*:\s*(?:[-\u2022\*]\s*.*(?:\n|$))+", " ", text)
+
+        # If there's a 'nguồn:' followed by a long description that mentions 'Khóa học',
+        # remove that block (to avoid returning quoted source details). Limit scan to 800 chars.
+        m = re.search(r"(?is)\bnguồn\s*:\s*(.{20,800})", text)
+        if m and re.search(r"Khóa học|khóa học", m.group(1)):
+            # cut from the 'nguồn:' marker to the end of that matched block
+            text = text[: m.start()].strip()
+    except Exception:
+        pass
 
     # remove markdown/code fences entirely (```...``` and ```) and inline backticks
     text = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
@@ -424,7 +480,7 @@ def _remove_repetitive_patterns(text: str, max_repeat: int = 3) -> str:
     return " ".join(cleaned)
 
 
-def _finalize_answer(text: str, max_sentences: int = 4, max_words: int = 64) -> str:
+def _finalize_answer(text: str, max_sentences: int = 2, max_words: int = 32) -> str:
     """
     Post-process a cleaned answer to enforce a concise length and preserve any
     trailing source lines. Behavior:
@@ -473,12 +529,42 @@ def _finalize_answer(text: str, max_sentences: int = 4, max_words: int = 64) -> 
         filtered = [main] if main else []
 
     selected = filtered[:max_sentences]
-    result = " ".join(selected).strip()
 
-    # Word-limit safety
-    words = result.split()
-    if len(words) > max_words:
-        result = " ".join(words[:max_words]).rstrip(" ,.;") + "."
+    # Preserve original line breaks when present (e.g., bullet lists).
+    # If the main text contains explicit newlines, keep up to `max_sentences`
+    # non-empty lines instead of joining into a single paragraph.
+    if "\n" in main:
+        lines_main = [ln.strip() for ln in main.splitlines() if ln.strip()]
+        if lines_main:
+            sel_lines = lines_main[:max_sentences]
+            # Enforce word limit while preserving line breaks: include full lines
+            # until the cumulative word count would exceed max_words.
+            cum_words = 0
+            kept_lines: List[str] = []
+            for ln in sel_lines:
+                ln_words = ln.split()
+                if cum_words + len(ln_words) <= max_words:
+                    kept_lines.append(ln)
+                    cum_words += len(ln_words)
+                else:
+                    # need to truncate this line to fit remaining words
+                    remaining = max_words - cum_words
+                    if remaining > 0:
+                        truncated = " ".join(ln_words[:remaining]).rstrip(" ,.;")
+                        if truncated and truncated[-1] not in (".", "?", "!"):
+                            truncated = truncated + "."
+                        kept_lines.append(truncated)
+                    break
+            result = "\n".join(kept_lines).strip()
+        else:
+            result = " ".join(selected).strip()
+    else:
+        result = " ".join(selected).strip()
+
+        # Word-limit safety for single-line result
+        words = result.split()
+        if len(words) > max_words:
+            result = " ".join(words[:max_words]).rstrip(" ,.;") + "."
 
     # Ensure final punctuation
     if result and result[-1] not in (".", "?", "!"):

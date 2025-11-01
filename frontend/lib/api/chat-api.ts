@@ -39,20 +39,22 @@ export const sendMessageToChatbot = async (question: string): Promise<string> =>
     const response = await chatAxios.post("/ask", payload);
 
     const answer = response.data.answer as string;
-    const new_history = [
-      ...payload.history,
-      { role: "user", content: question },
-      { role: "assistant", content: answer }
-    ];
-    localStorage.setItem(
-      "chatHistory",
-      JSON.stringify(
-        // new_history.length <= 6
-        //   ? new_history
-        //   : new_history.slice(new_history.length - 6)
-        new_history
-      )
-    );
+    if (answer != "Có lỗi xảy ra!") {
+      const new_history = [
+        ...payload.history,
+        { role: "user", content: question },
+        { role: "assistant", content: answer }
+      ];
+      localStorage.setItem(
+        "chatHistory",
+        JSON.stringify(
+          // new_history.length <= 6
+          //   ? new_history
+          //   : new_history.slice(new_history.length - 6)
+          new_history
+        )
+      );
+    }
     
     return answer;
   } catch (error) {

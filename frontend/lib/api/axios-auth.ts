@@ -43,8 +43,11 @@ authAxios.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return authAxios(originalRequest);
       } catch (refreshError) {
-        console.error("Refresh token expired or invalid");
+        console.error("Refresh token expired or invalid => Logout");
         // Optional: logout user here
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
         return Promise.reject(refreshError);
       }
     }
