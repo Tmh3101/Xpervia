@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
+import { User, Heart } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -10,15 +10,22 @@ import { PaymentModal } from "./PaymentModal";
 import { useRouter } from "next/navigation";
 import { CourseCategories } from "@/components/course/CourseCategories";
 
+interface TeacherInfo {
+  name: string
+  avatar_url: string | null
+}
+
 interface CourseHeroProps {
   id: number;
   title: string;
   currentPrice: number;
   originalPrice: number;
   discount: number;
-  teacher: string;
+  teacher: TeacherInfo;
   bannerImageUrl: string;
   categories: string[];
+  num_students: number;
+  num_favorites: number;
   onEnrollSuccess: () => void;
 }
 
@@ -31,6 +38,8 @@ export function CourseHero({
   teacher,
   bannerImageUrl,
   categories,
+  num_students,
+  num_favorites,
   onEnrollSuccess,
 }: CourseHeroProps) {
   const { user, enrollInCourse } = useAuth();
@@ -87,9 +96,30 @@ export function CourseHero({
                   <h1 className="text-2xl text-destructive font-bold mb-2 max-w-3xl">
                     {title}
                   </h1>
-                  <div className="flex items-center mb-2 mt-2">
-                    <User className="w-4 h-4 mr-2 text-primary" />
-                    <div className="text-primary font-medium">{teacher}</div>
+                  <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full">
+                      <User className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{num_students ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full">
+                      <Heart className="w-4 h-4 text-pink-500" />
+                      <span className="font-medium">{num_favorites ?? 0}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center mb-1">
+                    <div className="w-8 h-8 mr-1 relative">
+                      <Image
+                        src={teacher.avatar_url || "/user-avatar.svg"}
+                        alt="avatar"
+                        width={28}
+                        height={28}
+                        className="rounded-full object-cover"
+                        priority={false}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-primary">
+                      {teacher.name}
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
