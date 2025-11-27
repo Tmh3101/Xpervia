@@ -45,7 +45,8 @@ def hybrid_recommend_home(
     seen = _get_course_seen_ids(user_id)
     scores_combined = {}
     for cid in combined_cands:
-        scores_combined[cid] = scores_blend.get(cid, 0.0) / 10 if cid in seen else scores_blend.get(cid, 0.0)
+        # scores_combined[cid] = scores_blend.get(cid, 0.0) / 20 if cid in seen else scores_blend.get(cid, 0.0)
+        scores_combined[cid] = 0.0 if cid in seen else scores_blend.get(cid, 0.0)
         
     ranked = sorted(scores_combined.items(), key=lambda x: x[1], reverse=True)
     return [{"course_id": cid, "score": score} for (cid, score) in ranked]
