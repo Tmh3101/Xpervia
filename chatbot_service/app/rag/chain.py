@@ -77,53 +77,53 @@ def make_rag_chain(
         chat = build_chat_model(chat_model_config)
         print("[CHAIN] Local chat model built at startup.")
 
-    def _do_hypothetical(inp: ChainInput) -> str:
-        print('[CHAIN] Doing hypothetical')
-        hyde_res = generate_hypothetical(
-            query=inp["question"]
-        )
-        print("[HYPOTHETICAL] Generated hypothetical answer.")
-        return {
-            "question": inp["question"],
-            "hypo_draft": hyde_res["draft"],
-            "history": inp.get("history"),
-            "system_prompt": inp.get("system_prompt"),
-            "use_simple_prompt": inp.get("use_simple_prompt", False)
-        }
+    # def _do_hypothetical(inp: ChainInput) -> str:
+    #     print('[CHAIN] Doing hypothetical')
+    #     hyde_res = generate_hypothetical(
+    #         query=inp["question"]
+    #     )
+    #     print("[HYPOTHETICAL] Generated hypothetical answer.")
+    #     return {
+    #         "question": inp["question"],
+    #         "hypo_draft": hyde_res["draft"],
+    #         "history": inp.get("history"),
+    #         "system_prompt": inp.get("system_prompt"),
+    #         "use_simple_prompt": inp.get("use_simple_prompt", False)
+    #     }
 
-    def _do_embed(ctx: Dict[str, Any]) -> Dict[str, Any]:
-        emb_res = embed_query(ctx["hypo_draft"])
-        print("[EMBEDDING] Embedding question:", ctx["hypo_draft"])
-        ctx["hypo_emb"] = emb_res
-        return ctx
+    # def _do_embed(ctx: Dict[str, Any]) -> Dict[str, Any]:
+    #     emb_res = embed_query(ctx["hypo_draft"])
+    #     print("[EMBEDDING] Embedding question:", ctx["hypo_draft"])
+    #     ctx["hypo_emb"] = emb_res
+    #     return ctx
 
-    async def _do_retrieve(ctx: Dict[str, Any]) -> Dict[str, Any]:
-        # hybrid_retrieve is now async
-        chunks = await hybrid_retrieve(
-            eng,
-            query_embedding=ctx["hypo_emb"],
-            query_text=ctx["hypo_draft"],
-        )
-        ctx["retrieved_chunks"] = chunks
-        print(f"[RETRIEVED] Retrieved {len(chunks)} chunks")
-        return ctx
-
-    # def _do_embed(inp: ChainInput) -> Dict[str, Any]:
-    #     emb_res = embed_query(inp["question"])
-    #     print("[EMBEDDING] Embedding question:", inp["question"])
-    #     inp["question_emb"] = emb_res
-    #     return inp
-    
     # async def _do_retrieve(ctx: Dict[str, Any]) -> Dict[str, Any]:
     #     # hybrid_retrieve is now async
     #     chunks = await hybrid_retrieve(
     #         eng,
-    #         query_embedding=ctx["question_emb"],
-    #         query_text=ctx["question"],
+    #         query_embedding=ctx["hypo_emb"],
+    #         query_text=ctx["hypo_draft"],
     #     )
     #     ctx["retrieved_chunks"] = chunks
     #     print(f"[RETRIEVED] Retrieved {len(chunks)} chunks")
     #     return ctx
+
+    def _do_embed(inp: ChainInput) -> Dict[str, Any]:
+        emb_res = embed_query(inp["question"])
+        print("[EMBEDDING] Embedding question:", inp["question"])
+        inp["question_emb"] = emb_res
+        return inp
+    
+    async def _do_retrieve(ctx: Dict[str, Any]) -> Dict[str, Any]:
+        # hybrid_retrieve is now async
+        chunks = await hybrid_retrieve(
+            eng,
+            query_embedding=ctx["question_emb"],
+            query_text=ctx["question"],
+        )
+        ctx["retrieved_chunks"] = chunks
+        print(f"[RETRIEVED] Retrieved {len(chunks)} chunks")
+        return ctx
 
     def _do_generate(ctx: Dict[str, Any]) -> Dict[str, Any]:
         ans = generate_answer(
