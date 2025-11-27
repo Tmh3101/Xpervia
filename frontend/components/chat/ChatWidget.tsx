@@ -204,7 +204,7 @@ export const ChatWidget: React.FC = () => {
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Nhập câu hỏi..."
-                            maxLength={64}
+                            maxLength={100}
                             disabled={typing}
                             className="flex-1 min-h-[38px] max-h-[96px] resize-none rounded-lg border input-border px-3 py-2 text-sm leading-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                         />
