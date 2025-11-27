@@ -159,7 +159,7 @@ def make_rag_chain(
     identity = RunnablePassthrough()
     chain = (
         identity
-        | RunnableLambda(_do_hypothetical)
+        # | RunnableLambda(_do_hypothetical)
         | RunnableLambda(_do_embed)
         | RunnableLambda(_do_retrieve)
         | RunnableLambda(_do_generate)
