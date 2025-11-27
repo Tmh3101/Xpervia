@@ -23,6 +23,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir maturin && \
+    pip install --no-cache-dir --no-build-isolation underthesea-core==1.0.4 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Production stage
