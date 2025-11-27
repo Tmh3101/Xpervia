@@ -39,3 +39,6 @@ COLAB_LLM_URL = os.getenv("COLAB_LLM_URL")
 
 # Frontend base URL (nếu muốn tạo source_url)
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", None) 
+
+# Gemini API Key
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", None)

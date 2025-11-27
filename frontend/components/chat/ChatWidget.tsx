@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
@@ -15,17 +14,9 @@ import { Send, ArrowDownToLine } from "lucide-react"
 import chatBg from "@/public/chat-bg.png"
 import logo from "@/public/logo-ngang.png";
 
-type ChatTurn = { role: "user" | "assistant"; content: string };
+type ChatTurn = { role: "user" | "assistant"; content: string, courseId?: number };
 
 const STORAGE_KEY = "chatHistory";
-
-function saveMessagesToStorage(msgs: ChatTurn[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs));
-  } catch {
-    /* silent */
-  }
-}
 
 function loadMessagesFromStorage(): ChatTurn[] {
   try {
@@ -34,6 +25,14 @@ function loadMessagesFromStorage(): ChatTurn[] {
     return JSON.parse(raw) as ChatTurn[];
   } catch {
     return [];
+  }
+}
+
+function saveMessagesToStorage(msgs: ChatTurn[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs.slice(-6)));
+  } catch {
+    /* silent */
   }
 }
 
@@ -94,8 +93,8 @@ export const ChatWidget: React.FC = () => {
       setTyping(true);
       scrollToBottom(false);
       try {
-        const answer = await sendMessageToChatbot(text);
-        const assistantMsg: ChatTurn = { role: "assistant", content: answer || "Xin lỗi, hệ thống không trả lời được." };
+        const { answer, courseId } = await sendMessageToChatbot(text);
+        const assistantMsg: ChatTurn = { role: "assistant", content: answer || "Xin lỗi, hệ thống không trả lời được.", courseId };
         setMessages((prev) => {
           const next = [...prev, assistantMsg];
           saveMessagesToStorage(next);
@@ -161,17 +160,14 @@ export const ChatWidget: React.FC = () => {
           style={{ maxHeight: "92vh" }}
         >
             <Card className="flex flex-col w-10/12 h-[60vh] sm:h-[78vh] md:h-[72vh] lg:h-[58vh] overflow-hidden shadow-2xl rounded-2xl">
-                <CardHeader className="flex justify-between p-4 border-b bg-primary">
-                    <div className="flex items-center gap-3">
-                      {/* <CardTitle className="text-sm text-white font-semibold">Trợ lý học tập</CardTitle> */}
-                      <Image
-                        src={logo}
-                        alt="Logo"
-                        width={80}
-                        height={80}
-                        className="rounded-xl bg-white"
-                      />
-                    </div>
+                <CardHeader className="flex justify-between p-2 border-b bg-primary">
+                    <Image
+                      src={logo}
+                      alt="Logo"
+                      width={80}
+                      height={80}
+                      className="rounded-xl bg-white"
+                    />
                 </CardHeader>
 
                 <CardContent
@@ -208,7 +204,7 @@ export const ChatWidget: React.FC = () => {
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Nhập câu hỏi..."
-                            maxLength={128}
+                            maxLength={64}
                             disabled={typing}
                             className="flex-1 min-h-[38px] max-h-[96px] resize-none rounded-lg border input-border px-3 py-2 text-sm leading-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                         />

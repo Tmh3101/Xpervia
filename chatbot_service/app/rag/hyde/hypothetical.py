@@ -54,20 +54,22 @@ def _call_colab_generate(
 def build_prompt(query: str, with_keywords: bool = True, max_words: int = 64) -> str:
     kw_line = ('Thêm vào cuối phần trả lời (dòng cuối): "Keywords: ..." gồm 2–4 từ khóa, phân tách dấu phẩy.'
                if with_keywords else 'Không cần dòng Keywords.')
-    prompt = f"""
-Bạn là trợ lý tạo “câu trả lời giả định” phục vụ truy xuất thông tin trong kiến trúc HyDE RAG.
-Hãy viết MỘT đoạn trả lời GIẢ ĐỊNH ngắn gọn (khoảng {max_words} từ) mô tả câu trả lời hợp lý cho truy vấn, dựa trên kiến thức nền tảng và các giả định phổ biến.
-KHÔNG nêu nguồn, KHÔNG bịa chi tiết cụ thể (tên, số liệu).
 
-YÊU CẦU:
-- Văn phong trung lập, súc tích.
-- Trình bày câu trả lời dưới dạng đoạn văn.
-- {kw_line}
-- Trả lời bằng Tiếng Việt.
+    prompt = f"""Bạn là trợ lý AI của nền tảng học trực tuyến Xpervia.
 
-Truy vấn:
-"{query}"
+MỤC TIÊU:
+- Trả lời chính xác, ngắn gọn, tự nhiên và hữu ích.
+- Hãy viết MỘT đoạn trả lời GIẢ ĐỊNH ngắn gọn (khoảng {max_words} từ) mô tả câu trả lời hợp lý cho truy vấn, dựa trên kiến thức nền tảng và các giả định phổ biến.
+
+HƯỚNG DẪN (BẮT BUỘC TUÂN THEO):
+1. Tuyệt đối chỉ trả lời bằng TIẾNG VIỆT. KHÔNG có bất kỳ một câu tiếng Anh nào dưới mọi hình thức.
+2. Trả lời phải NGẮN GỌN và ĐÚNG TRỌNG TÂM câu hỏi. KHÔNG giải thích, KHÔNG mở rộng, KHÔNG thêm ví dụ, KHÔNG in code.
+3. KHÔNG có câu hỏi trong câu trả lời.
+4. Viết văn phong tự nhiên, thân thiện, dễ hiểu.
+5. KHÔNG được trả lời bằng HTML.
+6. {kw_line}
 """.strip()
+
     return prompt
 
 def load_hyde_model_and_tokenizer():
@@ -156,7 +158,6 @@ def generate_hypothetical(
         return s
 
     gen = _clean_hyde_generation(raw_gen)
-    print("[HyDE] Cleaned generation:", gen)
 
     # tách keywords (nếu có) — extract from raw_gen before cleaning to be robust
     kws: List[str] = []
@@ -171,5 +172,7 @@ def generate_hypothetical(
     words = gen.split()
     if len(words) > 160:
         gen = " ".join(words[:160]).rstrip(" ,.;") + "."
+
+    print("[HyDE] Cleaned generation:", gen)
 
     return {"draft": gen, "keywords": kws, "used_prompt": prompt}

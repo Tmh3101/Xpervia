@@ -480,7 +480,7 @@ def _remove_repetitive_patterns(text: str, max_repeat: int = 3) -> str:
     return " ".join(cleaned)
 
 
-def _finalize_answer(text: str, max_sentences: int = 2, max_words: int = 32) -> str:
+def _finalize_answer(text: str, max_sentences: int = 2, max_words: int = 64) -> str:
     """
     Post-process a cleaned answer to enforce a concise length and preserve any
     trailing source lines. Behavior:
@@ -491,6 +491,12 @@ def _finalize_answer(text: str, max_sentences: int = 2, max_words: int = 32) -> 
     """
     if not text:
         return "Xin lỗi, tôi không thể tạo câu trả lời lúc này."
+    
+    if 'đáp án chính xác là'.lower() in text.lower():
+        try:
+            return text.split('đáp án chính xác là')[1].split(':')[1].split('.')[0].strip()
+        except:
+            pass
 
     # Split into lines and pull off trailing source lines like 'Nguồn:' or 'SOURCES:'
     lines = [ln.rstrip() for ln in text.strip().splitlines()]
@@ -577,5 +583,25 @@ def _finalize_answer(text: str, max_sentences: int = 2, max_words: int = 32) -> 
     # Fallback
     if not result or len(result.strip()) < 3:
         return "Xin lỗi, tôi không thể tạo câu trả lời lúc này."
+    
+    try:
+        result = result.split('?')[1].strip()
+    except:
+        pass
+
+    try:
+        result = result.split('A:')[0].strip()
+    except:
+        pass
+
+    try:
+        result = result.split('AI:')[0].strip()
+    except:
+        pass
+
+    try:
+        result = result.split('[Câu hỏi]:')[0].strip()
+    except:
+        pass
 
     return result

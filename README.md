@@ -27,12 +27,15 @@ Xpervia là nền tảng học tập trực tuyến giúp quản lý khóa học
 - **Chấm điểm & Phản hồi**: Giáo viên chấm điểm, nhận xét bài tập
 - **Thống kê**: Tiến độ học tập, số lượng khóa học, học viên đăng ký
 - **Gợi ý khóa học thông minh**: Tích hợp reco_service đề xuất khóa học tương đồng
+- **🤖 RAG Chatbot**: Hệ thống chatbot thông minh sử dụng RAG (Retrieval-Augmented Generation) để tư vấn khóa học
 
 ## Công Nghệ Sử Dụng
 
-- **Backend**: Django Rest Framework, Supabase PostgreSQL, Supabase Storage, Reco Service (gợi ý khóa học)
-- **Frontend**: Next.js, React, ShadCN/UI
+- **Backend**: Django Rest Framework, Supabase PostgreSQL, Supabase Storage, Reco Service (gợi ý khóa học), Celery + Redis (background tasks)
+- **Frontend**: Next.js 14, React 18, TailwindCSS, ShadCN/UI
+- **Chatbot**: FastAPI, LangChain, HuggingFace Transformers, Sentence-Transformers, PostgreSQL + pgvector (vector search)
 - **Authentication**: Supabase Auth (JWT)
+- **Containerization**: Docker, Docker Compose
 
 <div align="center">
     <img src="https://wvhmkaizijngdfbmpenf.supabase.co/storage/v1/object/public/xpervia-public/assets/system-structure.png" alt="System Architecture" width="600"/>
@@ -42,11 +45,49 @@ Xpervia là nền tảng học tập trực tuyến giúp quản lý khóa học
 
 ## Cài Đặt & Chạy Dự Án
 
-### Docker
+### 🐳 Docker (Khuyến Nghị)
 
-- Dự án đã hỗ trợ Docker cho cả backend và frontend. Database sử dụng Supabase PostgreSQL (không dùng local database).
-- Cấu hình kết nối Supabase trong file `.env` của backend.
-- Đảm bảo đã cập nhật các file Dockerfile và docker-compose.yml phù hợp với Supabase.
+Dự án đã được containerized hoàn toàn với Docker cho cả 3 modules: Backend, Frontend và Chatbot Service.
+
+#### Quick Start với Docker
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd Xpervia
+
+# 2. Copy và cấu hình environment files
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+cp chatbot_service/.env.example chatbot_service/.env
+
+# 3. Cấu hình Supabase credentials trong các file .env
+
+# 4. Build và khởi động tất cả services
+docker-compose up -d
+
+# 5. Chạy database migrations
+docker-compose exec backend python manage.py migrate
+docker-compose exec backend python manage.py seed_admin
+
+# 6. Truy cập ứng dụng
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000
+# Chatbot API: http://localhost:8001
+```
+
+📖 **Chi tiết**: Xem [DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md) để biết hướng dẫn đầy đủ và [DOCKER_COMMANDS.md](./DOCKER_COMMANDS.md) cho quick reference commands.
+
+#### Docker Services
+
+- **backend** (port 8000): Django REST API với Gunicorn
+- **frontend** (port 3000): Next.js application
+- **chatbot** (port 8001): RAG Chatbot với FastAPI
+- **redis** (port 6379): Cache và message broker
+- **celery-worker**: Background task processing
+- **celery-beat**: Scheduled tasks
+
+### 💻 Local Development (Không dùng Docker)
 
 ### Backend
 

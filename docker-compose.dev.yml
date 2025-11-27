@@ -1,0 +1,139 @@
+version: "3.9"
+
+# Development docker-compose với hot-reload và debugging
+# Sử dụng: docker-compose -f docker-compose.dev.yml up
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: xpervia-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - xpervia-network-dev
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xpervia-backend-dev
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONUNBUFFERED=1
+      - DEBUG=True
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+    networks:
+      - xpervia-network-dev
+    stdin_open: true
+    tty: true
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xpervia-celery-worker-dev
+    command: celery -A backend worker -l debug --pool=solo
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - xpervia-network-dev
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xpervia-celery-beat-dev
+    command: celery -A backend beat -l debug --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - xpervia-network-dev
+
+  chatbot:
+    build:
+      context: ./chatbot_service
+      dockerfile: Dockerfile
+    container_name: xpervia-chatbot-dev
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8001 --reload
+    volumes:
+      - ./chatbot_service:/app
+      - chatbot_cache_dev:/app/.cache
+      - /app/__pycache__
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TOKENIZERS_PARALLELISM=false
+      - HF_HOME=/app/.cache/huggingface
+      - TRANSFORMERS_CACHE=/app/.cache/huggingface
+    env_file:
+      - ./chatbot_service/.env
+    depends_on:
+      - redis
+    networks:
+      - xpervia-network-dev
+    stdin_open: true
+    tty: true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: deps
+    container_name: xpervia-frontend-dev
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+    env_file:
+      - ./frontend/.env.local
+    depends_on:
+      - backend
+      - chatbot
+    networks:
+      - xpervia-network-dev
+    stdin_open: true
+    tty: true
+
+networks:
+  xpervia-network-dev:
+    driver: bridge
+
+volumes:
+  redis_data_dev:
+    driver: local
+  chatbot_cache_dev:
+    driver: local

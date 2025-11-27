@@ -28,7 +28,7 @@ interface ChatbotMessageReq {
     return_chunks?: boolean;
 }
 
-export const sendMessageToChatbot = async (question: string): Promise<string> => {
+export const sendMessageToChatbot = async (question: string): Promise<{ answer: string; courseId: number }> => {
   try {
     const cur_history = localStorage.getItem("chatHistory");
     const payload: ChatbotMessageReq = {
@@ -37,26 +37,10 @@ export const sendMessageToChatbot = async (question: string): Promise<string> =>
       return_chunks: true,
     };
     const response = await chatAxios.post("/ask", payload);
-
     const answer = response.data.answer as string;
-    if (answer != "Có lỗi xảy ra!") {
-      const new_history = [
-        ...payload.history,
-        { role: "user", content: question },
-        { role: "assistant", content: answer }
-      ];
-      localStorage.setItem(
-        "chatHistory",
-        JSON.stringify(
-          // new_history.length <= 6
-          //   ? new_history
-          //   : new_history.slice(new_history.length - 6)
-          new_history
-        )
-      );
-    }
+    const courseId = response.data.retrieved_chunks[0].course_id;
     
-    return answer;
+    return { answer, courseId }
   } catch (error) {
     console.error("Error sending message to chatbot:", error);
     throw new Error("Có lỗi xảy ra!")

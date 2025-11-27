@@ -22,3 +22,8 @@ peft==0.17.1
 bitsandbytes==0.48.1
 
 schedule==1.2.2
+ragas==0.3.8
+datasets==4.4.1
+sentence-transformers==5.1.0
+langchain-google-genai==2.0.10
+google-generativeai==0.8.5
