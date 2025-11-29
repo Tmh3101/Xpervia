@@ -105,9 +105,22 @@ def ensure_tfidf_artifacts(force: bool = False) -> dict | None:
     Gọi ở startup. An toàn khi nhiều worker nhờ file-lock:
     - Nếu artifacts hợp lệ: return None (không làm gì)
     - Nếu thiếu/hỏng hoặc force=True: fit và lưu
+    - Tự động build ma trận course-course similarity
     """
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     if not force and _artifact_ok():
+        # Kiểm tra xem ma trận similarity có tồn tại không
+        from api.services.reco_service.cb.similarity import (
+            load_course_similarity_matrix,
+            build_and_save_course_similarity_matrix
+        )
+        sim_matrix = load_course_similarity_matrix()
+        if sim_matrix is None:
+            # Artifacts TF-IDF OK nhưng chưa có similarity matrix -> build
+            try:
+                build_and_save_course_similarity_matrix()
+            except Exception as e:
+                print(f"Warning: Could not build similarity matrix: {e}")
         return None
 
     try:

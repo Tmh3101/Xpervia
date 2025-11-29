@@ -108,6 +108,7 @@ python manage.py seed_admin
 
 # Khởi tạo hệ thống gợi ý khóa học
 python manage.py reco_init
+python manage.py rebuild_course_similarity --force
 
 # Chạy server
 python manage.py runserver

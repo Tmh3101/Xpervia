@@ -39,6 +39,8 @@ export const sendMessageToChatbot = async (question: string): Promise<{ answer: 
     const response = await chatAxios.post("/ask", payload);
     const answer = response.data.answer as string;
     const courseId = response.data.retrieved_chunks[0].course_id;
+
+    console.log("Chatbot response:", response.data);
     
     return { answer, courseId }
   } catch (error) {

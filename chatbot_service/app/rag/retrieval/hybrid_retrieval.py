@@ -20,7 +20,7 @@ async def hybrid_retrieve(
     top_k_semantic: int = 2,
     top_k_lexical: int = 2,
     top_k_final: int = 3,
-    alpha: float = 0.4,
+    alpha: float = 0.6,
     min_semantic: Optional[float] = None,
     course_id: Optional[int] = None,
     doc_types: Optional[List[str]] = None,
