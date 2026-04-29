@@ -1,0 +1,7 @@
+[project]
+name = "xpervia-backend"
+version = "0.1.0"
+dependencies = []
+
+[tool.uv.extra-build-dependencies]
+underthesea-core = ["maturin"]
