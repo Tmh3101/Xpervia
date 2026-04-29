@@ -1,16 +1,9 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "backend/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "runtime": "python3.12" }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "backend/wsgi.py"
+      "source": "/api/(.*)",
+      "destination": "backend/wsgi.py"
     }
   ]
 }
