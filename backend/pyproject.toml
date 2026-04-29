@@ -11,7 +11,7 @@ dependencies = [
     "python-decouple==3.8",
     "pyjwt==2.9.0",
     "supabase==2.15.1",
-    "underthesea==6.8.4",
+    "underthesea==6.8.0",
     "scikit-learn==1.6.1",
     "scipy==1.15.1",
     "joblib==1.4.2",
