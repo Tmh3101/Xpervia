@@ -1,7 +1,7 @@
 [project]
 name = "xpervia-backend"
 version = "0.1.0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "Django==5.1.5",
     "djangorestframework==3.15.2",
