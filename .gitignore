@@ -9,3 +9,8 @@ Thumbs.db
 
 # Environment variables
 .env
+.gitnexus
+.claude
+
+AGENTS.md
+CLAUDE.md
