@@ -9,5 +9,8 @@ Thumbs.db
 
 # Environment variables
 .env
+.gitnexus
+.claude
 
-chatbot_service_old/
+AGENTS.md
+CLAUDE.md
