@@ -12,5 +12,4 @@ scipy==1.16.1
 joblib==1.5.2
 django-celery-beat==2.8.1
 redis==5.3.1
-gunicorn==23.0.0
-celery==5.4.0
+maturin>=1.0.0
