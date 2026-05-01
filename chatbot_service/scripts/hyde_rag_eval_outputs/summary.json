@@ -1,8 +1,0 @@
-{
-  "num_samples": 104,
-  "num_success": 100,
-  "faithfulness_avg": 0.3085,
-  "answer_relevance_avg": 0.293,
-  "context_precision_avg": 0.0033,
-  "context_recall_avg": 0.01
-}

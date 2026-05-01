@@ -13,7 +13,7 @@ from peft import PeftModel, PeftConfig
 from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 from app import config
 
-LORA_ADAPTER_PATH = "./qwen2_5_0_5b_lora_ragqa"
+LORA_ADAPTER_PATH = "./qwen2_5-1_5B-instruct-lora"
 
 @dataclass
 class GenerativeConfig:

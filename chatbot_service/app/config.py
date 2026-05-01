@@ -20,9 +20,6 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", None)
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", None)
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", None)
 
-# REDIS (optional cache/queue)
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-
 # Chunking & Indexing
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 512))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 64))
@@ -39,6 +36,3 @@ COLAB_LLM_URL = os.getenv("COLAB_LLM_URL")
 
 # Frontend base URL (nếu muốn tạo source_url)
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", None) 
-
-# Gemini API Key
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", None)
