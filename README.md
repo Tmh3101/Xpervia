@@ -39,16 +39,16 @@
 
 ## Tính Năng Chính
 
-| Tính năng | Mô tả |
-|-----------|-------|
-| 👤 **Quản lý người dùng** | Đăng ký, đăng nhập, phân quyền (Admin, Giáo viên, Học viên) |
-| 📚 **Quản lý khóa học** | Tạo, chỉnh sửa, xóa, phân loại khóa học theo danh mục |
-| 📝 **Bài học & Bài tập** | Nội dung học tập, video, file đính kèm, bài tập có hạn nộp |
-| ✅ **Chấm điểm & Phản hồi** | Giáo viên chấm điểm, nhận xét bài tập học viên |
-| 📊 **Thống kê** | Tiến độ học tập, số lượng khóa học, học viên đăng ký |
+| Tính năng                        | Mô tả                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| 👤 **Quản lý người dùng**        | Đăng ký, đăng nhập, phân quyền (Admin, Giáo viên, Học viên)            |
+| 📚 **Quản lý khóa học**          | Tạo, chỉnh sửa, xóa, phân loại khóa học theo danh mục                  |
+| 📝 **Bài học & Bài tập**         | Nội dung học tập, video, file đính kèm, bài tập có hạn nộp             |
+| ✅ **Chấm điểm & Phản hồi**      | Giáo viên chấm điểm, nhận xét bài tập học viên                         |
+| 📊 **Thống kê**                  | Tiến độ học tập, số lượng khóa học, học viên đăng ký                   |
 | 🎯 **Gợi ý khóa học thông minh** | Hybrid Recommendation System (Content-Based + Collaborative Filtering) |
-| 🤖 **RAG Chatbot** | Chatbot thông minh sử dụng RAG để tư vấn khóa học |
-| ❤️ **Yêu thích khóa học** | Lưu và quản lý danh sách khóa học yêu thích |
+| 🤖 **RAG Chatbot**               | Chatbot thông minh sử dụng RAG để tư vấn khóa học                      |
+| ❤️ **Yêu thích khóa học**        | Lưu và quản lý danh sách khóa học yêu thích                            |
 
 ## Kiến Trúc Hệ Thống
 
@@ -93,15 +93,15 @@ Hệ thống Xpervia bao gồm **3 module chính**:
 
 ### Công Nghệ Sử Dụng
 
-| Module | Công nghệ |
-|--------|-----------|
-| **Frontend** | Next.js 14, React 18, TailwindCSS, ShadCN/UI, TypeScript |
-| **Backend** | Django 5.1, Django REST Framework, Celery, Redis |
-| **Chatbot** | FastAPI, LangChain, HuggingFace Transformers, Sentence-Transformers |
-| **Database** | Supabase PostgreSQL, pgvector (vector search) |
-| **Storage** | Supabase Storage |
-| **Authentication** | Supabase Auth (JWT) |
-| **Containerization** | Docker, Docker Compose |
+| Module               | Công nghệ                                                           |
+| -------------------- | ------------------------------------------------------------------- |
+| **Frontend**         | Next.js 14, React 18, TailwindCSS, ShadCN/UI, TypeScript            |
+| **Backend**          | Django 5.1, Django REST Framework, Celery, Redis                    |
+| **Chatbot**          | FastAPI, LangChain, HuggingFace Transformers, Sentence-Transformers |
+| **Database**         | Supabase PostgreSQL, pgvector (vector search)                       |
+| **Storage**          | Supabase Storage                                                    |
+| **Authentication**   | Supabase Auth (JWT)                                                 |
+| **Containerization** | Docker, Docker Compose                                              |
 
 ---
 
@@ -109,12 +109,12 @@ Hệ thống Xpervia bao gồm **3 module chính**:
 
 ### Yêu cầu chung
 
-| Thành phần | Yêu cầu tối thiểu |
-|------------|-------------------|
-| **OS** | Windows 10/11, macOS 10.15+, Ubuntu 20.04+ |
-| **RAM** | 8GB (16GB khuyến nghị cho Chatbot) |
-| **Disk** | 20GB trống |
-| **Internet** | Kết nối ổn định (để tải models AI) |
+| Thành phần   | Yêu cầu tối thiểu                          |
+| ------------ | ------------------------------------------ |
+| **OS**       | Windows 10/11, macOS 10.15+, Ubuntu 20.04+ |
+| **RAM**      | 8GB (16GB khuyến nghị cho Chatbot)         |
+| **Disk**     | 20GB trống                                 |
+| **Internet** | Kết nối ổn định (để tải models AI)         |
 
 ### Với Docker (Khuyến nghị)
 
@@ -123,13 +123,13 @@ Hệ thống Xpervia bao gồm **3 module chính**:
 
 ### Với Local Development
 
-| Module | Yêu cầu |
-|--------|---------|
-| **Backend** | Python 3.12+, pip |
-| **Frontend** | Node.js 20+, npm 10+ |
-| **Chatbot** | Python 3.12+, CUDA (optional cho GPU) |
+| Module       | Yêu cầu                                |
+| ------------ | -------------------------------------- |
+| **Backend**  | Python 3.12+, pip                      |
+| **Frontend** | Node.js 20+, npm 10+                   |
+| **Chatbot**  | Python 3.12+, CUDA (optional cho GPU)  |
 | **Database** | Tài khoản Supabase (free tier đủ dùng) |
-| **Cache** | Redis Server 7+ |
+| **Cache**    | Redis Server 7+                        |
 
 ---
 
@@ -281,9 +281,6 @@ EMBEDDING_MODEL=Alibaba-NLP/gte-multilingual-base
 EMBED_DIM=768
 LLM_MODEL=arcee-ai/Arcee-VyLinh
 USE_CUDA=0
-
-# Frontend URL (for source links)
-FRONTEND_BASE_URL=http://localhost:3000
 ```
 
 ### Bước 4: Tạo Storage Buckets trên Supabase
@@ -324,13 +321,13 @@ docker-compose exec backend python manage.py rebuild_course_similarity --force
 
 ### Bước 7: Truy cập ứng dụng
 
-| Service | URL | Mô tả |
-|---------|-----|-------|
-| **Frontend** | http://localhost:3000 | Giao diện web chính |
-| **Backend API** | http://localhost:8000 | REST API |
-| **API Docs (Swagger)** | http://localhost:8000/swagger/ | API Documentation |
-| **Chatbot API** | http://localhost:8001 | RAG Chatbot API |
-| **Chatbot Docs** | http://localhost:8001/docs | Chatbot API Documentation |
+| Service                | URL                            | Mô tả                     |
+| ---------------------- | ------------------------------ | ------------------------- |
+| **Frontend**           | http://localhost:3000          | Giao diện web chính       |
+| **Backend API**        | http://localhost:8000          | REST API                  |
+| **API Docs (Swagger)** | http://localhost:8000/swagger/ | API Documentation         |
+| **Chatbot API**        | http://localhost:8001          | RAG Chatbot API           |
+| **Chatbot Docs**       | http://localhost:8001/docs     | Chatbot API Documentation |
 
 ### 🐳 Docker Commands Reference
 
@@ -391,6 +388,7 @@ cp chatbot_service/.env.example chatbot_service/.env
 ```
 
 > **Lưu ý cho Local Development**: Thay đổi Redis URL trong các file `.env`:
+>
 > - `CELERY_BROKER_URL=redis://localhost:6379/0`
 > - `CELERY_RESULT_BACKEND=redis://localhost:6379/1`
 > - `REDIS_URL=redis://localhost:6379/0`
@@ -483,13 +481,13 @@ uvicorn app.api.main:app --host 0.0.0.0 --port 8001 --reload
 
 ### Tổng hợp các terminals cần mở
 
-| Terminal | Thư mục | Lệnh |
-|----------|---------|------|
-| 1 | `backend/` | `python manage.py runserver` |
-| 2 | `backend/` | `celery -A backend worker -l info` |
-| 3 | `frontend/` | `npm run dev` |
-| 4 | `chatbot_service/` | `uvicorn app.api.main:app --port 8001 --reload` |
-| 5 | (anywhere) | Redis server (hoặc dùng Docker) |
+| Terminal | Thư mục            | Lệnh                                            |
+| -------- | ------------------ | ----------------------------------------------- |
+| 1        | `backend/`         | `python manage.py runserver`                    |
+| 2        | `backend/`         | `celery -A backend worker -l info`              |
+| 3        | `frontend/`        | `npm run dev`                                   |
+| 4        | `chatbot_service/` | `uvicorn app.api.main:app --port 8001 --reload` |
+| 5        | (anywhere)         | Redis server (hoặc dùng Docker)                 |
 
 ---
 
@@ -508,27 +506,28 @@ uvicorn app.api.main:app --host 0.0.0.0 --port 8001 --reload
 
 Sau khi chạy `seed_admin`, tài khoản admin được tạo:
 
-| Field | Value |
-|-------|-------|
-| Email | `admin001@gmail.com` |
-| Password | `admin001` |
-| Role | `admin` |
+| Field    | Value                |
+| -------- | -------------------- |
+| Email    | `admin001@gmail.com` |
+| Password | `admin001`           |
+| Role     | `admin`              |
 
 > ⚠️ **Lưu ý**: Đổi mật khẩu ngay sau khi đăng nhập lần đầu!
 
 ### Các Django Management Commands
 
-| Command | Mô tả |
-|---------|-------|
-| `python manage.py migrate` | Chạy database migrations |
-| `python manage.py seed_admin` | Tạo tài khoản admin |
-| `python manage.py reco_init` | Khởi tạo Recommendation System (TF-IDF + CF) |
-| `python manage.py rebuild_course_similarity --force` | Rebuild ma trận Course Similarity |
-| `python manage.py createsuperuser` | Tạo superuser Django |
+| Command                                              | Mô tả                                        |
+| ---------------------------------------------------- | -------------------------------------------- |
+| `python manage.py migrate`                           | Chạy database migrations                     |
+| `python manage.py seed_admin`                        | Tạo tài khoản admin                          |
+| `python manage.py reco_init`                         | Khởi tạo Recommendation System (TF-IDF + CF) |
+| `python manage.py rebuild_course_similarity --force` | Rebuild ma trận Course Similarity            |
+| `python manage.py createsuperuser`                   | Tạo superuser Django                         |
 
 ### Cấu hình Recommendation System
 
 Hệ thống gợi ý sử dụng Hybrid Recommendation:
+
 - **Content-Based Filtering**: TF-IDF vectors từ nội dung khóa học
 - **Collaborative Filtering**: User-based CF từ hành vi enroll/favorite
 
@@ -562,13 +561,13 @@ curl -X POST http://localhost:8001/ask \
 
 ### Lỗi thường gặp
 
-| Lỗi | Nguyên nhân | Giải pháp |
-|-----|-------------|-----------|
-| `Connection refused to Redis` | Redis chưa chạy | Khởi động Redis: `docker run -d -p 6379:6379 redis:7-alpine` |
-| `Supabase connection failed` | Sai credentials | Kiểm tra lại file `.env` |
-| `Module not found` | Thiếu dependencies | Chạy lại `pip install -r requirements.txt` |
-| `Port already in use` | Port đã bị chiếm | Đổi port hoặc kill process đang dùng |
-| `Chatbot out of memory` | RAM không đủ | Giảm model size hoặc tăng RAM |
+| Lỗi                           | Nguyên nhân        | Giải pháp                                                    |
+| ----------------------------- | ------------------ | ------------------------------------------------------------ |
+| `Connection refused to Redis` | Redis chưa chạy    | Khởi động Redis: `docker run -d -p 6379:6379 redis:7-alpine` |
+| `Supabase connection failed`  | Sai credentials    | Kiểm tra lại file `.env`                                     |
+| `Module not found`            | Thiếu dependencies | Chạy lại `pip install -r requirements.txt`                   |
+| `Port already in use`         | Port đã bị chiếm   | Đổi port hoặc kill process đang dùng                         |
+| `Chatbot out of memory`       | RAM không đủ       | Giảm model size hoặc tăng RAM                                |
 
 ### Reset toàn bộ dự án
 
@@ -587,7 +586,7 @@ rm -rf backend/venv frontend/node_modules chatbot_service/venv
 
 ## Đóng Góp
 
-Mọi đóng góp đều được hoan nghênh! 
+Mọi đóng góp đều được hoan nghênh!
 
 1. Fork repository
 2. Tạo branch mới (`git checkout -b feature/AmazingFeature`)

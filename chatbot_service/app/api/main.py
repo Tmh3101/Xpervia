@@ -10,9 +10,15 @@ from app.rag.chain import build_engine
 
 app = FastAPI(title="RAG Chatbot (LangChain + Qwen)", version="0.1.0")
 
+origins = [
+    "https://xpervia.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(","),
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
