@@ -49,7 +49,14 @@ def build_engine() -> AsyncEngine:
         raise RuntimeError("asyncpg not installed. Please `pip install asyncpg`. Import error: " + str(e))
 
     try:
-        engine = create_async_engine(url, pool_pre_ping=True)
+        engine = create_async_engine(
+            url, 
+            pool_pre_ping=True,
+            connect_args={
+                "statement_cache_size": 0,
+                "prepared_statement_cache_size": 0
+            }
+        )
         return engine
     except InvalidRequestError as e:
         raise RuntimeError(

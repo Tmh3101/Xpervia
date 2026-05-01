@@ -2,8 +2,11 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
+IS_ON_MODAL = "MODAL_ENVIRONMENT" in os.environ
+
 # Load .env ở thư mục gốc dự án
-load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+if not IS_ON_MODAL:
+    load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 print(Path(__file__).resolve().parent.parent.parent / ".env")
 

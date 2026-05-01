@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import traceback
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .schemas import AskDTO, AskResponse
@@ -58,4 +59,5 @@ async def ask(dto: AskDTO) -> AskResponse:
         return resp
 
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Generation error: {e}")
