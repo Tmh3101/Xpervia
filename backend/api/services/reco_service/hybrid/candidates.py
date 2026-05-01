@@ -40,7 +40,7 @@ def _cb_quick_candidates(
     topk: int = CB_USER_MAX_ITEMS,
     min_sim: float = MIN_SIM_CB,
 ) -> Dict[int, float]:
-    vec, X, row_map = load_tfidf()
+    vec, X, row_map = load_tfidf() # X là ma trận TF-IDF của tất cả course
     u_vec = build_user_vector(user_id)
     if u_vec is None or u_vec.nnz == 0:
         return {}

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import ChatWidget from "@/components/chat/ChatWidget";
 import { Inter } from "next/font/google";
 import { authorizeWith } from "@/lib/authorize";
 import logo from "@/public/logo-vuong.png";
@@ -73,13 +74,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               ) : (
                 <>
                   <Header />
-                  {children}
+                  <div className="min-h-[80vh]">
+                    {children}
+                  </div>
                   <Footer />
                 </>
               )}
             </div>
           </RoleBasedProtection>
         </AuthProvider>
+        <ChatWidget />
       </body>
     </html>
   );

@@ -33,6 +33,8 @@ export function CourseCard({
   regis_start_date,
   regis_end_date,
   max_students,
+  num_students,
+  num_favorites,
   mode,
   progress = 0,
   studentsEnrolled = 0,
@@ -77,7 +79,7 @@ export function CourseCard({
         {/* Nút yêu thích cho student */}
         {(mode === "student" || mode === "enrolled") && user && (
           <button
-            className="absolute top-[2px] right-2 z-10 p-2 rounded-full bg-white/25 shadow-md hover:scale-110 transition-all"
+            className={`absolute top-[2px] right-2 z-10 p-2 rounded-full shadow-md hover:scale-110 transition-all ${isFavorite ? "bg-red-500/35" : "bg-white/25"}`}
             onClick={(e) => {
               e.stopPropagation();
               toggleFavorite?.(id);
@@ -88,7 +90,7 @@ export function CourseCard({
               className={`w-5 h-5 transition-all duration-200 ${
                 isFavorite && "scale-110"
               }`}
-              color={isFavorite ? "#FFD600" : "#17A0F0"}
+              color={isFavorite ? "red" : "#17A0F0"}
             />
           </button>
         )}
@@ -97,13 +99,30 @@ export function CourseCard({
         <h3 className="font-bold text-lg/[1.5rem] text-destructive mb-1 line-clamp-2">
           {course_content.title}
         </h3>
+        <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
+          <div className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full">
+            <User className="w-4 h-4 text-primary" />
+            <span className="font-medium">{num_students ?? 0}</span>
+          </div>
+          <div className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full">
+            <Heart className="w-4 h-4 text-pink-500" />
+            <span className="font-medium">{num_favorites ?? 0}</span>
+          </div>
+        </div>
         {mode !== "teacher" ? (
           <div className="flex items-center mb-1">
-            <User className="w-4 h-4 mr-2 text-primary" />
+            <div className="w-8 h-8 mr-1 relative">
+              <Image
+                src={course_content.teacher.avatar_url || "/user-avatar.svg"}
+                alt="avatar"
+                width={28}
+                height={28}
+                className="rounded-full object-cover"
+                priority={false}
+              />
+            </div>
             <span className="text-sm font-medium text-primary">
-              {course_content.teacher.first_name +
-                " " +
-                course_content.teacher.last_name}
+              {course_content.teacher.first_name + " " + course_content.teacher.last_name}
             </span>
           </div>
         ) : (

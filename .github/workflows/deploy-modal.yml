@@ -1,0 +1,57 @@
+name: Deploy Chatbot to Modal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "chatbot_service/**"
+      - ".github/workflows/deploy-modal.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Modal
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install modal
+
+      - name: Create .env file
+        working-directory: chatbot_service
+        run: |
+          echo "SUPABASE_DB_HOST=${{ secrets.SUPABASE_DB_HOST }}" >> .env
+          echo "SUPABASE_DB_PORT=${{ secrets.SUPABASE_DB_PORT }}" >> .env
+          echo "SUPABASE_DB_NAME=${{ secrets.SUPABASE_DB_NAME }}" >> .env
+          echo "SUPABASE_DB_USER=${{ secrets.SUPABASE_DB_USER }}" >> .env
+          echo "SUPABASE_DB_PASSWORD=${{ secrets.SUPABASE_DB_PASSWORD }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
+          echo "CHUNK_SIZE=${{ secrets.CHUNK_SIZE }}" >> .env
+          echo "CHUNK_OVERLAP=${{ secrets.CHUNK_OVERLAP }}" >> .env
+          echo "EMBEDDING_MODEL=${{ secrets.EMBEDDING_MODEL }}" >> .env
+          echo "EMBED_DIM=${{ secrets.EMBED_DIM }}" >> .env
+          echo "LLM_MODEL=${{ secrets.LLM_MODEL }}" >> .env
+          echo "USE_CUDA=${{ secrets.USE_CUDA }}" >> .env
+          echo "FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" >> .env
+          echo "IS_COLAB_LLM=${{ secrets.IS_COLAB_LLM }}" >> .env
+          echo "COLAB_LLM_URL=${{ secrets.COLAB_LLM_URL }}" >> .env
+
+      - name: Deploy to Modal
+        working-directory: chatbot_service
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy chatbot_service/deploy_modal.py

@@ -87,7 +87,7 @@ def refresh_session_view(request):
         "access_token": result["access_token"],
         "refresh_token": result["refresh_token"],
         "user": UserSerializer(result["user"]).data
-    }, status=200)
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -108,7 +108,7 @@ def request_reset_password_view(request):
     return Response({
         "success": True,
         "message": "Password reset email sent successfully"
-    }, status=200)
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -121,7 +121,7 @@ def reset_password_view(request):
         return Response({
             "success": False,
             "message": "Email and new password are required"
-        }, status=400)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         auth.reset_password(email, new_password)
@@ -132,7 +132,7 @@ def reset_password_view(request):
     return Response({
         "success": True,
         "message": "Password reset successfully"
-    }, status=200)
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -147,7 +147,7 @@ def get_current_user(request):
             "success": False,
             "message": "Failed to retrieve user info",
             "error": str(e)
-        }, status=400)
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     logger.info(f"User info retrieved successfully: {user.email}")  
     return Response({
@@ -156,5 +156,5 @@ def get_current_user(request):
         "user": UserSerializer(user).data,
         "enrollment_ids": [enrollment.course_id for enrollment in user.enrollments.all()],
         "favorite_ids": [favorite.course_id for favorite in user.favorites.all()]
-    }, status=200)
+    }, status=status.HTTP_200_OK)
 

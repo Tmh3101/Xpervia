@@ -22,6 +22,8 @@ const nextConfig = {
     parallelServerCompiles: true,
   },
   reactStrictMode: false, // Tắt Strict Mode
+  // Enable standalone output for Docker production builds
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
 }
 
 mergeConfig(nextConfig, userConfig)

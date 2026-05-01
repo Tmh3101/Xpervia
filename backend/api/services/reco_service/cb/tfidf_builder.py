@@ -61,6 +61,7 @@ def fit_tfidf_and_save() -> Dict:
     Fit TF-IDF toàn bộ course corpus:
     - vectorizer, matrix, row_map
     - L2-normalize theo hàng
+    - Xây dựng ma trận course-course similarity
     """
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     ids, docs = _build_corpus()
@@ -73,14 +74,27 @@ def fit_tfidf_and_save() -> Dict:
 
     row_map = {cid: i for i, cid in enumerate(ids)} # Tạo map course_id → row index trong ma trận
     save_artifacts(ARTIFACT_DIR, vec, X, row_map, VECT_NAME, MATRIX_NAME, MAP_NAME)
+    
+    # Xây dựng và lưu ma trận course-course similarity
+    from api.services.reco_service.cb.similarity import build_and_save_course_similarity_matrix
+    sim_stats = build_and_save_course_similarity_matrix()
+    
     return {
         "n_courses": len(ids),
         "n_features": int(X.shape[1]),
         "artifact_dir": ARTIFACT_DIR,
+        "similarity_matrix": sim_stats,
     }
 
 # Transform 1 khóa học mới hoặc cập nhật khóa học (KHÔNG refit) - thêm hoặc cập nhật vào ma trận
 def transform_single_course(course_id: int) -> None:
+    """
+    Cập nhật TF-IDF và similarity matrix cho 1 khóa học.
+    - Load các artifacts
+    - Transform khóa học mới/cập nhật
+    - Cập nhật ma trận TF-IDF
+    - Cập nhật ma trận course-course similarity
+    """
     # Load các artifacts
     vec, X, row_map = load_artifacts(ARTIFACT_DIR, VECT_NAME, MATRIX_NAME, MAP_NAME)
 
@@ -106,6 +120,10 @@ def transform_single_course(course_id: int) -> None:
 
     # Lưu lại artifacts
     save_artifacts(ARTIFACT_DIR, vec, X, row_map, VECT_NAME, MATRIX_NAME, MAP_NAME)
+    
+    # Cập nhật ma trận course-course similarity
+    from api.services.reco_service.cb.similarity import update_course_similarity_for_single
+    update_course_similarity_for_single(course_id)
 
 
 # Load TF-IDF artifacts

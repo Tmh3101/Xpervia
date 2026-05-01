@@ -61,11 +61,16 @@ export default function CourseDetailPage() {
         currentPrice={courseDetailData.price * (1 - courseDetailData.discount)}
         originalPrice={courseDetailData.price}
         discount={courseDetailData.discount}
-        teacher={teacher.first_name + " " + teacher.last_name}
+        teacher={{
+          name: teacher.first_name + " " + teacher.last_name,
+          avatar_url: teacher.avatar_url,
+        }}
         bannerImageUrl={courseConent.thumbnail_url}
         categories={courseDetailData.course_content.categories.map(
           (c) => c.name
         )}
+        num_students={courseDetailData.num_students}
+        num_favorites={courseDetailData.num_favorites}
         onEnrollSuccess={handleEnrollSuccess}
       />
       <div className="container mx-auto px-4 pt-10">

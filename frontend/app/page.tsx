@@ -42,8 +42,6 @@ export default function Home() {
     setSearchQuery(query);
   };
 
-  console.log("Filtered Courses:", filteredCourses);
-
   return (
     <main>
       <HeroSection />
@@ -53,7 +51,7 @@ export default function Home() {
       />
       <section className="container mx-auto pb-12 min-h-[400px]">
         <h2 className="text-3xl text-destructive font-bold mb-8 text-center">
-          Khóa học hàng đầu
+          {`${user ? "Khóa học dành cho bạn" : "Khóa học phổ biến"}`}
         </h2>
         {filteredCourses.length > 0 ? (
           <div>
