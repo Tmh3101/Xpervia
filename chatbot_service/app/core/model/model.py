@@ -37,6 +37,7 @@ class GenerativeConfig:
                 "repetition_penalty": 1.1,
                 "max_new_tokens": 512,
                 "pad_token_id": None,
+                "return_full_text": False,
             }
         
         # Resolve đường dẫn LoRA thành absolute path

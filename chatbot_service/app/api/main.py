@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import traceback
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .schemas import AskDTO, AskResponse
@@ -10,9 +11,15 @@ from app.rag.chain import build_engine
 
 app = FastAPI(title="RAG Chatbot (LangChain + Qwen)", version="0.1.0")
 
+origins = [
+    "https://xpervia.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(","),
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,4 +59,5 @@ async def ask(dto: AskDTO) -> AskResponse:
         return resp
 
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Generation error: {e}")
